@@ -1,38 +1,47 @@
-import * as React from 'react';
-import { createRoot } from 'react-dom/client';
-import { Component } from 'react-simplified';
-import { HashRouter, Route } from 'react-router-dom';
+import React from 'react';
+import ReactDOM from 'react-dom';
 import { NavBar, Card, Alert } from './widgets';
-import { TaskList, TaskDetails, TaskEdit, TaskNew } from './task-components';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import {
+  CampusList,
+  SubjectList,
+  SubjectDetails,
+  SubjectNew,
+  ReviewNew,
+} from './subject-components'; // Updated imports
 
-class Menu extends Component {
+// Menu component linking to each campus
+class Menu extends React.Component {
   render() {
     return (
-      <NavBar brand="Todo App">
-        <NavBar.Link to="/tasks">Tasks</NavBar.Link>
+      <NavBar brand="NTNU">
+        <NavBar.Link to="/campus/Gloshaugen">Gløshaugen</NavBar.Link>
+        <NavBar.Link to="/campus/Øya">Øya</NavBar.Link>
+        <NavBar.Link to="/campus/Kalvskinnet">Kalvskinnet</NavBar.Link>
+        <NavBar.Link to="/campus/Dragvold">Dragvold</NavBar.Link>
+        <NavBar.Link to="/campus/Handelshøyskolen">Handelshøyskolen</NavBar.Link>
       </NavBar>
     );
   }
 }
 
-class Home extends Component {
-  render() {
-    return <Card title="Welcome">This is Todo App</Card>;
-  }
-}
+// Main application with routing
+const App = () => (
+  <Router>
+    <div>
+      <Menu /> {/* Display the campus menu */}
+      <Switch>
+        {/* Route for campus subject list */}
+        <Route exact path="/campus/:campus/subjects/new" component={SubjectNew} />
+        <Route exact path="/campus/:campus/subjects/:id/reviews/new" component={ReviewNew} />
+        <Route exact path="/campus/:campus/subjects/:id" component={SubjectDetails} />
+        <Route exact path="/campus/:campus" component={SubjectList} />
 
-let root = document.getElementById('root');
-if (root)
-  createRoot(root).render(
-    <HashRouter>
-      <div>
-        <Alert />
-        <Menu />
-        <Route exact path="/" component={Home} />
-        <Route exact path="/tasks" component={TaskList} />
-        <Route exact path="/tasks/:id(\d+)" component={TaskDetails} /> {/* id must be number */}
-        <Route exact path="/tasks/:id(\d+)/edit" component={TaskEdit} /> {/* id must be number */}
-        <Route exact path="/tasks/new" component={TaskNew} />
-      </div>
-    </HashRouter>,
-  );
+        {/* Fallback route (optional) */}
+        <Route path="/" component={CampusList} />
+      </Switch>
+    </div>
+  </Router>
+);
+
+ReactDOM.render(<App />, document.getElementById('root'));
