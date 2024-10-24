@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Component } from 'react-simplified';
 import { Alert, Card, Row, Column, Form, Button } from './widgets';
-import { NavLink } from 'react-router-dom';
+import { NavLink, withRouter } from 'react-router-dom';
 import reviewService, { Subject, Review } from './review-service';
 import { createHashHistory } from 'history';
 
@@ -31,7 +31,10 @@ export class CampusList extends Component {
 /**
  * Renders subject list for a campus.
  */
-export class SubjectList extends Component<{ match: { params: { campus: string } } }> {
+export class SubjectList extends Component<{
+  match: { params: { campus: string } };
+  history: any;
+}> {
   subjects: Subject[] = [];
 
   render() {
@@ -52,7 +55,7 @@ export class SubjectList extends Component<{ match: { params: { campus: string }
         </Card>
         <Button.Success
           onClick={() =>
-            history.push('/campus/' + this.props.match.params.campus + '/subjects/new')
+            this.props.history.push('/campus/' + this.props.match.params.campus + '/subjects/new')
           }
         >
           New Subject
