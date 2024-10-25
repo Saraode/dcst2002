@@ -1,3 +1,4 @@
+/* 
 import React from 'react';
 
 interface SearchBarProps {
@@ -19,8 +20,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ query, onSearch }) => {
 };
 
 export default SearchBar;
+*/
 
-/*
 import React, { useState } from 'react';
 
 interface SearchBarProps {
@@ -50,4 +51,3 @@ const SearchBar: React.FC<SearchBarProps> = ({ query1, query2, onSearch1, onSear
 };
 
 export default SearchBar;
-*/
