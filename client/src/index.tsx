@@ -9,7 +9,8 @@ import {
   SubjectDetails,
   SubjectNew,
   ReviewNew,
-} from './subject-components'; // Updated imports
+} from './subject-components';
+import FieldDropdown from './FieldDropdown'; // Importer FieldDropdown
 
 class Menu extends React.Component {
   state = {
@@ -50,13 +51,15 @@ const App = () => (
     <div>
       <Menu /> {/* Display the campus menu */}
       <Switch>
-        {/* Route for campus subject list */}
+        {/* Route for campus field selector with dropdown */}
+        <Route exact path="/campus/:campus" component={FieldDropdown} />
+
+        {/* Existing routes */}
         <Route exact path="/campus/:campus/subjects/new" component={SubjectNew} />
         <Route exact path="/campus/:campus/subjects/:id/reviews/new" component={ReviewNew} />
         <Route exact path="/campus/:campus/subjects/:id" component={SubjectDetails} />
-        <Route exact path="/campus/:campus" component={SubjectList} />
 
-        {/* Fallback route (optional) */}
+        {/* Fallback route */}
         <Route path="/" component={CampusList} />
       </Switch>
     </div>
@@ -64,3 +67,5 @@ const App = () => (
 );
 
 ReactDOM.render(<App />, document.getElementById('root'));
+
+
