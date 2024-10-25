@@ -65,4 +65,18 @@ router.post('/subjects/:id/reviews', (request, response) => {
   }
 });
 
+// Search subjects by name and tags
+/*
+router.get('/search', async (req, res) => {
+  const { query } = req.query;
+
+  try {
+    const subjects = await searchSubjects(query);
+    res.json(subjects);
+  } catch (error) {
+    console.error('Error searching subjects:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+*/
 export default router;

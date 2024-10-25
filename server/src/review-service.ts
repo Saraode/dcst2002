@@ -16,6 +16,18 @@ export type Review = {
   text: string;
 };
 
+
+/*
+export const searchSubjects = async (query: string) => {
+  const searchQuery = `%${query}%`; 
+  const [results] = await pool.query(
+  `SELECT * FROM Subjects WHERE name LIKE ? OR tags LIKE ?`,
+    [searchQuery, searchQuery] 
+  );
+  return results;
+};
+*/
+
 export type Field = {
   id: number,
   name: string;
@@ -79,6 +91,7 @@ class FieldService {
     });
   }
 }
+
 
 class ReviewService {
   /**
