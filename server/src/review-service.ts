@@ -17,9 +17,10 @@ export type Review = {
 
 /*
 export const searchSubjects = async (query: string) => {
+  const searchQuery = `%${query}%`; 
   const [results] = await pool.query(
-    SELECT * FROM Subjects WHERE name LIKE ? OR tags LIKE ?,
-    [%${query}%, %${query}%] // Use parameterized queries to prevent SQL injection
+  `SELECT * FROM Subjects WHERE name LIKE ? OR tags LIKE ?`,
+    [searchQuery, searchQuery] 
   );
   return results;
 };
