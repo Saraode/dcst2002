@@ -11,18 +11,10 @@ const history = createHashHistory(); // Use history.push(...) to navigate progra
  * Renders campus list.
  */
 export class CampusList extends Component {
-  campuses = ['Gløshaugen', 'Øya', 'Kalvskinnet', 'Dragvold', 'Handelshøyskolen'];
-
   render() {
     return (
-      <Card title="Campuses">
-        {this.campuses.map((campus, index) => (
-          <Row key={index}>
-            <Column>
-              <NavLink to={'/campus/' + campus}>{campus}</NavLink>
-            </Column>
-          </Row>
-        ))}
+      <Card title="Velkommen til NTNU emnevurderinger – Din kilde til å finne de beste emnene ved NTNU!">
+        <Column>Søk etter emne: </Column>
       </Card>
     );
   }
