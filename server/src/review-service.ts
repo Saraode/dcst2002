@@ -15,6 +15,16 @@ export type Review = {
   text: string;
 };
 
+/*
+export const searchSubjects = async (query: string) => {
+  const [results] = await pool.query(
+    SELECT * FROM Subjects WHERE name LIKE ? OR tags LIKE ?,
+    [%${query}%, %${query}%] // Use parameterized queries to prevent SQL injection
+  );
+  return results;
+};
+*/
+
 class ReviewService {
   /**
    * Get all subjects for a specific campus.
