@@ -16,7 +16,7 @@ class Menu extends React.Component {
     query: '',
   };
 
-  handleSearch = (query) => {
+  handleSearch = (query: string) => {
     this.setState({ query });
     // Here you can either filter a local list or call a search function
     // For example, if you have a search function passed as a prop:
@@ -33,7 +33,12 @@ class Menu extends React.Component {
         <NavBar.Link to="/campus/Handelshøyskolen">Handelshøyskolen</NavBar.Link>
 
         {/* Integrate the SearchBar */}
-        <SearchBar query={this.state.query} onSearch={this.handleSearch} />
+        <SearchBar
+          query1={this.state.query}
+          query2={this.state.query}
+          onSearch1={this.handleSearch}
+          onSearch2={this.handleSearch}
+        />
       </NavBar>
     );
   }
