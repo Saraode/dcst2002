@@ -1,3 +1,4 @@
+//server/
 /**
  * Web server entry point used in `npm start`.
  */
@@ -19,7 +20,6 @@ app.listen(port, () => {
   console.info(`Server running on port ${port}`);
 });
 
-
-app.use('/api/v2/subjects', subjectRouter);
 app.use('/api', reviewRouter); // Kobler til alle ruter i reviewRouter under /api
 
+app.use('/api/v2/subjects', subjectRouter);

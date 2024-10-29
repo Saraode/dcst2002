@@ -1,10 +1,15 @@
+// client/review-service.tsx
+
+// client/review-service.tsx
+
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://localhost:3000/api/v2';
+axios.defaults.baseURL = 'http://localhost:3000/api';
 
 export type Subject = {
   id: number;
   name: string;
+  fieldId: number;
   reviews: Review[];
 };
 
@@ -13,36 +18,25 @@ export type Review = {
   text: string;
 };
 
-/**
- * Review Service to handle subjects and reviews for different campuses.
- */
 class ReviewService {
-  /**
-   * Get a list of subjects for a given campus.
-   */
-  getSubjectsByCampus(campus: string) {
+  getSubjectsByCampus(campus: string): Promise<Subject[]> {
     return axios.get<Subject[]>(`/campus/${campus}/subjects`).then((response) => response.data);
   }
 
-  /**
-   * Get a specific subject by its id.
-   */
+  getSubjectsByField(fieldId: number) {
+    return axios.get<Subject[]>(`/fields/${fieldId}/subjects`).then((response) => response.data);
+  }
+
   getSubject(id: number) {
     return axios.get<Subject>(`/subjects/${id}`).then((response) => response.data);
   }
 
-  /**
-   * Create a new subject for a specific campus.
-   */
-  createSubject(campus: string, name: string) {
+  createSubject(fieldId: number, name: string) {
     return axios
-      .post<{ id: number }>(`/campus/${campus}/subjects`, { name })
+      .post<{ id: number }>(`/fields/${fieldId}/subjects`, { name })
       .then((response) => response.data.id);
   }
 
-  /**
-   * Create a new review for a specific subject.
-   */
   createReview(subjectId: number, text: string) {
     return axios
       .post<{ id: number }>(`/subjects/${subjectId}/reviews`, { text })

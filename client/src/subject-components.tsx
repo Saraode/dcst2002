@@ -1,15 +1,14 @@
+// client/SubjectComponents.tsx
+
 import * as React from 'react';
 import { Component } from 'react-simplified';
 import { Alert, Card, Row, Column, Form, Button } from './widgets';
-import { NavLink, withRouter } from 'react-router-dom';
+import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
 import reviewService, { Subject, Review } from './review-service';
 import { createHashHistory } from 'history';
 
 const history = createHashHistory(); // Use history.push(...) to navigate programmatically
 
-/**
- * Renders campus list.
- */
 export class CampusList extends Component {
   render() {
     return (
@@ -20,13 +19,7 @@ export class CampusList extends Component {
   }
 }
 
-/**
- * Renders subject list for a campus.
- */
-export class SubjectList extends Component<{
-  match: { params: { campus: string } };
-  history: any;
-}> {
+class SubjectList extends Component<RouteComponentProps<{ campus: string }>> {
   subjects: Subject[] = [];
 
   render() {
@@ -37,7 +30,7 @@ export class SubjectList extends Component<{
             <Row key={subject.id}>
               <Column>
                 <NavLink
-                  to={'/campus/' + this.props.match.params.campus + '/subjects/' + subject.id}
+                  to={`/campus/${this.props.match.params.campus}/subjects/${subject.id}`}
                 >
                   {subject.name}
                 </NavLink>
@@ -47,7 +40,7 @@ export class SubjectList extends Component<{
         </Card>
         <Button.Success
           onClick={() =>
-            this.props.history.push('/campus/' + this.props.match.params.campus + '/subjects/new')
+            this.props.history.push(`/campus/${this.props.match.params.campus}/subjects/new`)
           }
         >
           New Subject
@@ -59,18 +52,18 @@ export class SubjectList extends Component<{
   mounted() {
     reviewService
       .getSubjectsByCampus(this.props.match.params.campus)
-      .then((subjects) => (this.subjects = subjects))
-      .catch((error) => Alert.danger('Error getting subjects: ' + error.message));
+      .then((subjects: Subject[]) => (this.subjects = subjects))
+      .catch((error: { message: string }) => Alert.danger('Error getting subjects: ' + error.message));
   }
 }
 
-/**
- * Renders subject details and reviews.
- */
-export class SubjectDetails extends Component<{
-  match: { params: { campus: string; id: number } };
-}> {
-  subject: Subject = { id: 0, name: '', reviews: [] };
+export const SubjectListWithRouter = withRouter(SubjectList);
+
+class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id: string }>> {
+  subject: Subject = {
+    id: 0, name: '', reviews: [],
+    fieldId: 0
+  };
 
   render() {
     return (
@@ -92,11 +85,7 @@ export class SubjectDetails extends Component<{
         <Button.Success
           onClick={() =>
             history.push(
-              '/campus/' +
-                this.props.match.params.campus +
-                '/subjects/' +
-                this.props.match.params.id +
-                '/reviews/new',
+              `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}/reviews/new`
             )
           }
         >
@@ -107,17 +96,17 @@ export class SubjectDetails extends Component<{
   }
 
   mounted() {
+    const subjectId = Number(this.props.match.params.id);
     reviewService
-      .getSubject(this.props.match.params.id)
+      .getSubject(subjectId)
       .then((subject) => (this.subject = subject))
       .catch((error) => Alert.danger('Error getting subject: ' + error.message));
   }
 }
 
-/**
- * Renders form to create a new subject.
- */
-export class SubjectNew extends Component<{ match: { params: { campus: string } } }> {
+export const SubjectDetailsWithRouter = withRouter(SubjectDetails);
+
+class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId: string }>> {
   name = '';
 
   render() {
@@ -139,11 +128,10 @@ export class SubjectNew extends Component<{ match: { params: { campus: string } 
         </Card>
         <Button.Success
           onClick={() => {
+            const { fieldId, campus } = this.props.match.params;
             reviewService
-              .createSubject(this.props.match.params.campus, this.name)
-              .then((id) =>
-                history.push('/campus/' + this.props.match.params.campus + '/subjects/' + id),
-              )
+              .createSubject(Number(fieldId), this.name)
+              .then((id) => history.push(`/campus/${campus}/subjects/${id}`))
               .catch((error) => Alert.danger('Error creating subject: ' + error.message));
           }}
         >
@@ -154,10 +142,9 @@ export class SubjectNew extends Component<{ match: { params: { campus: string } 
   }
 }
 
-/**
- * Renders form to create a new review for a subject.
- */
-export class ReviewNew extends Component<{ match: { params: { campus: string; id: number } } }> {
+export const SubjectNewWithRouter = withRouter(SubjectNew);
+
+class ReviewNew extends Component<RouteComponentProps<{ campus: string; id: string }>> {
   reviewText = '';
 
   render() {
@@ -180,14 +167,11 @@ export class ReviewNew extends Component<{ match: { params: { campus: string; id
         <Button.Success
           onClick={() => {
             reviewService
-              .createReview(this.props.match.params.id, this.reviewText)
+              .createReview(Number(this.props.match.params.id), this.reviewText)
               .then(() =>
                 history.push(
-                  '/campus/' +
-                    this.props.match.params.campus +
-                    '/subjects/' +
-                    this.props.match.params.id,
-                ),
+                  `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}`
+                )
               )
               .catch((error) => Alert.danger('Error creating review: ' + error.message));
           }}
@@ -198,3 +182,5 @@ export class ReviewNew extends Component<{ match: { params: { campus: string; id
     );
   }
 }
+
+export const ReviewNewWithRouter = withRouter(ReviewNew);

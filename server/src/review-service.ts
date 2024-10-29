@@ -1,12 +1,13 @@
+// server/review-service.ts
+
 import pool from './mysql-pool';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import express, { Request, Response } from 'express';
 
-// Define types for Subject and Review and Fields
 export type Subject = {
   id: number;
   name: string;
-  campusId: string;
+  fieldId: number;
   reviews: Review[];
 };
 
@@ -29,64 +30,31 @@ export const searchSubjects = async (query: string) => {
 */
 
 export type Field = {
-  id: number,
+  id: number;
+  name: string;
+};
+
+export type Campus = {
+  campusId: number;
   name: string;
 };
 
 class FieldService {
-  /**
-   * Get all fields.
-   */
   getFields() {
     return new Promise<Field[]>((resolve, reject) => {
       pool.query('SELECT * FROM Fields', (error, results: RowDataPacket[]) => {
         if (error) return reject(error);
-
         resolve(results as Field[]);
       });
     });
   }
 
-  /**
-   * Get a specific field by id.
-   */
   getFieldById(id: number) {
     return new Promise<Field | undefined>((resolve, reject) => {
       pool.query('SELECT * FROM Fields WHERE id = ?', [id], (error, results: RowDataPacket[]) => {
         if (error) return reject(error);
         if (results.length === 0) return resolve(undefined);
-
         resolve(results[0] as Field);
-      });
-    });
-  }
-
-  /**
-   * Create a new field.
-   * Resolves the newly created field id.
-   */
-  createField(name: string) {
-    return new Promise<number>((resolve, reject) => {
-      pool.query(
-        'INSERT INTO Fields (name) VALUES (?)',
-        [name],
-        (error, results: ResultSetHeader) => {
-          if (error) return reject(error);
-          resolve(results.insertId);
-        },
-      );
-    });
-  }
-
-  /**
-   * Delete field by id.
-   */
-  deleteField(id: number) {
-    return new Promise<void>((resolve, reject) => {
-      pool.query('DELETE FROM Fields WHERE id = ?', [id], (error, results: ResultSetHeader) => {
-        if (error) return reject(error);
-        if (results.affectedRows === 0) return reject(new Error('No field deleted'));
-        resolve();
       });
     });
   }
@@ -94,42 +62,71 @@ class FieldService {
 
 
 class ReviewService {
-  /**
-   * Get all subjects for a specific campus.
-   */
-  getSubjectsByCampus(campus: string) {
+  // Hent alle subjects for en spesifikk campus
+  getSubjectsByCampus(campusId: number): Promise<Subject[]> {
     return new Promise<Subject[]>((resolve, reject) => {
       pool.query(
         'SELECT * FROM Subjects WHERE campusId = ?',
-        [campus],
+        [campusId],
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
-
           resolve(results as Subject[]);
         },
       );
     });
   }
 
-  /**
-   * Get subject by id.
-   */
+  getAllCampuses(): Promise<Campus[]> {
+    return new Promise<Campus[]>((resolve, reject) => {
+      pool.query('SELECT campusId, name FROM Campuses', (error, results) => {
+        if (error) return reject(error);
+        resolve(results as Campus[]);
+      });
+    });
+  }
+  
+  getSubjectsByField(fieldId: number) {
+    return new Promise<Subject[]>((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM Subjects WHERE fieldId = ?',
+        [fieldId],
+        (error, results: RowDataPacket[]) => {
+          if (error) return reject(error);
+          resolve(results as Subject[]);
+        },
+      );
+    });
+  }
+
+  createSubject(fieldId: number, name: string) {
+    return new Promise<number>((resolve, reject) => {
+      pool.query(
+        'INSERT INTO Subjects (name, fieldId) VALUES (?, ?)',
+        [name, fieldId],
+        (error, results: ResultSetHeader) => {
+          if (error) {
+            console.error('Databasefeil ved opprettelse av emne:', error);
+            return reject(error);
+          }
+          resolve(results.insertId);
+        },
+      );
+    });
+  }
+
   getSubject(id: number) {
     return new Promise<Subject | undefined>((resolve, reject) => {
       pool.query('SELECT * FROM Subjects WHERE id = ?', [id], (error, results: RowDataPacket[]) => {
         if (error) return reject(error);
-
         if (results.length === 0) return resolve(undefined);
 
         const subject = results[0] as Subject;
 
-        // Get reviews for the subject
         pool.query(
           'SELECT * FROM Reviews WHERE subjectId = ?',
           [id],
           (reviewError, reviewResults: RowDataPacket[]) => {
             if (reviewError) return reject(reviewError);
-
             subject.reviews = reviewResults as Review[];
             resolve(subject);
           },
@@ -138,27 +135,6 @@ class ReviewService {
     });
   }
 
-  /**
-   * Create a new subject for a specific campus.
-   * Resolves the newly created subject id.
-   */
-  createSubject(campusId: string, name: string) {
-    return new Promise<number>((resolve, reject) => {
-      pool.query(
-        'INSERT INTO Subjects (name, campusId) VALUES (?, ?)',
-        [name, campusId],
-        (error, results: ResultSetHeader) => {
-          if (error) return reject(error);
-          resolve(results.insertId);
-        },
-      );
-    });
-  }
-
-  /**
-   * Create a new review for a specific subject.
-   * Resolves the newly created review id.
-   */
   createReview(subjectId: number, text: string) {
     return new Promise<number>((resolve, reject) => {
       pool.query(
@@ -171,51 +147,50 @@ class ReviewService {
       );
     });
   }
-
-  /**
-   * Delete subject by id.
-   */
-  deleteSubject(id: number) {
-    return new Promise<void>((resolve, reject) => {
-      pool.query('DELETE FROM Subjects WHERE id = ?', [id], (error, results: ResultSetHeader) => {
-        if (error) return reject(error);
-        if (results.affectedRows == 0) return reject(new Error('No subject deleted'));
-        resolve();
-      });
-    });
-  }
-
-  /**
-   * Delete review by id.
-   */
-  deleteReview(id: number) {
-    return new Promise<void>((resolve, reject) => {
-      pool.query('DELETE FROM Reviews WHERE id = ?', [id], (error, results: ResultSetHeader) => {
-        if (error) return reject(error);
-        if (results.affectedRows == 0) return reject(new Error('No review deleted'));
-        resolve();
-      });
-    });
-  }
 }
 
 const reviewService = new ReviewService();
-export default reviewService;
-
 const fieldService = new FieldService();
 
 const router = express.Router();
 
-// API-endepunkt for å hente alle Fields
 router.get('/fields', async (req: Request, res: Response) => {
   try {
-    const fields = await fieldService.getFields(); // Henter alle fields fra FieldService
-    res.json(fields); // Returnerer fields som JSON
+    const fields = await fieldService.getFields();
+    res.json(fields);
   } catch (error) {
     console.error('Error fetching fields:', error);
     res.status(500).json({ error: 'Failed to fetch fields' });
   }
 });
 
-// Eksporter routeren for bruk i serveroppsettet
+router.get('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
+  const { fieldId } = req.params;
+  try {
+    const subjects = await reviewService.getSubjectsByField(Number(fieldId));
+    res.json(subjects);
+  } catch (error) {
+    console.error('Error fetching subjects:', error);
+    res.status(500).json({ error: 'Failed to fetch subjects' });
+  }
+});
+
+router.post('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
+  const { fieldId } = req.params;
+  const { name } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: 'Emnenavn mangler' });
+  }
+
+  try {
+    const newSubjectId = await reviewService.createSubject(Number(fieldId), name);
+    console.log('Nytt emne lagt til i databasen med ID:', newSubjectId);
+    res.json({ id: newSubjectId, name });
+  } catch (error) {
+    console.error('Feil ved forsøk på å legge til emne i databasen:', error);
+    res.status(500).json({ error: 'Kunne ikke legge til emne' });
+  }
+});
+
 export { router as reviewRouter, reviewService, fieldService };

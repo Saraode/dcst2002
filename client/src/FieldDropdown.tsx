@@ -1,5 +1,9 @@
-import React, { useEffect, useState } from 'react';
+// client/components/FieldDropdown.tsx
 
+import React, { useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
+
+// Definer typen for Field
 type Field = {
   id: number;
   name: string;
@@ -8,13 +12,13 @@ type Field = {
 const FieldDropdown: React.FC = () => {
   const [fields, setFields] = useState<Field[]>([]);
   const [selectedField, setSelectedField] = useState<number | ''>('');
+  const history = useHistory();
 
   useEffect(() => {
     const fetchFields = async () => {
       try {
-        const response = await fetch('/api/fields'); // Kall til API-endepunktet
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data: Field[] = await response.json(); // Konverterer responsen til Field[]
+        const response = await fetch('/api/fields');
+        const data = await response.json();
         setFields(data);
       } catch (error) {
         console.error('Failed to fetch fields:', error);
@@ -24,8 +28,11 @@ const FieldDropdown: React.FC = () => {
     fetchFields();
   }, []);
 
+  // Når et field velges, naviger til /fields/:fieldId/subjects
   const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedField(Number(event.target.value));
+    const fieldId = Number(event.target.value);
+    setSelectedField(fieldId);
+    history.push(`/fields/${fieldId}/subjects`);
   };
 
   return (
@@ -39,9 +46,9 @@ const FieldDropdown: React.FC = () => {
           </option>
         ))}
       </select>
-      {selectedField && <p>Du har valgt: {fields.find(field => field.id === selectedField)?.name}</p>}
     </div>
   );
 };
 
 export default FieldDropdown;
+
