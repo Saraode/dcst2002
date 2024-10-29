@@ -1,15 +1,18 @@
+// client/index.tsx
+
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { NavBar, Card, Alert } from './widgets';
+import { NavBar } from './widgets';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import {
   CampusList,
-  SubjectList,
-  SubjectDetails,
-  SubjectNew,
-  ReviewNew,
+  SubjectListWithRouter as SubjectList, // Bruker withRouter-innpakket komponent
+  SubjectDetailsWithRouter as SubjectDetails,
+  SubjectNewWithRouter as SubjectNew,
+  ReviewNewWithRouter as ReviewNew,
 } from './subject-components';
-import FieldDropdown from './FieldDropdown'; // Importer FieldDropdown
+import FieldDropdown from './FieldDropdown';
+import SubjectsByField from './SubjectsByField';
 
 // Menu component linking to each campus
 class Menu extends React.Component {
@@ -30,15 +33,18 @@ class Menu extends React.Component {
 const App = () => (
   <Router>
     <div>
-      <Menu /> {/* Display the campus menu */}
+      <Menu />
       <Switch>
-        {/* Route for campus field selector with dropdown */}
+        {/* Route for FieldDropdown for valgt campus */}
         <Route exact path="/campus/:campus" component={FieldDropdown} />
 
-        {/* Existing routes */}
-        <Route exact path="/campus/:campus/subjects/new" component={SubjectNew} />
-        <Route exact path="/campus/:campus/subjects/:id/reviews/new" component={ReviewNew} />
-        <Route exact path="/campus/:campus/subjects/:id" component={SubjectDetails} />
+        {/* Route for SubjectsByField */}
+        <Route exact path="/fields/:fieldId/subjects" component={SubjectsByField} />
+
+        {/* Routes for Subject Components */}
+        <Route exact path="/fields/:fieldId/subjects/new" component={SubjectNew} />
+        <Route exact path="/fields/:fieldId/subjects/:id/reviews/new" component={ReviewNew} />
+        <Route exact path="/fields/:fieldId/subjects/:id" component={SubjectDetails} />
 
         {/* Fallback route */}
         <Route path="/" component={CampusList} />
@@ -48,5 +54,4 @@ const App = () => (
 );
 
 ReactDOM.render(<App />, document.getElementById('root'));
-
 

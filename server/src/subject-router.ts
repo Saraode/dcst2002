@@ -1,25 +1,27 @@
 import express from 'express';
-import reviewService from './review-service';
+import { reviewService } from './review-service';
 
-/**
- * Express router containing subject and review methods.
- */
 const router = express.Router();
 
-/**
- * Get all subjects for a specific campus.
- */
-router.get('/campus/:campus/subjects', (request, response) => {
-  const campus = request.params.campus;
-  reviewService
-    .getSubjectsByCampus(campus)
-    .then((subjects) => response.send(subjects))
-    .catch((error) => response.status(500).send(error));
+router.get('/campuses', async (req, res) => {
+  try {
+    const campuses = await reviewService.getAllCampuses();
+    res.json(campuses);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch campuses' });
+  }
 });
 
-/**
- * Get details for a specific subject.
- */
+router.get('/campus/:campusId/subjects', async (request, response) => {
+  const campusId = Number(request.params.campusId);
+  try {
+    const subjects = await reviewService.getSubjectsByCampus(campusId);
+    response.json(subjects);
+  } catch (error) {
+    response.status(500).send(error);
+  }
+});
+
 router.get('/subjects/:id', (request, response) => {
   const id = Number(request.params.id);
   reviewService
@@ -30,17 +32,12 @@ router.get('/subjects/:id', (request, response) => {
     .catch((error) => response.status(500).send(error));
 });
 
-/**
- * Create a new subject for a specific campus.
- * Example request body: { name: "New Subject" }
- * Example response body: { id: 4 }
- */
-router.post('/campus/:campus/subjects', (request, response) => {
-  const campus = request.params.campus;
+router.post('/campus/:campusId/subjects', (request, response) => {
+  const campusId = Number(request.params.campusId);
   const data = request.body;
   if (data && data.name && data.name.length !== 0) {
     reviewService
-      .createSubject(campus, data.name)
+      .createSubject(campusId, data.name)
       .then((id) => response.send({ id }))
       .catch((error) => response.status(500).send(error));
   } else {
@@ -48,10 +45,6 @@ router.post('/campus/:campus/subjects', (request, response) => {
   }
 });
 
-/**
- * Create a new review for a specific subject.
- * Example request body: { text: "Great subject!" }
- */
 router.post('/subjects/:id/reviews', (request, response) => {
   const subjectId = Number(request.params.id);
   const data = request.body;

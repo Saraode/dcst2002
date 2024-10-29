@@ -1,3 +1,4 @@
+//server/
 /**
  * Web server entry point used in `npm start`.
  */
@@ -16,8 +17,3 @@ app.listen(port, () => {
 });
 
 app.use('/api', reviewRouter); // Kobler til alle ruter i reviewRouter under /api
-
-app.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000');
-});
-
