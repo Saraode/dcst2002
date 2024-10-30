@@ -1,7 +1,9 @@
 // client/components/FieldDropdown.tsx
 
+// client/components/FieldDropdown.tsx
+
 import React, { useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 
 // Definer typen for Field
 type Field = {
@@ -13,20 +15,22 @@ const FieldDropdown: React.FC = () => {
   const [fields, setFields] = useState<Field[]>([]);
   const [selectedField, setSelectedField] = useState<number | ''>('');
   const history = useHistory();
+  const { campus } = useParams<{ campus: string }>(); // Henter campus-navn fra URL
 
   useEffect(() => {
     const fetchFields = async () => {
       try {
-        const response = await fetch('/api/fields');
+        // Legger til campus-navnet i API-forespørselen for å filtrere på campus
+        const response = await fetch(`/api/campus/${encodeURIComponent(campus)}/fields`);
         const data = await response.json();
-        setFields(data);
+        setFields(data); // Setter fagområder i dropdown-listen
       } catch (error) {
         console.error('Failed to fetch fields:', error);
       }
     };
 
     fetchFields();
-  }, []);
+  }, [campus]);
 
   // Når et field velges, naviger til /fields/:fieldId/subjects
   const handleSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -51,4 +55,3 @@ const FieldDropdown: React.FC = () => {
 };
 
 export default FieldDropdown;
-

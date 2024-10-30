@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 
 // Definer typer for Subject og Field
 type Subject = {
-  id: number;
+  id: string;
   name: string;
 };
 
@@ -18,6 +18,7 @@ const SubjectsByField: React.FC = () => {
   const { fieldId } = useParams<{ fieldId: string }>(); // Henter fieldId fra URL
   const [subjects, setSubjects] = useState<Subject[]>([]); // Lagrer subjects
   const [fieldName, setFieldName] = useState<string>(''); // Lagrer navnet på field
+  const [newSubjectId, setNewSubjectId] = useState(''); // Fagkode (ID) for nytt subject
   const [newSubjectName, setNewSubjectName] = useState(''); // Navn på nytt subject
 
   // Henter field-navnet fra backend
@@ -53,51 +54,59 @@ const SubjectsByField: React.FC = () => {
   }, [fieldId]);
 
   // Funksjon for å legge til nytt subject
-  // Funksjon for å legge til nytt subject
-const handleAddSubject = async () => {
-  if (!newSubjectName) {
-    console.error('Subject name is missing.');
-    return;
-  }
-
-  try {
-    const response = await fetch(`/api/fields/${fieldId}/subjects`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: newSubjectName }), // Sender inn navn på nytt emne
-    });
-
-    if (response.ok) {
-      const newSubject = await response.json();
-      setSubjects([...subjects, newSubject]); // Legger til det nye subjectet i listen
-      setNewSubjectName(''); // Tømmer inputfeltet
-      console.log('Subject added successfully:', newSubject);
-    } else {
-      console.error('Failed to add subject:', await response.json());
+  const handleAddSubject = async () => {
+    if (!newSubjectId || !newSubjectName) {
+      console.error('ID eller navn mangler.');
+      return;
     }
-  } catch (error) {
-    console.error('Failed to add subject:', error);
-  }
-};
+  
+    try {
+      const response = await fetch(`/api/fields/${fieldId}/subjects`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: newSubjectId, name: newSubjectName }),
+      });
+  
+      if (response.ok) {
+        const newSubject = await response.json();
+        setSubjects([...subjects, newSubject]);
+        setNewSubjectId('');
+        setNewSubjectName('');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to add subject:', errorData.error);
+        alert(`Kunne ikke legge til emne: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to add subject:', error);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', gap: '20px' }}>
-      {/* Boks for å legge til nytt subject */}
-      <div style={{ flex: '1', border: '1px solid #ccc', padding: '10px' }}>
+      {/* Boks for å legge til nytt subject, inputfeltene er under hverandre */}
+      <div style={{ flex: '1', border: '1px solid #ccc', padding: '10px', display: 'flex', flexDirection: 'column' }}>
         <h2>Legg til nytt emne</h2>
         <input
           type="text"
-          placeholder="Emnekode"
+          placeholder="Fagkode (ID)"
+          value={newSubjectId}
+          onChange={(e) => setNewSubjectId(e.target.value)}
+          style={{ marginBottom: '10px' }}
+        />
+        <input
+          type="text"
+          placeholder="Emnenavn"
           value={newSubjectName}
           onChange={(e) => setNewSubjectName(e.target.value)}
-          style={{ display: 'block', marginBottom: '10px' }}
+          style={{ marginBottom: '10px' }}
         />
         <button onClick={handleAddSubject}>Legg til</button>
       </div>
 
-      {/* Liste over subjects */}
+      {/* Liste over subjects til høyre */}
       <div style={{ flex: '2', border: '1px solid #ccc', padding: '10px' }}>
         <h2>Emner i {fieldName}</h2> {/* Viser navnet på fagområdet */}
         <ul>
@@ -111,6 +120,3 @@ const handleAddSubject = async () => {
 };
 
 export default SubjectsByField;
-
-
-

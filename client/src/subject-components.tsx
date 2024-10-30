@@ -6,6 +6,8 @@ import { Alert, Card, Row, Column, Form, Button } from './widgets';
 import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
 import reviewService, { Subject, Review } from './review-service';
 import { createHashHistory } from 'history';
+import axios from 'axios';
+import { NavBar } from './widgets';
 
 const history = createHashHistory(); // Use history.push(...) to navigate programmatically
 
