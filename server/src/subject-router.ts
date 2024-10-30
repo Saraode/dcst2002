@@ -1,9 +1,10 @@
 import express from 'express';
-import { reviewService } from './review-service';
+import { fieldService, reviewService } from './review-service';
 
 const router = express.Router();
 
-router.get('/campuses', async (req, res) => {
+// Hent alle campus-navn
+router.get('/campus', async (req, res) => {
   try {
     const campuses = await reviewService.getAllCampuses();
     res.json(campuses);
@@ -12,64 +13,67 @@ router.get('/campuses', async (req, res) => {
   }
 });
 
-router.get('/campus/:campusId/subjects', async (request, response) => {
-  const campusId = Number(request.params.campusId);
+// Hent fields for en spesifikk campus
+router.get('/campus/:campus/fields', async (req, res) => {
+  const { campus } = req.params;
   try {
-    const subjects = await reviewService.getSubjectsByCampus(campusId);
-    response.json(subjects);
+    const fields = await fieldService.getFieldsByCampus(campus);
+    res.json(fields);
   } catch (error) {
-    response.status(500).send(error);
+    console.error('Error fetching fields for campus:', error);
+    res.status(500).json({ error: 'Failed to fetch fields' });
   }
 });
 
-router.get('/subjects/:id', (request, response) => {
-  const id = Number(request.params.id);
-  reviewService
-    .getSubject(id)
-    .then((subject) =>
-      subject ? response.send(subject) : response.status(404).send('Subject not found'),
-    )
-    .catch((error) => response.status(500).send(error));
-});
+// Legg til nytt subject med fagkode og navn for et spesifikt field
+router.post('/fields/:fieldId/subjects', async (req, res) => {
+  const { fieldId } = req.params;
+  const { id, name } = req.body;
 
-router.post('/campus/:campusId/subjects', (request, response) => {
-  const campusId = Number(request.params.campusId);
-  const data = request.body;
-  if (data && data.name && data.name.length !== 0) {
-    reviewService
-      .createSubject(campusId, data.name)
-      .then((id) => response.send({ id }))
-      .catch((error) => response.status(500).send(error));
-  } else {
-    response.status(400).send('Missing subject name');
+  if (!id || !name) {
+    return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
   }
-});
-
-router.post('/subjects/:id/reviews', (request, response) => {
-  const subjectId = Number(request.params.id);
-  const data = request.body;
-  if (data && data.text && data.text.length !== 0) {
-    reviewService
-      .createReview(subjectId, data.text)
-      .then((id) => response.send({ id }))
-      .catch((error) => response.status(500).send(error));
-  } else {
-    response.status(400).send('Missing review text');
-  }
-});
-
-// Search subjects by name and tags
-/*
-router.get('/search', async (req, res) => {
-  const { query } = req.query;
 
   try {
-    const subjects = await searchSubjects(query);
-    res.json(subjects);
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
+    res.json({ id: newSubjectId, name });
   } catch (error) {
-    console.error('Error searching subjects:', error);
-    res.status(500).send('Internal Server Error');
+    console.error('Feil ved forsøk på å legge til emne i databasen:', error);
+    res.status(500).json({ error: 'Kunne ikke legge til emne' });
   }
 });
-*/
+
+// Hent et spesifikt subject basert på id
+router.get('/subjects/:id', async (req, res) => {
+  const id = req.params.id; // Emnekoden som string
+  try {
+    const subject = await reviewService.getSubject(id);
+    if (subject) {
+      res.json(subject);
+    } else {
+      res.status(404).json({ error: 'Subject not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch subject' });
+  }
+});
+
+// Opprett en ny review for et spesifikt subject basert på emnekode (id)
+router.post('/subjects/:id/reviews', async (req, res) => {
+  const subjectId = req.params.id; // Emnekoden som string
+  const { text } = req.body;
+
+  if (!text) {
+    return res.status(400).json({ error: 'Review text mangler' });
+  }
+
+  try {
+    const newReviewId = await reviewService.createReview(subjectId, text);
+    res.json({ id: newReviewId });
+  } catch (error) {
+    console.error('Feil ved opprettelse av review:', error);
+    res.status(500).json({ error: 'Kunne ikke legge til review' });
+  }
+});
+
 export default router;

@@ -5,7 +5,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import express, { Request, Response } from 'express';
 
 export type Subject = {
-  id: number;
+  id: string; // Emnekoden brukes som ID
   name: string;
   fieldId: number;
   reviews: Review[];
@@ -13,25 +13,14 @@ export type Subject = {
 
 export type Review = {
   id: number;
-  subjectId: number;
+  subjectId: string;
   text: string;
 };
-
-
-/*
-export const searchSubjects = async (query: string) => {
-  const searchQuery = `%${query}%`; 
-  const [results] = await pool.query(
-  `SELECT * FROM Subjects WHERE name LIKE ? OR tags LIKE ?`,
-    [searchQuery, searchQuery] 
-  );
-  return results;
-};
-*/
 
 export type Field = {
   id: number;
   name: string;
+  campusId: number;
 };
 
 export type Campus = {
@@ -39,8 +28,26 @@ export type Campus = {
   name: string;
 };
 
+// FieldService for databaseoperasjoner på fields
 class FieldService {
-  getFields() {
+  // Hent fagområder for et bestemt campus uten å bruke Subjects
+  getFieldsByCampus(campus: string) {
+    return new Promise<Field[]>((resolve, reject) => {
+      pool.query(
+        `SELECT f.id, f.name 
+         FROM Fields f 
+         JOIN Campuses c ON f.campusId = c.campusId 
+         WHERE c.name = ?`,
+        [campus],
+        (error, results: RowDataPacket[]) => {
+          if (error) return reject(error);
+          resolve(results as Field[]);
+        }
+      );
+    });
+  }
+
+  getFields(): Promise<Field[]> {
     return new Promise<Field[]>((resolve, reject) => {
       pool.query('SELECT * FROM Fields', (error, results: RowDataPacket[]) => {
         if (error) return reject(error);
@@ -49,33 +56,18 @@ class FieldService {
     });
   }
 
-  getFieldById(id: number) {
+  getFieldById(id: number): Promise<Field | undefined> {
     return new Promise<Field | undefined>((resolve, reject) => {
       pool.query('SELECT * FROM Fields WHERE id = ?', [id], (error, results: RowDataPacket[]) => {
         if (error) return reject(error);
-        if (results.length === 0) return resolve(undefined);
-        resolve(results[0] as Field);
+        resolve(results.length > 0 ? (results[0] as Field) : undefined);
       });
     });
   }
 }
 
-
+// ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
-  // Hent alle subjects for en spesifikk campus
-  getSubjectsByCampus(campusId: number): Promise<Subject[]> {
-    return new Promise<Subject[]>((resolve, reject) => {
-      pool.query(
-        'SELECT * FROM Subjects WHERE campusId = ?',
-        [campusId],
-        (error, results: RowDataPacket[]) => {
-          if (error) return reject(error);
-          resolve(results as Subject[]);
-        },
-      );
-    });
-  }
-
   getAllCampuses(): Promise<Campus[]> {
     return new Promise<Campus[]>((resolve, reject) => {
       pool.query('SELECT campusId, name FROM Campuses', (error, results) => {
@@ -84,8 +76,8 @@ class ReviewService {
       });
     });
   }
-  
-  getSubjectsByField(fieldId: number) {
+
+  getSubjectsByField(fieldId: number): Promise<Subject[]> {
     return new Promise<Subject[]>((resolve, reject) => {
       pool.query(
         'SELECT * FROM Subjects WHERE fieldId = ?',
@@ -93,35 +85,60 @@ class ReviewService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results as Subject[]);
-        },
+        }
       );
     });
   }
 
-  createSubject(fieldId: number, name: string) {
-    return new Promise<number>((resolve, reject) => {
-      pool.query(
-        'INSERT INTO Subjects (name, fieldId) VALUES (?, ?)',
-        [name, fieldId],
-        (error, results: ResultSetHeader) => {
-          if (error) {
-            console.error('Databasefeil ved opprettelse av emne:', error);
-            return reject(error);
+  // Legg til et nytt subject (emne) i databasen
+  createSubject(id: string, name: string, fieldId: number): Promise<string> {
+    return new Promise<string>(async (resolve, reject) => {
+      try {
+        // Sjekk om ID-en allerede eksisterer
+        const existingSubject = await this.getSubjectById(id);
+        if (existingSubject) {
+          return reject(new Error(`Subject med ID '${id}' eksisterer allerede`));
+        }
+
+        // Hvis ID ikke eksisterer, legg til emnet
+        pool.query(
+          'INSERT INTO Subjects (id, name, fieldId) VALUES (?, ?, ?)',
+          [id, name, fieldId],
+          (error, results: ResultSetHeader) => {
+            if (error) {
+              console.error('Databasefeil ved opprettelse av emne:', error);
+              return reject(error);
+            }
+            resolve(id); // Returnerer fagkoden (ID) som primærnøkkel
           }
-          resolve(results.insertId);
-        },
+        );
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  // Hent en Subject basert på ID
+  getSubjectById(id: string): Promise<Subject | null> {
+    return new Promise<Subject | null>((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM Subjects WHERE id = ?',
+        [id],
+        (error, results: RowDataPacket[]) => {
+          if (error) return reject(error);
+          resolve(results.length > 0 ? (results[0] as Subject) : null);
+        }
       );
     });
   }
 
-  getSubject(id: number) {
+  getSubject(id: string): Promise<Subject | undefined> {
     return new Promise<Subject | undefined>((resolve, reject) => {
       pool.query('SELECT * FROM Subjects WHERE id = ?', [id], (error, results: RowDataPacket[]) => {
         if (error) return reject(error);
         if (results.length === 0) return resolve(undefined);
 
         const subject = results[0] as Subject;
-
         pool.query(
           'SELECT * FROM Reviews WHERE subjectId = ?',
           [id],
@@ -129,13 +146,13 @@ class ReviewService {
             if (reviewError) return reject(reviewError);
             subject.reviews = reviewResults as Review[];
             resolve(subject);
-          },
+          }
         );
       });
     });
   }
 
-  createReview(subjectId: number, text: string) {
+  createReview(subjectId: string, text: string): Promise<number> {
     return new Promise<number>((resolve, reject) => {
       pool.query(
         'INSERT INTO Reviews (subjectId, text) VALUES (?, ?)',
@@ -143,17 +160,20 @@ class ReviewService {
         (error, results: ResultSetHeader) => {
           if (error) return reject(error);
           resolve(results.insertId);
-        },
+        }
       );
     });
   }
 }
 
+// Opprett instanser av service-klassene
 const reviewService = new ReviewService();
 const fieldService = new FieldService();
 
+// Definer ruter
 const router = express.Router();
 
+// Hent alle fields
 router.get('/fields', async (req: Request, res: Response) => {
   try {
     const fields = await fieldService.getFields();
@@ -164,6 +184,45 @@ router.get('/fields', async (req: Request, res: Response) => {
   }
 });
 
+// Hent field etter ID
+router.get('/fields/:fieldId', async (req: Request, res: Response) => {
+  const { fieldId } = req.params;
+  try {
+    const field = await fieldService.getFieldById(Number(fieldId));
+    if (field) {
+      res.json(field);
+    } else {
+      res.status(404).json({ error: 'Field not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching field by ID:', error);
+    res.status(500).json({ error: 'Failed to fetch field' });
+  }
+});
+
+// Hent alle campus-navn
+router.get('/campuses', async (req, res) => {
+  try {
+    const campuses = await reviewService.getAllCampuses();
+    res.json(campuses);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch campuses' });
+  }
+});
+
+// Hent fields for en spesifikk campus
+router.get('/campus/:campus/fields', async (req, res) => {
+  const { campus } = req.params;
+  try {
+    const fields = await fieldService.getFieldsByCampus(campus);
+    res.json(fields);
+  } catch (error) {
+    console.error('Error fetching fields for campus:', error);
+    res.status(500).json({ error: 'Failed to fetch fields' });
+  }
+});
+
+// Hent subjects for et spesifikt field
 router.get('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
   const { fieldId } = req.params;
   try {
@@ -175,17 +234,17 @@ router.get('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
   }
 });
 
+// Legg til nytt subject for et spesifikt field
 router.post('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
   const { fieldId } = req.params;
-  const { name } = req.body;
+  const { id, name } = req.body;
 
-  if (!name) {
-    return res.status(400).json({ error: 'Emnenavn mangler' });
+  if (!name || !id) {
+    return res.status(400).json({ error: 'ID eller navn mangler' });
   }
 
   try {
-    const newSubjectId = await reviewService.createSubject(Number(fieldId), name);
-    console.log('Nytt emne lagt til i databasen med ID:', newSubjectId);
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
     res.json({ id: newSubjectId, name });
   } catch (error) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error);

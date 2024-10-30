@@ -18,7 +18,16 @@ export type Review = {
   text: string;
 };
 
+export type Campus ={
+  campusId: number;
+  name: string;
+};
+
 class ReviewService {
+  getAllCampuses() {
+    return axios.get<Campus[]>('/campuses').then((response) => response.data);
+  }
+
   getSubjectsByCampus(campus: string): Promise<Subject[]> {
     return axios.get<Subject[]>(`/campus/${campus}/subjects`).then((response) => response.data);
   }
