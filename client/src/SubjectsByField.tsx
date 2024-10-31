@@ -1,7 +1,5 @@
-// client/SubjectsByField.tsx
-
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 
 type Subject = {
   id: string;
@@ -108,10 +106,12 @@ const SubjectsByField: React.FC = () => {
       <div style={{ flex: '2', border: '1px solid #ccc', padding: '10px' }}>
         <h2>Emner i {fieldName}</h2>
         <ul>
-          {subjects.map((subject) => (
-            <li key={subject.id}>{`${subject.id} ${subject.name}`}</li>
-          ))}
-        </ul>
+  {subjects.map((subject) => (
+    <li key={subject.id}>
+      <Link to={`/subjects/${subject.id}`}>{`${subject.id} ${subject.name}`}</Link>
+    </li>
+      ))}
+    </ul>
       </div>
     </div>
   );
