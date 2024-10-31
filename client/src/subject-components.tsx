@@ -34,7 +34,7 @@ class SubjectList extends Component<RouteComponentProps<{ campus: string }>> {
                 <NavLink
                   to={`/campus/${this.props.match.params.campus}/subjects/${subject.id}`}
                 >
-                  {subject.name}
+                  {subject.id} {subject.name} {/* Display both ID and name */}
                 </NavLink>
               </Column>
             </Row>
@@ -54,7 +54,10 @@ class SubjectList extends Component<RouteComponentProps<{ campus: string }>> {
   mounted() {
     reviewService
       .getSubjectsByCampus(this.props.match.params.campus)
-      .then((subjects: Subject[]) => (this.subjects = subjects))
+      .then((subjects: Subject[]) => {
+        this.subjects = subjects;
+        console.log("Mounted subjects:", subjects); // Debugging log
+      })
       .catch((error: { message: string }) => Alert.danger('Error getting subjects: ' + error.message));
   }
 }

@@ -1,0 +1,75 @@
+:root {
+  --primary-color: #00509e;
+  --secondary-color: #4da8da;
+  --background-color: #f0f4f8;
+  --text-color: #333;
+  --button-color: #00509e;
+  --button-hover-color: #003f7f;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+
+.add-subject, .subject-list {
+  flex: 1;
+}
+
+.card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+button {
+  background-color: var(--button-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: var(--button-hover-color);
+}
+
+input[type="text"] {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+input[type="text"]:focus {
+  border: 1px solid var(--primary-color);
+  box-shadow: 0 0 5px rgba(0, 80, 158, 0.2);
+  outline: none;
+}
+
+.add-subject h2, .subject-list h2 {
+  color: var(--primary-color);
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+h1, h2, h3 {
+  color: var(--primary-color);
+  font-weight: 500;
+}
