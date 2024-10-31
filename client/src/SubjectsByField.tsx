@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-// Definer typer for Subject og Field
 type Subject = {
   id: string;
   name: string;
@@ -15,21 +14,20 @@ type Field = {
 };
 
 const SubjectsByField: React.FC = () => {
-  const { fieldId } = useParams<{ fieldId: string }>(); // Henter fieldId fra URL
-  const [subjects, setSubjects] = useState<Subject[]>([]); // Lagrer subjects
-  const [fieldName, setFieldName] = useState<string>(''); // Lagrer navnet på field
-  const [newSubjectId, setNewSubjectId] = useState(''); // Fagkode (ID) for nytt subject
-  const [newSubjectName, setNewSubjectName] = useState(''); // Navn på nytt subject
+  const { fieldId } = useParams<{ fieldId: string }>();
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [fieldName, setFieldName] = useState<string>('');
+  const [newSubjectId, setNewSubjectId] = useState('');
+  const [newSubjectName, setNewSubjectName] = useState('');
+  const [errorMessage, setErrorMessage] = useState(''); // Feilmelding for brukeren
 
-  // Henter field-navnet fra backend
   useEffect(() => {
     const fetchFieldName = async () => {
       try {
         const response = await fetch(`/api/fields/${fieldId}`);
         if (!response.ok) throw new Error('Failed to fetch field name');
-        
         const field = await response.json();
-        setFieldName(field.name); // Oppdaterer field-navnet
+        setFieldName(field.name);
       } catch (error) {
         console.error('Failed to fetch field name:', error);
       }
@@ -37,15 +35,13 @@ const SubjectsByField: React.FC = () => {
     fetchFieldName();
   }, [fieldId]);
 
-  // Henter subjects fra backend når fieldId endres
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
         const response = await fetch(`/api/fields/${fieldId}/subjects`);
         if (!response.ok) throw new Error('Failed to fetch subjects');
-        
         const data = await response.json();
-        setSubjects(data); // Oppdaterer subjects-listen med data fra databasen
+        setSubjects(data); // Setter emner direkte
       } catch (error) {
         console.error('Failed to fetch subjects:', error);
       }
@@ -53,13 +49,12 @@ const SubjectsByField: React.FC = () => {
     fetchSubjects();
   }, [fieldId]);
 
-  // Funksjon for å legge til nytt subject
   const handleAddSubject = async () => {
     if (!newSubjectId || !newSubjectName) {
-      console.error('ID eller navn mangler.');
+      console.error('ID or name missing.');
       return;
     }
-  
+
     try {
       const response = await fetch(`/api/fields/${fieldId}/subjects`, {
         method: 'POST',
@@ -68,25 +63,28 @@ const SubjectsByField: React.FC = () => {
         },
         body: JSON.stringify({ id: newSubjectId, name: newSubjectName }),
       });
-  
+
       if (response.ok) {
         const newSubject = await response.json();
-        setSubjects([...subjects, newSubject]);
+        setSubjects([newSubject, ...subjects]); // Legger til nyeste emne øverst
         setNewSubjectId('');
         setNewSubjectName('');
+        setErrorMessage('');
+      } else if (response.status === 409) {
+        setErrorMessage('Emnet er allerede lagt til.');
       } else {
         const errorData = await response.json();
         console.error('Failed to add subject:', errorData.error);
-        alert(`Kunne ikke legge til emne: ${errorData.error}`);
+        setErrorMessage('Kunne ikke legge til emne');
       }
     } catch (error) {
       console.error('Failed to add subject:', error);
+      setErrorMessage('Kunne ikke legge til emne');
     }
   };
 
   return (
     <div style={{ display: 'flex', gap: '20px' }}>
-      {/* Boks for å legge til nytt subject, inputfeltene er under hverandre */}
       <div style={{ flex: '1', border: '1px solid #ccc', padding: '10px', display: 'flex', flexDirection: 'column' }}>
         <h2>Legg til nytt emne</h2>
         <input
@@ -104,14 +102,14 @@ const SubjectsByField: React.FC = () => {
           style={{ marginBottom: '10px' }}
         />
         <button onClick={handleAddSubject}>Legg til</button>
+        {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
       </div>
 
-      {/* Liste over subjects til høyre */}
       <div style={{ flex: '2', border: '1px solid #ccc', padding: '10px' }}>
-        <h2>Emner i {fieldName}</h2> {/* Viser navnet på fagområdet */}
+        <h2>Emner i {fieldName}</h2>
         <ul>
           {subjects.map((subject) => (
-            <li key={subject.id}>{subject.name}</li>
+            <li key={subject.id}>{`${subject.id} ${subject.name}`}</li>
           ))}
         </ul>
       </div>

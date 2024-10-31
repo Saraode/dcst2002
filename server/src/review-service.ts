@@ -68,6 +68,46 @@ class FieldService {
 
 // ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
+  async getAverageStarsForSubject(subjectId: string): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
+      pool.query(
+        'SELECT AVG(stars) as averageStars FROM Reviews WHERE subjectId = ?',
+        [subjectId],
+        (error, results: RowDataPacket[]) => {
+          if (error) return reject(error);
+          resolve(results[0].averageStars || 0); // Returnerer 0 hvis det ikke finnes anmeldelser
+        }
+      );
+    });
+  }
+
+  // Ny funksjon for å hente alle anmeldelser for et bestemt subjectId
+  getReviewsBySubjectId(subjectId: string): Promise<Review[]> {
+    return new Promise<Review[]>((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM Reviews WHERE subjectId = ? ORDER BY id DESC',
+        [subjectId],
+        (error, results: RowDataPacket[]) => {
+          if (error) return reject(error);
+          resolve(results as Review[]);
+        }
+      );
+    });
+  }
+
+  createReview(subjectId: string, text: string, stars: number): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
+      pool.query(
+        'INSERT INTO Reviews (subjectId, text, stars) VALUES (?, ?, ?)',
+        [subjectId, text, stars],
+        (error, results: ResultSetHeader) => {
+          if (error) return reject(error);
+          resolve(results.insertId);
+        }
+      );
+    });
+  }
+  
   getAllCampuses(): Promise<Campus[]> {
     return new Promise<Campus[]>((resolve, reject) => {
       pool.query('SELECT campusId, name FROM Campuses', (error, results) => {
@@ -80,10 +120,11 @@ class ReviewService {
   getSubjectsByField(fieldId: number): Promise<Subject[]> {
     return new Promise<Subject[]>((resolve, reject) => {
       pool.query(
-        'SELECT * FROM Subjects WHERE fieldId = ?',
+        'SELECT id, name FROM Subjects WHERE fieldId = ? ORDER BY id DESC', // Sortering i synkende rekkefølge
         [fieldId],
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
+          console.log("Fetched subjects:", results); // Log subjects for debugging
           resolve(results as Subject[]);
         }
       );
@@ -91,16 +132,16 @@ class ReviewService {
   }
 
   // Legg til et nytt subject (emne) i databasen
-  createSubject(id: string, name: string, fieldId: number): Promise<string> {
+  async createSubject(id: string, name: string, fieldId: number): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       try {
-        // Sjekk om ID-en allerede eksisterer
-        const existingSubject = await this.getSubjectById(id);
+        // Bruk case-insensitiv sjekk for emnekode
+        const existingSubject = await this.getSubjectByIdCaseInsensitive(id);
         if (existingSubject) {
           return reject(new Error(`Subject med ID '${id}' eksisterer allerede`));
         }
 
-        // Hvis ID ikke eksisterer, legg til emnet
+        // Legg til emnet hvis det ikke eksisterer fra før
         pool.query(
           'INSERT INTO Subjects (id, name, fieldId) VALUES (?, ?, ?)',
           [id, name, fieldId],
@@ -109,12 +150,26 @@ class ReviewService {
               console.error('Databasefeil ved opprettelse av emne:', error);
               return reject(error);
             }
-            resolve(id); // Returnerer fagkoden (ID) som primærnøkkel
+            resolve(id);
           }
         );
       } catch (error) {
         reject(error);
       }
+    });
+  }
+
+  // Funksjon for å sjekke om en emnekode allerede finnes (case-insensitivt)
+  getSubjectByIdCaseInsensitive(id: string): Promise<Subject | null> {
+    return new Promise<Subject | null>((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM Subjects WHERE LOWER(id) = LOWER(?)',
+        [id],
+        (error, results: RowDataPacket[]) => {
+          if (error) return reject(error);
+          resolve(results.length > 0 ? (results[0] as Subject) : null);
+        }
+      );
     });
   }
 
@@ -132,38 +187,26 @@ class ReviewService {
     });
   }
 
+  // Hente anmeldelser med `stars`
   getSubject(id: string): Promise<Subject | undefined> {
-    return new Promise<Subject | undefined>((resolve, reject) => {
-      pool.query('SELECT * FROM Subjects WHERE id = ?', [id], (error, results: RowDataPacket[]) => {
-        if (error) return reject(error);
-        if (results.length === 0) return resolve(undefined);
+  return new Promise<Subject | undefined>((resolve, reject) => {
+    pool.query('SELECT * FROM Subjects WHERE id = ?', [id], (error, results: RowDataPacket[]) => {
+      if (error) return reject(error);
+      if (results.length === 0) return resolve(undefined);
 
-        const subject = results[0] as Subject;
-        pool.query(
-          'SELECT * FROM Reviews WHERE subjectId = ?',
-          [id],
-          (reviewError, reviewResults: RowDataPacket[]) => {
-            if (reviewError) return reject(reviewError);
-            subject.reviews = reviewResults as Review[];
-            resolve(subject);
-          }
-        );
-      });
-    });
-  }
-
-  createReview(subjectId: string, text: string): Promise<number> {
-    return new Promise<number>((resolve, reject) => {
+      const subject = results[0] as Subject;
       pool.query(
-        'INSERT INTO Reviews (subjectId, text) VALUES (?, ?)',
-        [subjectId, text],
-        (error, results: ResultSetHeader) => {
-          if (error) return reject(error);
-          resolve(results.insertId);
+        'SELECT * FROM Reviews WHERE subjectId = ? ORDER BY id DESC', // Sorter i synkende rekkefølge
+        [id],
+        (reviewError, reviewResults: RowDataPacket[]) => {
+          if (reviewError) return reject(reviewError);
+          subject.reviews = reviewResults as Review[];
+          resolve(subject);
         }
       );
     });
-  }
+  });
+}
 }
 
 // Opprett instanser av service-klassene

@@ -1,0 +1,16 @@
+/* StarRating.css */
+.star-container {
+  display: flex;
+  gap: 5px;
+}
+
+.star {
+  font-size: 2rem;
+  color: #ccc;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.star.filled {
+  color: gold;
+}
