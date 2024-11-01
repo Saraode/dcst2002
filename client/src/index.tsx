@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { HashRouter as Router, Route, Switch } from 'react-router-dom';
 import Menu from './menu';
 import FieldDropdown from './FieldDropdown';
 import SubjectsByField from './SubjectsByField';

@@ -13,11 +13,15 @@ import { reviewRouter } from './review-service';
 // Serve client files
 app.use(express.static(path.join(__dirname, '/../../client/public')));
 
+// Connect routers to the API
+app.use('/api', subjectRouter);    // Adds subject-related routes under /api
+app.use('/api', reviewRouter);      // Adds review-related routes under /api
+
 const port = 3000;
 app.listen(port, () => {
   console.info(`Server running on port ${port}`);
 });
 
-// Connect routers to the API
-app.use('/api', subjectRouter);    // Adds subject-related routes under /api
-app.use('/api', reviewRouter);      // Adds review-related routes under /api
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '/../../client/public/index.html'));
+});
