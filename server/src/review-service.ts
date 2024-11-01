@@ -120,11 +120,10 @@ class ReviewService {
   getSubjectsByField(fieldId: number): Promise<Subject[]> {
     return new Promise<Subject[]>((resolve, reject) => {
       pool.query(
-        'SELECT id, name FROM Subjects WHERE fieldId = ? ORDER BY id DESC', // Sortering i synkende rekkefølge
+        'SELECT * FROM Subjects WHERE fieldId = ? ORDER BY id ASC', // Sorter alfabetisk etter `id`
         [fieldId],
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
-          console.log("Fetched subjects:", results); // Log subjects for debugging
           resolve(results as Subject[]);
         }
       );
