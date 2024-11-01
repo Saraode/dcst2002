@@ -3,7 +3,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { NavBar } from './widgets';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import { HashRouter as Router, Route, Switch } from 'react-router-dom';
 import {
   CampusList,
   SubjectDetailsWithRouter as SubjectDetails,  // Bruk withRouter-innpakkede komponenter
