@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import StarRating from './StarRating';
 
 type Review = {
@@ -7,7 +7,7 @@ type Review = {
   text: string;
   stars: number;
   submitterName: string | null;
-  userId: number; // Add userId to compare with logged-in user
+  userId: number;
 };
 
 type Subject = {
@@ -16,13 +16,22 @@ type Subject = {
 };
 
 const SubjectDetails: React.FC = () => {
-  const { subjectId } = useParams<{ subjectId: string }>();
+  const { subjectId, fieldId } = useParams<{ subjectId: string; fieldId: string }>(); // Add fieldId to useParams
+  const history = useHistory();
   const [subject, setSubject] = useState<Subject | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [newReviewText, setNewReviewText] = useState('');
   const [newRating, setNewRating] = useState(0);
   const [averageStars, setAverageStars] = useState(0);
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
+  const [isAuthorizedToEditSubject, setIsAuthorizedToEditSubject] = useState(false);
+
+  useEffect(() => {
+    const currentUserId = Number(localStorage.getItem('userId'));
+    if (currentUserId === 35) {
+      setIsAuthorizedToEditSubject(true);
+    }
+  }, []);
 
   const fetchAverageStars = async () => {
     try {
@@ -45,7 +54,7 @@ const SubjectDetails: React.FC = () => {
           setSubject(subjectData);
           const transformedReviews = subjectData.reviews.map((review: any) => ({
             ...review,
-            userId: review.user_id, // Create userId field for comparison
+            userId: review.user_id,
           }));
           setReviews(transformedReviews);
         }
@@ -75,7 +84,11 @@ const SubjectDetails: React.FC = () => {
       const response = await fetch(`/api/subjects/${subjectId}/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: newReviewText, stars: newRating, userId: currentUserId }),
+        body: JSON.stringify({
+          text: newReviewText,
+          stars: newRating,
+          userId: Number(currentUserId),
+        }),
       });
 
       if (response.ok) {
@@ -156,6 +169,35 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  // New handlers for editing and deleting the subject
+  const handleEditSubject = () => {
+    console.log('Edit subject:', subject);
+  };
+
+  const handleDeleteSubject = async () => {
+    const isConfirmed = window.confirm('Er du sikker på at du vil slette dette faget?');
+    if (!isConfirmed) return;
+
+    try {
+      const response = await fetch(`/api/subjects/${subjectId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: 35 }),
+      });
+
+      if (response.ok) {
+        console.log('Subject deleted successfully');
+        // Redirect back to the field page using the `history` object
+        history.push(`/fields/${fieldId}`);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to delete subject:', errorData.error);
+      }
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', gap: '20px' }}>
       <div
@@ -183,6 +225,15 @@ const SubjectDetails: React.FC = () => {
         >
           {editingReviewId ? 'Lagre endring' : 'Legg til anmeldelse'}
         </button>
+
+        {isAuthorizedToEditSubject && (
+          <div style={{ marginTop: '20px' }}>
+            <button onClick={handleEditSubject} style={{ marginRight: '10px' }}>
+              Rediger fag
+            </button>
+            <button onClick={handleDeleteSubject}>Slett fag</button>
+          </div>
+        )}
       </div>
 
       <div style={{ flex: '2', border: '1px solid #ccc', padding: '10px' }}>
@@ -202,9 +253,6 @@ const SubjectDetails: React.FC = () => {
               </p>
               <p>{review.text}</p>
               <StarRating rating={review.stars} onRatingChange={() => {}} readOnly />
-              {console.log(
-                `Review userId: ${review.userId}, Logged-in userId: ${Number(localStorage.getItem('userId'))}`,
-              )}
               {Number(localStorage.getItem('userId')) === review.userId && (
                 <>
                   <button onClick={() => handleEditReview(review)} style={{ marginRight: '5px' }}>

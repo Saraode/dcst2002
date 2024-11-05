@@ -261,6 +261,28 @@ class ReviewService {
       );
     });
   }
+
+  async updateSubject(subjectId: string, name: string, fieldId: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      pool.query(
+        'UPDATE Subjects SET name = ?, fieldId = ? WHERE id = ?',
+        [name, fieldId, subjectId],
+        (error) => {
+          if (error) return reject(error);
+          resolve();
+        },
+      );
+    });
+  }
+
+  async deleteSubject(subjectId: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      pool.query('DELETE FROM Subjects WHERE id = ?', [subjectId], (error) => {
+        if (error) return reject(error);
+        resolve();
+      });
+    });
+  }
 }
 
 // Opprett instanser av service-klassene
