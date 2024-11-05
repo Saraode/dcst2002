@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
+import { HashRouter as Router, Route, Switch, Link } from 'react-router-dom';
 import Menu from './menu';
 import FieldDropdown from './FieldDropdown';
 import SubjectsByField from './SubjectsByField';
