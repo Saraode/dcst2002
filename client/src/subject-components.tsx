@@ -31,9 +31,7 @@ class SubjectList extends Component<RouteComponentProps<{ campus: string }>> {
           {this.subjects.map((subject) => (
             <Row key={subject.id}>
               <Column>
-                <NavLink
-                  to={`/campus/${this.props.match.params.campus}/subjects/${subject.id}`}
-                >
+                <NavLink to={`/campus/${this.props.match.params.campus}/subjects/${subject.id}`}>
                   {subject.id} {subject.name} {/* Display both ID and name */}
                 </NavLink>
               </Column>
@@ -56,9 +54,11 @@ class SubjectList extends Component<RouteComponentProps<{ campus: string }>> {
       .getSubjectsByCampus(this.props.match.params.campus)
       .then((subjects: Subject[]) => {
         this.subjects = subjects;
-        console.log("Mounted subjects:", subjects); // Debugging log
+        console.log('Mounted subjects:', subjects); // Debugging log
       })
-      .catch((error: { message: string }) => Alert.danger('Error getting subjects: ' + error.message));
+      .catch((error: { message: string }) =>
+        Alert.danger('Error getting subjects: ' + error.message),
+      );
   }
 }
 
@@ -66,8 +66,10 @@ export const SubjectListWithRouter = withRouter(SubjectList);
 
 class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id: string }>> {
   subject: Subject = {
-    id: 0, name: '', reviews: [],
-    fieldId: 0
+    id: 0,
+    name: '',
+    reviews: [],
+    fieldId: 0,
   };
 
   render() {
@@ -83,14 +85,16 @@ class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id:
           </Row>
           {this.subject.reviews.map((review, index) => (
             <Row key={index}>
-              <Column>{review.text}</Column>
+              <Column>
+                <strong>{review.submitterName}</strong>: {review.text}
+              </Column>
             </Row>
           ))}
         </Card>
         <Button.Success
           onClick={() =>
             history.push(
-              `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}/reviews/new`
+              `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}/reviews/new`,
             )
           }
         >
@@ -149,8 +153,11 @@ class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId
 
 export const SubjectNewWithRouter = withRouter(SubjectNew);
 
-class ReviewNew extends Component<RouteComponentProps<{ campus: string; id: string }>> {
+class ReviewNew extends Component<
+  RouteComponentProps<{ campus: string; id: string }> & { submitterName: string }
+> {
   reviewText = '';
+  stars = 5;
 
   render() {
     return (
@@ -171,14 +178,27 @@ class ReviewNew extends Component<RouteComponentProps<{ campus: string; id: stri
         </Card>
         <Button.Success
           onClick={() => {
+            const userId = localStorage.getItem('userId');
+
+            if (!userId) {
+              Alert.danger('User is not logged in. Please log in to submit a review.');
+              return;
+            }
+
             reviewService
-              .createReview(Number(this.props.match.params.id), this.reviewText)
+              .createReview(
+                Number(this.props.match.params.id),
+                this.reviewText,
+                this.stars,
+                Number(userId),
+                this.props.submitterName, // Access `submitterName` from props passed down from a parent component or global state
+              )
               .then(() =>
                 history.push(
-                  `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}`
-                )
+                  `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}`,
+                ),
               )
-              .catch((error) => Alert.danger('Error creating review: ' + error.message));
+              .catch((error) => Alert.danger('Failed to add review: ' + error.message));
           }}
         >
           Submit Review

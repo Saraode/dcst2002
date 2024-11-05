@@ -16,9 +16,12 @@ export type Subject = {
 export type Review = {
   id: number;
   text: string;
+  stars: number;
+  submitterName: string;
+  userId: number;
 };
 
-export type Campus ={
+export type Campus = {
   campusId: number;
   name: string;
 };
@@ -46,9 +49,17 @@ class ReviewService {
       .then((response) => response.data.id);
   }
 
-  createReview(subjectId: number, text: string) {
+  createReview(
+    subjectId: number,
+    text: string,
+    stars: number,
+    userId: number,
+    submitterName: string,
+  ) {
     return axios
-      .post<{ id: number }>(`/subjects/${subjectId}/reviews`, { text })
+      .post<{
+        id: number;
+      }>(`/subjects/${subjectId}/reviews`, { text, stars, userId, submitterName })
       .then((response) => response.data.id);
   }
 }
