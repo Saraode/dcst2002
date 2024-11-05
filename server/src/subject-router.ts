@@ -2,6 +2,7 @@
 
 import express from 'express';
 import { fieldService, reviewService } from './review-service';
+import { userService } from './user-service'; // Adjust the path if needed
 
 const router = express.Router();
 
@@ -63,18 +64,34 @@ router.get('/subjects/:id', async (req, res) => {
 // Opprett en ny anmeldelse for et spesifikt subject basert på emnekode (id) inkludert stjerner
 router.post('/subjects/:id/reviews', async (req, res) => {
   const subjectId = req.params.id;
-  const { text, stars } = req.body;
+  const { text, stars, userId } = req.body;
 
-  if (!text || stars == null) {
-    return res.status(400).json({ error: 'Review text og stjerner mangler' });
+  if (!text || stars == null || !userId) {
+    return res.status(400).json({ error: 'Review text, stars, or userId missing' });
   }
 
   try {
-    const newReviewId = await reviewService.createReview(subjectId, text, stars);
-    res.json({ id: newReviewId });
+    // Fetch the submitter's name using the userId
+    const submitter = await userService.findUserById(userId); // Assuming findUserById exists in userService
+    if (!submitter) {
+      throw new Error('User not found'); // Handle this case appropriately
+    }
+    const submitterName = submitter.name;
+
+    // Now create the review with submitterName
+    const newReviewId = await reviewService.createReview(
+      subjectId,
+      text,
+      stars,
+      userId,
+      submitterName,
+    );
+
+    // Return the new review details including the submitter's name
+    res.json({ id: newReviewId, text, stars, submitterName });
   } catch (error) {
-    console.error('Feil ved opprettelse av review:', error);
-    res.status(500).json({ error: 'Kunne ikke legge til review' });
+    console.error('Error creating review:', error);
+    res.status(500).json({ error: 'Could not add review' });
   }
 });
 
@@ -108,14 +125,14 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { id, name } = req.body;
 
   if (!id || !name) {
-    console.log("Emne-ID eller navn mangler.");
+    console.log('Emne-ID eller navn mangler.');
     return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
   }
 
   try {
     console.log(`Forsøker å legge til emne med ID: ${id} og navn: ${name}`);
     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
-    console.log("Emne lagt til med ID:", newSubjectId);
+    console.log('Emne lagt til med ID:', newSubjectId);
     res.json({ id: newSubjectId, name });
   } catch (error: any) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
@@ -126,7 +143,46 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
   }
 });
 
+// Delete a review
+router.delete('/reviews/:reviewId', async (req, res) => {
+  const { reviewId } = req.params;
+  const { userId } = req.body; // Expect userId from the request body
+
+  try {
+    const review = await reviewService.getReviewById(Number(reviewId));
+
+    // Check if review exists and the user is the owner
+    if (!review || review.userId !== Number(userId)) {
+      return res.status(403).json({ error: 'Not authorized to delete this review' });
+    }
+
+    await reviewService.deleteReview(Number(reviewId));
+    res.status(200).json({ message: 'Review deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    res.status(500).json({ error: 'Could not delete review' });
+  }
+});
+
+// Update a review
+router.put('/reviews/:reviewId', async (req, res) => {
+  const { reviewId } = req.params;
+  const { text, stars, userId } = req.body;
+
+  try {
+    const review = await reviewService.getReviewById(Number(reviewId));
+
+    // Check if review exists and the user is the owner
+    if (!review || review.userId !== Number(userId)) {
+      return res.status(403).json({ error: 'Not authorized to edit this review' });
+    }
+
+    await reviewService.updateReview(Number(reviewId), text, stars);
+    res.status(200).json({ message: 'Review updated successfully' });
+  } catch (error) {
+    console.error('Error updating review:', error);
+    res.status(500).json({ error: 'Could not update review' });
+  }
+});
+
 export default router;
-
-
-
