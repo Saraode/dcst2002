@@ -185,4 +185,42 @@ router.put('/reviews/:reviewId', async (req, res) => {
   }
 });
 
+// Update subject
+router.put('/subjects/:subjectId', async (req, res) => {
+  const { subjectId } = req.params;
+  const { userId, name, fieldId } = req.body; // Example additional fields for updating
+
+  if (userId !== 35) {
+    return res.status(403).json({ error: 'Not authorized to edit this subject' });
+  }
+
+  try {
+    // Proceed with update logic, for example:
+    await reviewService.updateSubject(subjectId, name, fieldId);
+    res.status(200).json({ message: 'Subject updated successfully' });
+  } catch (error) {
+    console.error('Error updating subject:', error);
+    res.status(500).json({ error: 'Could not update subject' });
+  }
+});
+
+// Delete subject
+router.delete('/subjects/:subjectId', async (req, res) => {
+  const { subjectId } = req.params;
+  const { userId } = req.body;
+
+  if (userId !== 35) {
+    return res.status(403).json({ error: 'Not authorized to delete this subject' });
+  }
+
+  try {
+    // Proceed with delete logic
+    await reviewService.deleteSubject(subjectId);
+    res.status(200).json({ message: 'Subject deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting subject:', error);
+    res.status(500).json({ error: 'Could not delete subject' });
+  }
+});
+
 export default router;
