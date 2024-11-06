@@ -8,6 +8,7 @@ type Review = {
   stars: number;
   submitterName: string | null;
   userId: number;
+  created_date: string;
 };
 
 type Subject = {
@@ -92,8 +93,13 @@ const SubjectDetails: React.FC = () => {
       });
 
       if (response.ok) {
-        const newReview = await response.json();
+        const newReview = await response.json(); // This should include `submitterName` and `created_date`
+
+        console.log('New Review from API:', newReview); // Debugging line to check received data
+
+        // Update the reviews immediately with all properties intact
         setReviews([newReview, ...reviews]);
+
         setNewReviewText('');
         setNewRating(0);
         fetchAverageStars();
@@ -249,7 +255,8 @@ const SubjectDetails: React.FC = () => {
               }}
             >
               <p>
-                <strong>{review.submitterName}</strong>
+                <strong>{review.submitterName}</strong>{' '}
+                <span>{new Date(review.created_date).toLocaleDateString()}</span>
               </p>
               <p>{review.text}</p>
               <StarRating rating={review.stars} onRatingChange={() => {}} readOnly />
