@@ -72,10 +72,17 @@ class FieldService {
 class ReviewService {
   async getReviewById(
     reviewId: number,
-  ): Promise<{ id: number; text: string; stars: number; userId: number } | null> {
+  ): Promise<{
+    id: number;
+    text: string;
+    stars: number;
+    userId: number;
+    submitterName: string;
+    created_date: string;
+  } | null> {
     return new Promise((resolve, reject) => {
       pool.query(
-        'SELECT id, text, stars, user_id AS userId FROM Reviews WHERE id = ?',
+        'SELECT id, text, stars, user_id AS userId, submitterName, created_date FROM Reviews WHERE id = ?',
         [reviewId],
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
@@ -85,6 +92,8 @@ class ReviewService {
               text: string;
               stars: number;
               userId: number;
+              submitterName: string;
+              created_date: string;
             };
             resolve(review);
           } else {

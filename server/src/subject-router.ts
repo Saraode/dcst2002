@@ -62,6 +62,7 @@ router.get('/subjects/:id', async (req, res) => {
 });
 
 // Opprett en ny anmeldelse for et spesifikt subject basert på emnekode (id) inkludert stjerner
+// In the route for creating a new review
 router.post('/subjects/:id/reviews', async (req, res) => {
   const subjectId = req.params.id;
   const { text, stars, userId } = req.body;
@@ -71,14 +72,13 @@ router.post('/subjects/:id/reviews', async (req, res) => {
   }
 
   try {
-    // Fetch the submitter's name using the userId
-    const submitter = await userService.findUserById(userId); // Assuming findUserById exists in userService
+    const submitter = await userService.findUserById(userId);
     if (!submitter) {
-      throw new Error('User not found'); // Handle this case appropriately
+      throw new Error('User not found');
     }
     const submitterName = submitter.name;
 
-    // Now create the review with submitterName
+    // Create the review
     const newReviewId = await reviewService.createReview(
       subjectId,
       text,
@@ -87,8 +87,11 @@ router.post('/subjects/:id/reviews', async (req, res) => {
       submitterName,
     );
 
-    // Return the new review details including the submitter's name
-    res.json({ id: newReviewId, text, stars, submitterName });
+    // Fetch the newly created review with `userId`, `submitterName`, and `created_date`
+    const newReview = await reviewService.getReviewById(newReviewId);
+
+    // Return the complete review details to the frontend
+    res.json(newReview);
   } catch (error) {
     console.error('Error creating review:', error);
     res.status(500).json({ error: 'Could not add review' });
