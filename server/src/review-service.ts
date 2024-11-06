@@ -1,8 +1,9 @@
 // server/review-service.ts
 
-import pool from './mysql-pool';
+import { pool, updateVersion } from './mysql-pool';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import express, { Request, Response } from 'express';
+import axios from 'axios';
 
 export type Subject = {
   id: string;
@@ -43,7 +44,7 @@ class FieldService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results as Field[]);
-        }
+        },
       );
     });
   }
@@ -98,13 +99,24 @@ class ReviewService {
         [subjectId],
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
-          resolve(results[0].averageStars || 0);
-        }
+          resolve(results[0].averageStars || 0); // Returnerer 0 hvis det ikke finnes anmeldelser
+        },
       );
     });
   }
-
-  getReviewsBySubjectId(subjectId: string): Promise<Review[]> {
+  
+  async updateVersion() {
+    try {
+      console.log('Calling updateVersion API...');
+      const response = await axios.post('http://localhost:3000/api/version/update');
+      console.log('updateVersion response:', response.data);
+    } catch (error) {
+      console.error('Error in updateVersion:', error);
+    }
+  }
+  
+  // Ny funksjon for å hente alle anmeldelser for et bestemt subjectId
+   getReviewsBySubjectId(subjectId: string): Promise<Review[]> {
     return new Promise<Review[]>((resolve, reject) => {
       pool.query(
         `SELECT id, text, stars, submitterName
@@ -115,7 +127,7 @@ class ReviewService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results as Review[]);
-        }
+        },
       );
     });
   }
@@ -134,7 +146,8 @@ class ReviewService {
         (error, results: ResultSetHeader) => {
           if (error) return reject(error);
           resolve(results.insertId);
-        }
+          this.updateVersion();
+        },
       );
     });
   }
@@ -156,10 +169,11 @@ class ReviewService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results as Subject[]);
-        }
+        },
       );
     });
   }
+
 
   async createSubject(id: string, name: string, fieldId: number, levelId: number): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
@@ -175,7 +189,8 @@ class ReviewService {
           (error, results: ResultSetHeader) => {
             if (error) return reject(error);
             resolve(id);
-          }
+            this.updateVersion(); // Kall til updateVersion etter å ha opprettet et fag
+          },
         );
       } catch (error) {
         reject(error);
@@ -191,7 +206,7 @@ class ReviewService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results.length > 0 ? (results[0] as Subject) : null);
-        }
+        },
       );
     });
   }
