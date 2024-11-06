@@ -27,18 +27,17 @@ router.get('/campus/:campus/fields', async (req, res) => {
   }
 });
 
-// Legg til nytt subject med fagkode og navn for et spesifikt field
 router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
-  const { id, name } = req.body;
+  const { id, name, level } = req.body;
 
-  if (!id || !name) {
-    return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
+  if (!id || !name || !level) {
+    return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
   }
 
   try {
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
-    res.json({ id: newSubjectId, name });
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level);
+    res.json({ id: newSubjectId, name, level });
   } catch (error) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error);
     res.status(500).json({ error: 'Kunne ikke legge til emne' });
@@ -57,6 +56,16 @@ router.get('/subjects/:id', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch subject' });
+  }
+});
+
+// Hent alle nivåer
+router.get('/levels', async (req, res) => {
+  try {
+    const levels = await reviewService.getAllLevels();
+    res.json(levels);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch levels' });
   }
 });
 
@@ -102,27 +111,40 @@ router.get('/subjects/:id/average-stars', async (req, res) => {
   }
 });
 
-// Legg til nytt subject med fagkode og navn for et spesifikt field
-router.post('/fields/:fieldId/subjects', async (req, res) => {
-  const { fieldId } = req.params;
-  const { id, name } = req.body;
+// // Legg til nytt subject med fagkode og navn for et spesifikt field
+// router.post('/fields/:fieldId/subjects', async (req, res) => {
+//   const { fieldId } = req.params;
+//   const { id, name } = req.body;
 
-  if (!id || !name) {
-    console.log("Emne-ID eller navn mangler.");
-    return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
-  }
+//   if (!id || !name) {
+//     console.log("Emne-ID eller navn mangler.");
+//     return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
+//   }
 
+//   try {
+//     console.log(`Forsøker å legge til emne med ID: ${id} og navn: ${name}`);
+//     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
+//     console.log("Emne lagt til med ID:", newSubjectId);
+//     res.json({ id: newSubjectId, name });
+//   } catch (error: any) {
+//     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
+//     if (error.message.includes('eksisterer allerede')) {
+//       return res.status(409).json({ error: 'Emnet er allerede lagt til' });
+//     }
+//     res.status(500).json({ error: 'Kunne ikke legge til emne' });
+//   }
+// });
+
+// Hent emner for et spesifikt field basert på studienivå
+// Hent emner for et spesifikt field basert på studienivå
+router.get('/fields/:fieldId/subjects/level/:level', async (req, res) => {
+  const { fieldId, level } = req.params;
   try {
-    console.log(`Forsøker å legge til emne med ID: ${id} og navn: ${name}`);
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
-    console.log("Emne lagt til med ID:", newSubjectId);
-    res.json({ id: newSubjectId, name });
-  } catch (error: any) {
-    console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
-    if (error.message.includes('eksisterer allerede')) {
-      return res.status(409).json({ error: 'Emnet er allerede lagt til' });
-    }
-    res.status(500).json({ error: 'Kunne ikke legge til emne' });
+    const subjects = await reviewService.getSubjectsByFieldAndLevel(Number(fieldId), Number(level)); // Konverter `level` til number
+    res.json(subjects);
+  } catch (error) {
+    console.error('Error fetching subjects by level:', error);
+    res.status(500).json({ error: 'Failed to fetch subjects by level' });
   }
 });
 

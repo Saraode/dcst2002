@@ -11,6 +11,7 @@ export type Subject = {
   name: string;
   fieldId: number;
   reviews: Review[];
+  level?: string; // Legg til level-felt
 };
 
 export type Review = {
@@ -40,9 +41,9 @@ class ReviewService {
     return axios.get<Subject>(`/subjects/${id}`).then((response) => response.data);
   }
 
-  createSubject(fieldId: number, name: string) {
+  createSubject(campus: string, name: string, level: string) {
     return axios
-      .post<{ id: number }>(`/fields/${fieldId}/subjects`, { name })
+      .post<{ id: number }>(`/fields/${campus}/subjects`, { name, level })
       .then((response) => response.data.id);
   }
 
