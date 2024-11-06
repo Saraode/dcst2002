@@ -131,31 +131,31 @@ router.get('/subjects/:id/average-stars', async (req, res) => {
   }
 });
 
-// Legg til nytt subject med fagkode og navn for et spesifikt field
- router.post('/fields/:fieldId/subjects', async (req, res) => {
-   const { fieldId } = req.params;
-   const { id, name } = req.body;
+// Legg til nytt subject med fagkode, navn og nivå (levelId) for et spesifikt field
+router.post('/fields/:fieldId/subjects', async (req, res) => {
+  const { fieldId } = req.params;
+  const { id, name, levelId } = req.body; // Legg til levelId her
 
-   if (!id || !name) {
-     console.log("Emne-ID eller navn mangler.");
-     return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
-   }
+  // Valider at id, name og levelId er til stede
+  if (!id || !name || !levelId) {
+    console.log("Emne-ID, navn eller nivå mangler.");
+    return res.status(400).json({ error: 'Fagkode (ID), emnenavn eller nivå mangler' });
+  }
 
-   try {
-     console.log(`Forsøker å legge til emne med ID: ${id} og navn: ${name}`);
-     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
-     console.log("Emne lagt til med ID:", newSubjectId);
-     res.json({ id: newSubjectId, name });
-   } catch (error: any) {
-     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
-     if (error.message.includes('eksisterer allerede')) {
-       return res.status(409).json({ error: 'Emnet er allerede lagt til' });
-     }
-     res.status(500).json({ error: 'Kunne ikke legge til emne' });
-   }
+  try {
+    console.log(`Forsøker å legge til emne med ID: ${id}, navn: ${name}, nivå: ${levelId}`);
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), levelId); // Inkluder levelId
+    console.log("Emne lagt til med ID:", newSubjectId);
+    res.json({ id: newSubjectId, name, levelId });
+  } catch (error: any) {
+    console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
+    if (error.message.includes('eksisterer allerede')) {
+      return res.status(409).json({ error: 'Emnet er allerede lagt til' });
+    }
+    res.status(500).json({ error: 'Kunne ikke legge til emne' });
+  }
 });
 
-// Hent emner for et spesifikt field basert på studienivå
 // Hent emner for et spesifikt field basert på studienivå
 router.get('/fields/:fieldId/subjects/level/:level', async (req, res) => {
   const { fieldId, level } = req.params;
@@ -165,30 +165,32 @@ router.get('/fields/:fieldId/subjects/level/:level', async (req, res) => {
   } catch (error) {
     console.error('Error fetching subjects by level:', error);
     res.status(500).json({ error: 'Failed to fetch subjects by level' });
-
-// Legg til nytt subject med fagkode og navn for et spesifikt field
-router.post('/fields/:fieldId/subjects', async (req, res) => {
-  const { fieldId } = req.params;
-  const { id, name } = req.body;
-
-  if (!id || !name) {
-    console.log('Emne-ID eller navn mangler.');
-    return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
-  }
-
-  try {
-    console.log(`Forsøker å legge til emne med ID: ${id} og navn: ${name}`);
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
-    console.log('Emne lagt til med ID:', newSubjectId);
-    res.json({ id: newSubjectId, name });
-  } catch (error: any) {
-    console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
-    if (error.message.includes('eksisterer allerede')) {
-      return res.status(409).json({ error: 'Emnet er allerede lagt til' });
-    }
-    res.status(500).json({ error: 'Kunne ikke legge til emne' });
-  }
+  };
 });
+
+// // Legg til nytt subject med fagkode og navn for et spesifikt field
+// router.post('/fields/:fieldId/subjects', async (req, res) => {
+//   const { fieldId } = req.params;
+//   const { id, name } = req.body;
+
+//   if (!id || !name) {
+//     console.log('Emne-ID eller navn mangler.');
+//     return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
+//   }
+
+//   try {
+//     console.log(`Forsøker å legge til emne med ID: ${id} og navn: ${name}`);
+//     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
+//     console.log('Emne lagt til med ID:', newSubjectId);
+//     res.json({ id: newSubjectId, name });
+//   } catch (error: any) {
+//     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
+//     if (error.message.includes('eksisterer allerede')) {
+//       return res.status(409).json({ error: 'Emnet er allerede lagt til' });
+//     }
+//     res.status(500).json({ error: 'Kunne ikke legge til emne' });
+//   }
+// });
 
 // Delete a review
 router.delete('/reviews/:reviewId', async (req, res) => {
