@@ -5,7 +5,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import express, { Request, Response } from 'express';
 
 export type Subject = {
-  id: string; // Emnekoden brukes som ID
+  id: string;
   name: string;
   fieldId: number;
   reviews: Review[];
@@ -15,8 +15,8 @@ export type Review = {
   id: number;
   subjectId: string;
   text: string;
-  stars: number; // Include the stars rating
-  submitterName: string; // Include the user's name who submitted the review
+  stars: number;
+  submitterName: string;
 };
 
 export type Field = {
@@ -32,7 +32,6 @@ export type Campus = {
 
 // FieldService for databaseoperasjoner på fields
 class FieldService {
-  // Hent fagområder for et bestemt campus uten å bruke Subjects
   getFieldsByCampus(campus: string) {
     return new Promise<Field[]>((resolve, reject) => {
       pool.query(
@@ -44,7 +43,7 @@ class FieldService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results as Field[]);
-        },
+        }
       );
     });
   }
@@ -86,20 +85,8 @@ class ReviewService {
         [reviewId],
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
-          if (results.length > 0) {
-            const review = results[0] as {
-              id: number;
-              text: string;
-              stars: number;
-              userId: number;
-              submitterName: string;
-              created_date: string;
-            };
-            resolve(review);
-          } else {
-            resolve(null);
-          }
-        },
+          resolve(results.length > 0 ? results[0] as any : null);
+        }
       );
     });
   }
@@ -111,8 +98,8 @@ class ReviewService {
         [subjectId],
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
-          resolve(results[0].averageStars || 0); // Returnerer 0 hvis det ikke finnes anmeldelser
-        },
+          resolve(results[0].averageStars || 0);
+        }
       );
     });
   }
@@ -128,7 +115,7 @@ class ReviewService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results as Review[]);
-        },
+        }
       );
     });
   }
@@ -138,16 +125,16 @@ class ReviewService {
     text: string,
     stars: number,
     userId: number,
-    submitterName: string, // Use submitterName as the parameter name
+    submitterName: string,
   ): Promise<number> {
     return new Promise<number>((resolve, reject) => {
       pool.query(
         'INSERT INTO Reviews (subjectId, text, stars, user_id, submitterName) VALUES (?, ?, ?, ?, ?)',
-        [subjectId, text, stars, userId, submitterName], // Include submitterName in the values
+        [subjectId, text, stars, userId, submitterName],
         (error, results: ResultSetHeader) => {
           if (error) return reject(error);
           resolve(results.insertId);
-        },
+        }
       );
     });
   }
@@ -161,8 +148,6 @@ class ReviewService {
     });
   }
 
-  // Hent emner basert på studienivå og fieldId
-  // Hent emner for et spesifikt nivå (levelId) og fieldId
   getSubjectsByFieldAndLevel(fieldId: number, levelId: number): Promise<Subject[]> {
     return new Promise<Subject[]>((resolve, reject) => {
       pool.query(
@@ -171,13 +156,11 @@ class ReviewService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results as Subject[]);
-        },
+        }
       );
     });
   }
 
-  // Legg til et nytt subject (emne) i databasen
-  // Oppdater metoden for å legge til et nytt subject, inkludert levelId
   async createSubject(id: string, name: string, fieldId: number, levelId: number): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       try {
@@ -192,7 +175,7 @@ class ReviewService {
           (error, results: ResultSetHeader) => {
             if (error) return reject(error);
             resolve(id);
-          },
+          }
         );
       } catch (error) {
         reject(error);
@@ -200,8 +183,6 @@ class ReviewService {
     });
   }
 
-
-  // Funksjon for å sjekke om en emnekode allerede finnes (case-insensitivt)
   getSubjectByIdCaseInsensitive(id: string): Promise<Subject | null> {
     return new Promise<Subject | null>((resolve, reject) => {
       pool.query(
@@ -210,11 +191,11 @@ class ReviewService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results.length > 0 ? (results[0] as Subject) : null);
-        },
+        }
       );
     });
   }
-  // Hent alle nivåer fra Levels-tabellen
+
   getAllLevels(): Promise<{ id: number; name: string }[]> {
     return new Promise((resolve, reject) => {
       pool.query('SELECT * FROM Levels', (error, results: RowDataPacket[]) => {
@@ -224,7 +205,6 @@ class ReviewService {
     });
   }
 
-  // Hent en Subject basert på ID
   getSubjectById(id: string): Promise<Subject | null> {
     return new Promise<Subject | null>((resolve, reject) => {
       pool.query('SELECT * FROM Subjects WHERE id = ?', [id], (error, results: RowDataPacket[]) => {
@@ -233,21 +213,20 @@ class ReviewService {
       });
     });
   }
-  // Hent alle subjects for et spesifikt field basert på fieldId
-getSubjectsByField(fieldId: number): Promise<Subject[]> {
-  return new Promise<Subject[]>((resolve, reject) => {
-    pool.query(
-      'SELECT * FROM Subjects WHERE fieldId = ? ORDER BY id ASC',
-      [fieldId],
-      (error, results: RowDataPacket[]) => {
-        if (error) return reject(error);
-        resolve(results as Subject[]);
-      }
-    );
-  });
-}
 
-  // Hente anmeldelser med `stars`
+  getSubjectsByField(fieldId: number): Promise<Subject[]> {
+    return new Promise<Subject[]>((resolve, reject) => {
+      pool.query(
+        'SELECT * FROM Subjects WHERE fieldId = ? ORDER BY id ASC',
+        [fieldId],
+        (error, results: RowDataPacket[]) => {
+          if (error) return reject(error);
+          resolve(results as Subject[]);
+        }
+      );
+    });
+  }
+
   getSubject(id: string): Promise<Subject | undefined> {
     return new Promise<Subject | undefined>((resolve, reject) => {
       pool.query('SELECT * FROM Subjects WHERE id = ?', [id], (error, results: RowDataPacket[]) => {
@@ -256,19 +235,18 @@ getSubjectsByField(fieldId: number): Promise<Subject[]> {
 
         const subject = results[0] as Subject;
         pool.query(
-          'SELECT * FROM Reviews WHERE subjectId = ? ORDER BY id DESC', // Sorter i synkende rekkefølge
+          'SELECT * FROM Reviews WHERE subjectId = ? ORDER BY id DESC',
           [id],
           (reviewError, reviewResults: RowDataPacket[]) => {
             if (reviewError) return reject(reviewError);
             subject.reviews = reviewResults as Review[];
             resolve(subject);
-          },
+          }
         );
       });
     });
   }
 
-  // Delete a review
   deleteReview(reviewId: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       pool.query('DELETE FROM Reviews WHERE id = ?', [reviewId], (error) => {
@@ -278,7 +256,6 @@ getSubjectsByField(fieldId: number): Promise<Subject[]> {
     });
   }
 
-  // Update a review
   updateReview(reviewId: number, text: string, stars: number): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       pool.query(
@@ -287,30 +264,28 @@ getSubjectsByField(fieldId: number): Promise<Subject[]> {
         (error) => {
           if (error) return reject(error);
           resolve();
-        },
+        }
       );
     });
-  });
-}
-// Hent antall emner per nivå for et spesifikt fagfelt
-getSubjectCountByLevel(fieldId: number): Promise<{ levelId: number; count: number }[]> {
-  return new Promise((resolve, reject) => {
-    pool.query(
-      `
-      SELECT levelId, COUNT(*) as count 
-      FROM Subjects 
-      WHERE fieldId = ? 
-      GROUP BY levelId
-      `,
-      [fieldId],
-      (error, results: RowDataPacket[]) => {
-        if (error) return reject(error);
-        resolve(results.map(row => ({ levelId: row.levelId, count: row.count })));
-      }
-    );
-  });
-}
+  }
 
+  // Hent antall emner per nivå for et spesifikt fagfelt
+  getSubjectCountByLevel(fieldId: number): Promise<{ levelId: number; count: number }[]> {
+    return new Promise((resolve, reject) => {
+      pool.query(
+        `
+        SELECT levelId, COUNT(*) as count 
+        FROM Subjects 
+        WHERE fieldId = ? 
+        GROUP BY levelId
+        `,
+        [fieldId],
+        (error, results: RowDataPacket[]) => {
+          if (error) return reject(error);
+          resolve(results.map(row => ({ levelId: row.levelId, count: row.count })));
+        }
+      );
+    });
   }
 
   async updateSubject(subjectId: string, name: string, fieldId: number): Promise<void> {
@@ -321,7 +296,7 @@ getSubjectCountByLevel(fieldId: number): Promise<{ levelId: number; count: numbe
         (error) => {
           if (error) return reject(error);
           resolve();
-        },
+        }
       );
     });
   }
@@ -342,6 +317,9 @@ const fieldService = new FieldService();
 
 // Definer ruter
 const router = express.Router();
+
+// Resten av ruter...
+
 
 // Hent alle fields
 router.get('/fields', async (req: Request, res: Response) => {
