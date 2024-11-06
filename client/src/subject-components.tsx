@@ -85,7 +85,9 @@ class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id:
           </Row>
           {this.subject.reviews.map((review, index) => (
             <Row key={index}>
-              <Column>{review.text}</Column>
+              <Column>
+                <strong>{review.submitterName}</strong>: {review.text}
+              </Column>
             </Row>
           ))}
         </Card>
@@ -113,16 +115,36 @@ class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id:
 
 export const SubjectDetailsWithRouter = withRouter(SubjectDetails);
 
+// Definer de fire studienivåene med romertall for nivåer
+
+
 class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId: string }>> {
   name = '';
+  level = '';
+  studyLevels: string[] = []; // Initialize studyLevels as an empty array
+
+  state = {
+    studyLevels: [] as string[], // Initialize studyLevels in the component's state
+  };
+
+  async componentDidMount() {
+    try {
+      const response = await axios.get('/api/study-levels'); // Henter studienivåer fra serveren
+      this.setState({ studyLevels: response.data });
+    } catch (error: any) { // Bruk 'any' for å spesifisere at vi forventer en error-type med en 'message'
+      Alert.danger('Error fetching study levels: ' + error.message);
+    }
+  }
 
   render() {
+    const { studyLevels } = this.state; // Extract studyLevels from the component's state
+
     return (
       <>
         <Card title="New Subject">
           <Row>
             <Column width={2}>
-              <Form.Label>Name:</Form.Label>
+              <Form.Label>Fagkode:</Form.Label>
             </Column>
             <Column>
               <Form.Input
@@ -132,17 +154,36 @@ class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId
               />
             </Column>
           </Row>
+
+          {/* Studienivå-avkryssingsbokser */}
+          <Row>
+            <Column width={2}>
+              <Form.Label>Studienivå:</Form.Label>
+            </Column>
+            <Column>
+              {studyLevels.map((level) => (
+                <Form.Checkbox
+                  key={level}
+                  checked={this.level === level}
+                  label={level}
+                  onChange={() => (this.level = level)}
+                />
+              ))}
+            </Column>
+          </Row>
         </Card>
+        
         <Button.Success
           onClick={() => {
-            const { fieldId, campus } = this.props.match.params;
             reviewService
-              .createSubject(Number(fieldId), this.name)
-              .then((id) => history.push(`/campus/${campus}/subjects/${id}`))
+              .createSubject(this.props.match.params.campus, this.name, this.level)
+              .then((id) =>
+                history.push(`/campus/${this.props.match.params.campus}/subjects/${id}`)
+              )
               .catch((error) => Alert.danger('Error creating subject: ' + error.message));
           }}
         >
-          Create
+          Opprett emne
         </Button.Success>
       </>
     );
@@ -151,8 +192,11 @@ class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId
 
 export const SubjectNewWithRouter = withRouter(SubjectNew);
 
-class ReviewNew extends Component<RouteComponentProps<{ campus: string; id: string }>> {
+class ReviewNew extends Component<
+  RouteComponentProps<{ campus: string; id: string }> & { submitterName: string }
+> {
   reviewText = '';
+  stars = 5;
 
   render() {
     return (
@@ -173,14 +217,27 @@ class ReviewNew extends Component<RouteComponentProps<{ campus: string; id: stri
         </Card>
         <Button.Success
           onClick={() => {
+            const userId = localStorage.getItem('userId');
+
+            if (!userId) {
+              Alert.danger('User is not logged in. Please log in to submit a review.');
+              return;
+            }
+
             reviewService
-              .createReview(Number(this.props.match.params.id), this.reviewText)
+              .createReview(
+                Number(this.props.match.params.id),
+                this.reviewText,
+                this.stars,
+                Number(userId),
+                this.props.submitterName, // Access `submitterName` from props passed down from a parent component or global state
+              )
               .then(() =>
                 history.push(
                   `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}`,
                 ),
               )
-              .catch((error) => Alert.danger('Error creating review: ' + error.message));
+              .catch((error) => Alert.danger('Failed to add review: ' + error.message));
           }}
         >
           Submit Review

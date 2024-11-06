@@ -2,6 +2,7 @@
 
 import express from 'express';
 import { fieldService, reviewService } from './review-service';
+import { userService } from './user-service'; // Adjust the path if needed
 
 const router = express.Router();
 
@@ -27,18 +28,17 @@ router.get('/campus/:campus/fields', async (req, res) => {
   }
 });
 
-// Legg til nytt subject med fagkode og navn for et spesifikt field
 router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
-  const { id, name } = req.body;
+  const { id, name, level } = req.body;
 
-  if (!id || !name) {
-    return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
+  if (!id || !name || !level) {
+    return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
   }
 
   try {
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
-    res.json({ id: newSubjectId, name });
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level);
+    res.json({ id: newSubjectId, name, level });
   } catch (error) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error);
     res.status(500).json({ error: 'Kunne ikke legge til emne' });
@@ -60,21 +60,50 @@ router.get('/subjects/:id', async (req, res) => {
   }
 });
 
+// Hent alle nivåer
+router.get('/levels', async (req, res) => {
+  try {
+    const levels = await reviewService.getAllLevels();
+    res.json(levels);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch levels' });
+  }
+});
+
 // Opprett en ny anmeldelse for et spesifikt subject basert på emnekode (id) inkludert stjerner
+// In the route for creating a new review
 router.post('/subjects/:id/reviews', async (req, res) => {
   const subjectId = req.params.id;
-  const { text, stars } = req.body;
+  const { text, stars, userId } = req.body;
 
-  if (!text || stars == null) {
-    return res.status(400).json({ error: 'Review text og stjerner mangler' });
+  if (!text || stars == null || !userId) {
+    return res.status(400).json({ error: 'Review text, stars, or userId missing' });
   }
 
   try {
-    const newReviewId = await reviewService.createReview(subjectId, text, stars);
-    res.json({ id: newReviewId });
+    const submitter = await userService.findUserById(userId);
+    if (!submitter) {
+      throw new Error('User not found');
+    }
+    const submitterName = submitter.name;
+
+    // Create the review
+    const newReviewId = await reviewService.createReview(
+      subjectId,
+      text,
+      stars,
+      userId,
+      submitterName,
+    );
+
+    // Fetch the newly created review with `userId`, `submitterName`, and `created_date`
+    const newReview = await reviewService.getReviewById(newReviewId);
+
+    // Return the complete review details to the frontend
+    res.json(newReview);
   } catch (error) {
-    console.error('Feil ved opprettelse av review:', error);
-    res.status(500).json({ error: 'Kunne ikke legge til review' });
+    console.error('Error creating review:', error);
+    res.status(500).json({ error: 'Could not add review' });
   }
 });
 
@@ -102,21 +131,22 @@ router.get('/subjects/:id/average-stars', async (req, res) => {
   }
 });
 
-// Legg til nytt subject med fagkode og navn for et spesifikt field
+// Legg til nytt subject med fagkode, navn og nivå (levelId) for et spesifikt field
 router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
-  const { id, name } = req.body;
+  const { id, name, levelId } = req.body; // Legg til levelId her
 
-  if (!id || !name) {
-    console.log("Emne-ID eller navn mangler.");
-    return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
+  // Valider at id, name og levelId er til stede
+  if (!id || !name || !levelId) {
+    console.log("Emne-ID, navn eller nivå mangler.");
+    return res.status(400).json({ error: 'Fagkode (ID), emnenavn eller nivå mangler' });
   }
 
   try {
-    console.log(`Forsøker å legge til emne med ID: ${id} og navn: ${name}`);
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
+    console.log(`Forsøker å legge til emne med ID: ${id}, navn: ${name}, nivå: ${levelId}`);
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), levelId); // Inkluder levelId
     console.log("Emne lagt til med ID:", newSubjectId);
-    res.json({ id: newSubjectId, name });
+    res.json({ id: newSubjectId, name, levelId });
   } catch (error: any) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
     if (error.message.includes('eksisterer allerede')) {
@@ -126,7 +156,120 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
   }
 });
 
+// Hent emner for et spesifikt field basert på studienivå
+router.get('/fields/:fieldId/subjects/level/:level', async (req, res) => {
+  const { fieldId, level } = req.params;
+  try {
+    const subjects = await reviewService.getSubjectsByFieldAndLevel(Number(fieldId), Number(level)); // Konverter `level` til number
+    res.json(subjects);
+  } catch (error) {
+    console.error('Error fetching subjects by level:', error);
+    res.status(500).json({ error: 'Failed to fetch subjects by level' });
+  };
+});
+
+// // Legg til nytt subject med fagkode og navn for et spesifikt field
+// router.post('/fields/:fieldId/subjects', async (req, res) => {
+//   const { fieldId } = req.params;
+//   const { id, name } = req.body;
+
+//   if (!id || !name) {
+//     console.log('Emne-ID eller navn mangler.');
+//     return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
+//   }
+
+//   try {
+//     console.log(`Forsøker å legge til emne med ID: ${id} og navn: ${name}`);
+//     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
+//     console.log('Emne lagt til med ID:', newSubjectId);
+//     res.json({ id: newSubjectId, name });
+//   } catch (error: any) {
+//     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
+//     if (error.message.includes('eksisterer allerede')) {
+//       return res.status(409).json({ error: 'Emnet er allerede lagt til' });
+//     }
+//     res.status(500).json({ error: 'Kunne ikke legge til emne' });
+//   }
+// });
+
+// Delete a review
+router.delete('/reviews/:reviewId', async (req, res) => {
+  const { reviewId } = req.params;
+  const { userId } = req.body; // Expect userId from the request body
+
+  try {
+    const review = await reviewService.getReviewById(Number(reviewId));
+
+    // Check if review exists and the user is the owner
+    if (!review || review.userId !== Number(userId)) {
+      return res.status(403).json({ error: 'Not authorized to delete this review' });
+    }
+
+    await reviewService.deleteReview(Number(reviewId));
+    res.status(200).json({ message: 'Review deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    res.status(500).json({ error: 'Could not delete review' });
+  }
+});
+
+// Update a review
+router.put('/reviews/:reviewId', async (req, res) => {
+  const { reviewId } = req.params;
+  const { text, stars, userId } = req.body;
+
+  try {
+    const review = await reviewService.getReviewById(Number(reviewId));
+
+    // Check if review exists and the user is the owner
+    if (!review || review.userId !== Number(userId)) {
+      return res.status(403).json({ error: 'Not authorized to edit this review' });
+    }
+
+    await reviewService.updateReview(Number(reviewId), text, stars);
+    res.status(200).json({ message: 'Review updated successfully' });
+  } catch (error) {
+    console.error('Error updating review:', error);
+    res.status(500).json({ error: 'Could not update review' });
+  }
+});
+
+// Update subject
+router.put('/subjects/:subjectId', async (req, res) => {
+  const { subjectId } = req.params;
+  const { userId, name, fieldId } = req.body; // Example additional fields for updating
+
+  if (userId !== 35) {
+    return res.status(403).json({ error: 'Not authorized to edit this subject' });
+  }
+
+  try {
+    // Proceed with update logic, for example:
+    await reviewService.updateSubject(subjectId, name, fieldId);
+    res.status(200).json({ message: 'Subject updated successfully' });
+  } catch (error) {
+    console.error('Error updating subject:', error);
+    res.status(500).json({ error: 'Could not update subject' });
+  }
+});
+
+// Delete subject
+router.delete('/subjects/:subjectId', async (req, res) => {
+  const { subjectId } = req.params;
+  const { userId } = req.body;
+
+  if (userId !== 35) {
+    return res.status(403).json({ error: 'Not authorized to delete this subject' });
+  }
+
+  try {
+    // Proceed with delete logic
+    await reviewService.deleteSubject(subjectId);
+    res.status(200).json({ message: 'Subject deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting subject:', error);
+    res.status(500).json({ error: 'Could not delete subject' });
+  }
+});
+
 export default router;
-
-
-
