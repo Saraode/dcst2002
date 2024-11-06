@@ -161,11 +161,13 @@ class ReviewService {
     });
   }
 
-  getSubjectsByField(fieldId: number): Promise<Subject[]> {
+  // Hent emner basert på studienivå og fieldId
+  // Hent emner for et spesifikt nivå (levelId) og fieldId
+  getSubjectsByFieldAndLevel(fieldId: number, levelId: number): Promise<Subject[]> {
     return new Promise<Subject[]>((resolve, reject) => {
       pool.query(
-        'SELECT * FROM Subjects WHERE fieldId = ? ORDER BY id ASC', // Sorter alfabetisk etter `id`
-        [fieldId],
+        'SELECT * FROM Subjects WHERE fieldId = ? AND levelId = ? ORDER BY id ASC',
+        [fieldId, levelId],
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results as Subject[]);
@@ -175,24 +177,20 @@ class ReviewService {
   }
 
   // Legg til et nytt subject (emne) i databasen
-  async createSubject(id: string, name: string, fieldId: number): Promise<string> {
+  // Oppdater metoden for å legge til et nytt subject, inkludert levelId
+  async createSubject(id: string, name: string, fieldId: number, levelId: number): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
       try {
-        // Bruk case-insensitiv sjekk for emnekode
         const existingSubject = await this.getSubjectByIdCaseInsensitive(id);
         if (existingSubject) {
           return reject(new Error(`Subject med ID '${id}' eksisterer allerede`));
         }
 
-        // Legg til emnet hvis det ikke eksisterer fra før
         pool.query(
-          'INSERT INTO Subjects (id, name, fieldId) VALUES (?, ?, ?)',
-          [id, name, fieldId],
+          'INSERT INTO Subjects (id, name, fieldId, levelId) VALUES (?, ?, ?, ?)',
+          [id, name, fieldId, levelId],
           (error, results: ResultSetHeader) => {
-            if (error) {
-              console.error('Databasefeil ved opprettelse av emne:', error);
-              return reject(error);
-            }
+            if (error) return reject(error);
             resolve(id);
           },
         );
@@ -201,6 +199,7 @@ class ReviewService {
       }
     });
   }
+
 
   // Funksjon for å sjekke om en emnekode allerede finnes (case-insensitivt)
   getSubjectByIdCaseInsensitive(id: string): Promise<Subject | null> {
@@ -215,6 +214,15 @@ class ReviewService {
       );
     });
   }
+  // Hent alle nivåer fra Levels-tabellen
+  getAllLevels(): Promise<{ id: number; name: string }[]> {
+    return new Promise((resolve, reject) => {
+      pool.query('SELECT * FROM Levels', (error, results: RowDataPacket[]) => {
+        if (error) return reject(error);
+        resolve(results as { id: number; name: string }[]);
+      });
+    });
+  }
 
   // Hent en Subject basert på ID
   getSubjectById(id: string): Promise<Subject | null> {
@@ -225,6 +233,19 @@ class ReviewService {
       });
     });
   }
+  // Hent alle subjects for et spesifikt field basert på fieldId
+getSubjectsByField(fieldId: number): Promise<Subject[]> {
+  return new Promise<Subject[]>((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM Subjects WHERE fieldId = ? ORDER BY id ASC',
+      [fieldId],
+      (error, results: RowDataPacket[]) => {
+        if (error) return reject(error);
+        resolve(results as Subject[]);
+      }
+    );
+  });
+}
 
   // Hente anmeldelser med `stars`
   getSubject(id: string): Promise<Subject | undefined> {
@@ -269,6 +290,27 @@ class ReviewService {
         },
       );
     });
+  });
+}
+// Hent antall emner per nivå for et spesifikt fagfelt
+getSubjectCountByLevel(fieldId: number): Promise<{ levelId: number; count: number }[]> {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+      SELECT levelId, COUNT(*) as count 
+      FROM Subjects 
+      WHERE fieldId = ? 
+      GROUP BY levelId
+      `,
+      [fieldId],
+      (error, results: RowDataPacket[]) => {
+        if (error) return reject(error);
+        resolve(results.map(row => ({ levelId: row.levelId, count: row.count })));
+      }
+    );
+  });
+}
+
   }
 
   async updateSubject(subjectId: string, name: string, fieldId: number): Promise<void> {
@@ -350,11 +392,18 @@ router.get('/campus/:campus/fields', async (req, res) => {
   }
 });
 
-// Hent subjects for et spesifikt field
+// Endepunkt for å hente emner basert på fagfelt og nivå
 router.get('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
   const { fieldId } = req.params;
+  const levelId = req.query.levelId;
+
   try {
-    const subjects = await reviewService.getSubjectsByField(Number(fieldId));
+    let subjects;
+    if (levelId) {
+      subjects = await reviewService.getSubjectsByFieldAndLevel(Number(fieldId), Number(levelId));
+    } else {
+      subjects = await reviewService.getSubjectsByField(Number(fieldId));
+    }
     res.json(subjects);
   } catch (error) {
     console.error('Error fetching subjects:', error);
@@ -363,21 +412,36 @@ router.get('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
 });
 
 // Legg til nytt subject for et spesifikt field
+// Endre til å inkludere nivået korrekt
 router.post('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
   const { fieldId } = req.params;
-  const { id, name } = req.body;
+  const { id, name, level } = req.body;
 
-  if (!name || !id) {
-    return res.status(400).json({ error: 'ID eller navn mangler' });
+  if (!id || !name || !level) { // Validerer at alle feltene mottas
+    return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
   }
 
   try {
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
-    res.json({ id: newSubjectId, name });
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level);
+    res.json({ id: newSubjectId, name, level });
   } catch (error) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error);
     res.status(500).json({ error: 'Kunne ikke legge til emne' });
   }
 });
+
+// Hent antall emner per nivå for et spesifikt field
+router.get('/fields/:fieldId/subject-counts', async (req: Request, res: Response) => {
+  const { fieldId } = req.params;
+  try {
+    const counts = await reviewService.getSubjectCountByLevel(Number(fieldId));
+    res.json(counts);
+  } catch (error) {
+    console.error('Error fetching subject counts by level:', error);
+    res.status(500).json({ error: 'Failed to fetch subject counts' });
+  }
+});
+
+
 
 export { router as reviewRouter, reviewService, fieldService };
