@@ -31,9 +31,7 @@ class SubjectList extends Component<RouteComponentProps<{ campus: string }>> {
           {this.subjects.map((subject) => (
             <Row key={subject.id}>
               <Column>
-                <NavLink
-                  to={`/campus/${this.props.match.params.campus}/subjects/${subject.id}`}
-                >
+                <NavLink to={`/campus/${this.props.match.params.campus}/subjects/${subject.id}`}>
                   {subject.id} {subject.name} {/* Display both ID and name */}
                 </NavLink>
               </Column>
@@ -56,9 +54,11 @@ class SubjectList extends Component<RouteComponentProps<{ campus: string }>> {
       .getSubjectsByCampus(this.props.match.params.campus)
       .then((subjects: Subject[]) => {
         this.subjects = subjects;
-        console.log("Mounted subjects:", subjects); // Debugging log
+        console.log('Mounted subjects:', subjects); // Debugging log
       })
-      .catch((error: { message: string }) => Alert.danger('Error getting subjects: ' + error.message));
+      .catch((error: { message: string }) =>
+        Alert.danger('Error getting subjects: ' + error.message),
+      );
   }
 }
 
@@ -66,8 +66,10 @@ export const SubjectListWithRouter = withRouter(SubjectList);
 
 class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id: string }>> {
   subject: Subject = {
-    id: 0, name: '', reviews: [],
-    fieldId: 0
+    id: 0,
+    name: '',
+    reviews: [],
+    fieldId: 0,
   };
 
   render() {
@@ -90,7 +92,7 @@ class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id:
         <Button.Success
           onClick={() =>
             history.push(
-              `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}/reviews/new`
+              `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}/reviews/new`,
             )
           }
         >
@@ -175,8 +177,8 @@ class ReviewNew extends Component<RouteComponentProps<{ campus: string; id: stri
               .createReview(Number(this.props.match.params.id), this.reviewText)
               .then(() =>
                 history.push(
-                  `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}`
-                )
+                  `/campus/${this.props.match.params.campus}/subjects/${this.props.match.params.id}`,
+                ),
               )
               .catch((error) => Alert.danger('Error creating review: ' + error.message));
           }}
