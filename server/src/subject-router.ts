@@ -138,14 +138,14 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
 
   // Valider at id, name og levelId er til stede
   if (!id || !name || !levelId) {
-    console.log("Emne-ID, navn eller nivå mangler.");
+    console.log('Emne-ID, navn eller nivå mangler.');
     return res.status(400).json({ error: 'Fagkode (ID), emnenavn eller nivå mangler' });
   }
 
   try {
     console.log(`Forsøker å legge til emne med ID: ${id}, navn: ${name}, nivå: ${levelId}`);
     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), levelId); // Inkluder levelId
-    console.log("Emne lagt til med ID:", newSubjectId);
+    console.log('Emne lagt til med ID:', newSubjectId);
     res.json({ id: newSubjectId, name, levelId });
   } catch (error: any) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
@@ -165,7 +165,7 @@ router.get('/fields/:fieldId/subjects/level/:level', async (req, res) => {
   } catch (error) {
     console.error('Error fetching subjects by level:', error);
     res.status(500).json({ error: 'Failed to fetch subjects by level' });
-  };
+  }
 });
 
 // // Legg til nytt subject med fagkode og navn for et spesifikt field
@@ -237,19 +237,18 @@ router.put('/reviews/:reviewId', async (req, res) => {
 // Update subject
 router.put('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
-  const { userId, name, fieldId } = req.body; // Example additional fields for updating
+  const { userId, levelId } = req.body;
 
   if (userId !== 35) {
     return res.status(403).json({ error: 'Not authorized to edit this subject' });
   }
 
   try {
-    // Proceed with update logic, for example:
-    await reviewService.updateSubject(subjectId, name, fieldId);
-    res.status(200).json({ message: 'Subject updated successfully' });
+    await reviewService.updateSubjectLevel(subjectId, levelId);
+    res.status(200).json({ message: 'Subject level updated successfully' });
   } catch (error) {
-    console.error('Error updating subject:', error);
-    res.status(500).json({ error: 'Could not update subject' });
+    console.error('Error updating subject level:', error);
+    res.status(500).json({ error: 'Could not update subject level' });
   }
 });
 
