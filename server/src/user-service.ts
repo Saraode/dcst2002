@@ -1,3 +1,4 @@
+
 import {pool} from './mysql-pool';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import bcrypt from 'bcrypt';
