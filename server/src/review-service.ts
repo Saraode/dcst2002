@@ -70,6 +70,19 @@ class FieldService {
 
 // ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
+  async getTotalSubjectsCount(fieldId: number): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
+      pool.query(
+        'SELECT COUNT(*) as total FROM Subjects WHERE fieldId = ?',
+        [fieldId],
+        (error, results: RowDataPacket[]) => {
+          if (error) return reject(error);
+          resolve(results[0].total || 0);
+        }
+      );
+    });
+  }
+  
   async getReviewById(reviewId: number): Promise<{
     id: number;
     text: string;
@@ -282,23 +295,31 @@ class ReviewService {
   }
 
   // Hent antall emner per nivå for et spesifikt fagfelt
-  getSubjectCountByLevel(fieldId: number): Promise<{ levelId: number; count: number }[]> {
-    return new Promise((resolve, reject) => {
-      pool.query(
-        `
-        SELECT levelId, COUNT(*) as count 
-        FROM Subjects 
-        WHERE fieldId = ? 
-        GROUP BY levelId
-        `,
-        [fieldId],
-        (error, results: RowDataPacket[]) => {
-          if (error) return reject(error);
-          resolve(results.map((row) => ({ levelId: row.levelId, count: row.count })));
-        },
-      );
-    });
-  }
+  // Hent antall emner per nivå, og det totale antallet emner for et spesifikt fagfelt
+getSubjectCountByLevel(fieldId: number): Promise<{ levelId: number | null; count: number }[]> {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      `
+      SELECT levelId, COUNT(*) as count 
+      FROM Subjects 
+      WHERE fieldId = ? 
+      GROUP BY levelId WITH ROLLUP
+      `,
+      [fieldId],
+      (error, results: RowDataPacket[]) => {
+        if (error) return reject(error);
+        
+        // Mapper resultatene og legger til et ekstra objekt for total antall emner
+        const counts = results.map(row => ({
+          levelId: row.levelId !== null ? row.levelId : null,
+          count: row.count
+        }));
+
+        resolve(counts);
+      }
+    );
+  });
+}
 
   async updateSubject(subjectId: string, name: string, fieldId: number): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -437,6 +458,18 @@ router.get('/fields/:fieldId/subject-counts', async (req: Request, res: Response
   } catch (error) {
     console.error('Error fetching subject counts by level:', error);
     res.status(500).json({ error: 'Failed to fetch subject counts' });
+  }
+});
+
+// Endepunkt for å hente totalt antall emner for et spesifikt field
+router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Response) => {
+  const { fieldId } = req.params;
+  try {
+    const result = await reviewService.getTotalSubjectsCount(Number(fieldId));
+    res.json({ total: result });
+  } catch (error) {
+    console.error('Error fetching total subjects count:', error);
+    res.status(500).json({ error: 'Failed to fetch total subjects count' });
   }
 });
 
