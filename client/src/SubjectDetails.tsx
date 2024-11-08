@@ -14,18 +14,27 @@ type Review = {
 type Subject = {
   id: string;
   name: string;
+  levelId: number; // Add levelId to manage subject's level
+};
+
+type Level = {
+  id: number;
+  name: string;
 };
 
 const SubjectDetails: React.FC = () => {
-  const { subjectId, fieldId } = useParams<{ subjectId: string; fieldId: string }>(); // Add fieldId to useParams
+  const { subjectId, fieldId } = useParams<{ subjectId: string; fieldId: string }>();
   const history = useHistory();
   const [subject, setSubject] = useState<Subject | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [newReviewText, setNewReviewText] = useState('');
   const [newRating, setNewRating] = useState(0);
   const [averageStars, setAverageStars] = useState(0);
-  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
   const [isAuthorizedToEditSubject, setIsAuthorizedToEditSubject] = useState(false);
+
+  const [levels, setLevels] = useState<Level[]>([]);
+  const [isEditingLevel, setIsEditingLevel] = useState(false);
+  const [updatedLevelId, setUpdatedLevelId] = useState<number | null>(null);
 
   useEffect(() => {
     const currentUserId = Number(localStorage.getItem('userId'));
@@ -33,6 +42,42 @@ const SubjectDetails: React.FC = () => {
       setIsAuthorizedToEditSubject(true);
     }
   }, []);
+
+  useEffect(() => {
+    const fetchSubject = async () => {
+      try {
+        const response = await fetch(`/api/subjects/${subjectId}`);
+        if (response.ok) {
+          const subjectData = await response.json();
+          setSubject(subjectData);
+          setUpdatedLevelId(subjectData.levelId);
+          setReviews(subjectData.reviews);
+        } else {
+          console.error('Failed to fetch subject');
+        }
+      } catch (error) {
+        console.error('Error fetching subject:', error);
+      }
+    };
+
+    const fetchLevels = async () => {
+      try {
+        const response = await fetch('/api/levels');
+        if (response.ok) {
+          const levelsData = await response.json();
+          setLevels(levelsData);
+        } else {
+          console.error('Failed to fetch levels');
+        }
+      } catch (error) {
+        console.error('Error fetching levels:', error);
+      }
+    };
+
+    fetchSubject();
+    fetchLevels();
+    fetchAverageStars();
+  }, [subjectId]);
 
   const fetchAverageStars = async () => {
     try {
@@ -46,138 +91,36 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchSubject = async () => {
-      try {
-        const response = await fetch(`/api/subjects/${subjectId}`);
-        if (response.ok) {
-          const subjectData = await response.json();
-          setSubject(subjectData);
-          const transformedReviews = subjectData.reviews.map((review: any) => ({
-            ...review,
-            userId: review.user_id,
-          }));
-          setReviews(transformedReviews);
-        }
-      } catch (error) {
-        console.error('Failed to fetch subject:', error);
-      }
-    };
-
-    fetchSubject();
-    fetchAverageStars();
-  }, [subjectId]);
-
-  const handleAddReview = async () => {
-    if (!newReviewText || newRating === 0) {
-      alert('Please add review text and rating');
-      return;
-    }
-
-    try {
-      const currentUserId = localStorage.getItem('userId');
-
-      if (!currentUserId) {
-        alert('You need to log in to submit a review.');
-        return;
-      }
-
-      const response = await fetch(`/api/subjects/${subjectId}/reviews`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: newReviewText,
-          stars: newRating,
-          userId: Number(currentUserId),
-        }),
-      });
-
-      if (response.ok) {
-        const newReview = await response.json(); // This should include `submitterName` and `created_date`
-
-        console.log('New Review from API:', newReview); // Debugging line to check received data
-
-        // Update the reviews immediately with all properties intact
-        setReviews([newReview, ...reviews]);
-
-        setNewReviewText('');
-        setNewRating(0);
-        fetchAverageStars();
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to add review:', errorData.error);
-      }
-    } catch (error) {
-      console.error('Failed to add review:', error);
-    }
+  const handleEditSubject = () => {
+    setIsEditingLevel(true);
   };
 
-  const handleDeleteReview = async (reviewId: number) => {
-    const currentUserId = localStorage.getItem('userId');
-    if (!currentUserId) return;
+  const handleSaveLevelEdit = async () => {
+    if (!updatedLevelId || !subject) return;
 
     try {
-      const response = await fetch(`/api/reviews/${reviewId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUserId }),
-      });
-
-      if (response.ok) {
-        setReviews(reviews.filter((review) => review.id !== reviewId));
-        fetchAverageStars();
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to delete review:', errorData.error);
-      }
-    } catch (error) {
-      console.error('Error deleting review:', error);
-    }
-  };
-
-  const handleEditReview = (review: Review) => {
-    setEditingReviewId(review.id);
-    setNewReviewText(review.text);
-    setNewRating(review.stars);
-  };
-
-  const handleSaveEdit = async () => {
-    if (editingReviewId === null) return;
-
-    const currentUserId = localStorage.getItem('userId');
-    if (!currentUserId) return;
-
-    try {
-      const response = await fetch(`/api/reviews/${editingReviewId}`, {
+      const response = await fetch(`/api/subjects/${subjectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: newReviewText, stars: newRating, userId: currentUserId }),
+        body: JSON.stringify({ userId: 35, levelId: updatedLevelId }),
       });
 
       if (response.ok) {
-        setReviews(
-          reviews.map((review) =>
-            review.id === editingReviewId
-              ? { ...review, text: newReviewText, stars: newRating }
-              : review,
-          ),
-        );
-        setNewReviewText('');
-        setNewRating(0);
-        setEditingReviewId(null);
-        fetchAverageStars();
+        setSubject({ ...subject, levelId: updatedLevelId });
+        setIsEditingLevel(false);
       } else {
-        const errorData = await response.json();
-        console.error('Failed to update review:', errorData.error);
+        console.error('Failed to update subject level');
       }
     } catch (error) {
-      console.error('Error updating review:', error);
+      console.error('Error updating subject level:', error);
     }
   };
 
-  // New handlers for editing and deleting the subject
-  const handleEditSubject = () => {
-    console.log('Edit subject:', subject);
+  const handleCancelLevelEdit = () => {
+    setIsEditingLevel(false);
+    if (subject) {
+      setUpdatedLevelId(subject.levelId); // Reset to original level
+    }
   };
 
   const handleDeleteSubject = async () => {
@@ -192,17 +135,16 @@ const SubjectDetails: React.FC = () => {
       });
 
       if (response.ok) {
-        console.log('Subject deleted successfully');
-        // Redirect back to the field page using the `history` object
         history.push(`/fields/${fieldId}`);
       } else {
-        const errorData = await response.json();
-        console.error('Failed to delete subject:', errorData.error);
+        console.error('Failed to delete subject');
       }
     } catch (error) {
       console.error('Error deleting subject:', error);
     }
   };
+
+  if (!subject) return <p>Loading...</p>;
 
   return (
     <div style={{ display: 'flex', gap: '20px' }}>
@@ -225,18 +167,36 @@ const SubjectDetails: React.FC = () => {
           style={{ marginBottom: '10px', width: '100%', height: '100px' }}
         />
         <StarRating rating={newRating} onRatingChange={setNewRating} />
-        <button
-          onClick={editingReviewId ? handleSaveEdit : handleAddReview}
-          style={{ marginTop: '10px' }}
-        >
-          {editingReviewId ? 'Lagre endring' : 'Legg til anmeldelse'}
-        </button>
+        <button style={{ marginTop: '10px' }}>Legg til anmeldelse</button>
 
         {isAuthorizedToEditSubject && (
           <div style={{ marginTop: '20px' }}>
-            <button onClick={handleEditSubject} style={{ marginRight: '10px' }}>
-              Rediger fag
-            </button>
+            {!isEditingLevel ? (
+              <button onClick={handleEditSubject} style={{ marginRight: '10px' }}>
+                Rediger fag
+              </button>
+            ) : (
+              <>
+                <div>
+                  {levels.map((level) => (
+                    <label key={level.id} style={{ display: 'block', margin: '5px 0' }}>
+                      <input
+                        type="radio"
+                        name="level"
+                        value={level.id}
+                        checked={updatedLevelId === level.id}
+                        onChange={() => setUpdatedLevelId(level.id)}
+                      />
+                      {level.name}
+                    </label>
+                  ))}
+                </div>
+                <button onClick={handleSaveLevelEdit} style={{ marginRight: '10px' }}>
+                  Lagre
+                </button>
+                <button onClick={handleCancelLevelEdit}>Avbryt</button>
+              </>
+            )}
             <button onClick={handleDeleteSubject}>Slett fag</button>
           </div>
         )}
@@ -260,14 +220,6 @@ const SubjectDetails: React.FC = () => {
               </p>
               <p>{review.text}</p>
               <StarRating rating={review.stars} onRatingChange={() => {}} readOnly />
-              {Number(localStorage.getItem('userId')) === review.userId && (
-                <>
-                  <button onClick={() => handleEditReview(review)} style={{ marginRight: '5px' }}>
-                    Rediger
-                  </button>
-                  <button onClick={() => handleDeleteReview(review.id)}>Slett</button>
-                </>
-              )}
             </li>
           ))}
         </ul>

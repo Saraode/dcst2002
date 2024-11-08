@@ -70,9 +70,7 @@ class FieldService {
 
 // ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
-  async getReviewById(
-    reviewId: number,
-  ): Promise<{
+  async getReviewById(reviewId: number): Promise<{
     id: number;
     text: string;
     stars: number;
@@ -86,8 +84,8 @@ class ReviewService {
         [reviewId],
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
-          resolve(results.length > 0 ? results[0] as any : null);
-        }
+          resolve(results.length > 0 ? (results[0] as any) : null);
+        },
       );
     });
   }
@@ -104,7 +102,7 @@ class ReviewService {
       );
     });
   }
-  
+
   async updateVersion() {
     try {
       console.log('Calling updateVersion API...');
@@ -114,9 +112,9 @@ class ReviewService {
       console.error('Error in updateVersion:', error);
     }
   }
-  
+
   // Ny funksjon for å hente alle anmeldelser for et bestemt subjectId
-   getReviewsBySubjectId(subjectId: string): Promise<Review[]> {
+  getReviewsBySubjectId(subjectId: string): Promise<Review[]> {
     return new Promise<Review[]>((resolve, reject) => {
       pool.query(
         `SELECT id, text, stars, submitterName
@@ -173,7 +171,6 @@ class ReviewService {
       );
     });
   }
-
 
   async createSubject(id: string, name: string, fieldId: number, levelId: number): Promise<string> {
     return new Promise<string>(async (resolve, reject) => {
@@ -237,7 +234,7 @@ class ReviewService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results as Subject[]);
-        }
+        },
       );
     });
   }
@@ -256,7 +253,7 @@ class ReviewService {
             if (reviewError) return reject(reviewError);
             subject.reviews = reviewResults as Review[];
             resolve(subject);
-          }
+          },
         );
       });
     });
@@ -279,7 +276,7 @@ class ReviewService {
         (error) => {
           if (error) return reject(error);
           resolve();
-        }
+        },
       );
     });
   }
@@ -297,8 +294,8 @@ class ReviewService {
         [fieldId],
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
-          resolve(results.map(row => ({ levelId: row.levelId, count: row.count })));
-        }
+          resolve(results.map((row) => ({ levelId: row.levelId, count: row.count })));
+        },
       );
     });
   }
@@ -311,7 +308,7 @@ class ReviewService {
         (error) => {
           if (error) return reject(error);
           resolve();
-        }
+        },
       );
     });
   }
@@ -319,6 +316,14 @@ class ReviewService {
   async deleteSubject(subjectId: string): Promise<void> {
     return new Promise((resolve, reject) => {
       pool.query('DELETE FROM Subjects WHERE id = ?', [subjectId], (error) => {
+        if (error) return reject(error);
+        resolve();
+      });
+    });
+  }
+  async updateSubjectLevel(subjectId: string, levelId: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      pool.query('UPDATE Subjects SET levelId = ? WHERE id = ?', [levelId, subjectId], (error) => {
         if (error) return reject(error);
         resolve();
       });
@@ -334,7 +339,6 @@ const fieldService = new FieldService();
 const router = express.Router();
 
 // Resten av ruter...
-
 
 // Hent alle fields
 router.get('/fields', async (req: Request, res: Response) => {
@@ -410,7 +414,8 @@ router.post('/fields/:fieldId/subjects', async (req: Request, res: Response) => 
   const { fieldId } = req.params;
   const { id, name, level } = req.body;
 
-  if (!id || !name || !level) { // Validerer at alle feltene mottas
+  if (!id || !name || !level) {
+    // Validerer at alle feltene mottas
     return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
   }
 
@@ -434,7 +439,5 @@ router.get('/fields/:fieldId/subject-counts', async (req: Request, res: Response
     res.status(500).json({ error: 'Failed to fetch subject counts' });
   }
 });
-
-
 
 export { router as reviewRouter, reviewService, fieldService };
