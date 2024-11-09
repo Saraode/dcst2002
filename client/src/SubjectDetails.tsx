@@ -14,7 +14,7 @@ type Review = {
 type Subject = {
   id: string;
   name: string;
-  levelId: number; // Add levelId to manage subject's level
+  levelId: number;
 };
 
 type Level = {
@@ -31,7 +31,6 @@ const SubjectDetails: React.FC = () => {
   const [newRating, setNewRating] = useState(0);
   const [averageStars, setAverageStars] = useState(0);
   const [isAuthorizedToEditSubject, setIsAuthorizedToEditSubject] = useState(false);
-
   const [levels, setLevels] = useState<Level[]>([]);
   const [isEditingLevel, setIsEditingLevel] = useState(false);
   const [updatedLevelId, setUpdatedLevelId] = useState<number | null>(null);
@@ -91,6 +90,41 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  const handleAddReview = async () => {
+    if (!newReviewText || newRating === 0) {
+      alert('Vennligst fyll inn anmeldelsen og gi en vurdering');
+      return;
+    }
+
+    try {
+      const userId = Number(localStorage.getItem('userId'));
+      const submitterName = localStorage.getItem('userName') || 'Anonym';
+
+      const response = await fetch(`/api/subjects/${subjectId}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: newReviewText,
+          stars: newRating,
+          userId,
+          submitterName,
+        }),
+      });
+
+      if (response.ok) {
+        const newReview = await response.json();
+        setReviews([...reviews, newReview]);
+        setNewReviewText('');
+        setNewRating(0);
+        fetchAverageStars();
+      } else {
+        console.error('Failed to add review');
+      }
+    } catch (error) {
+      console.error('Error adding review:', error);
+    }
+  };
+
   const handleEditSubject = () => {
     setIsEditingLevel(true);
   };
@@ -119,7 +153,7 @@ const SubjectDetails: React.FC = () => {
   const handleCancelLevelEdit = () => {
     setIsEditingLevel(false);
     if (subject) {
-      setUpdatedLevelId(subject.levelId); // Reset to original level
+      setUpdatedLevelId(subject.levelId);
     }
   };
 
@@ -167,7 +201,9 @@ const SubjectDetails: React.FC = () => {
           style={{ marginBottom: '10px', width: '100%', height: '100px' }}
         />
         <StarRating rating={newRating} onRatingChange={setNewRating} />
-        <button style={{ marginTop: '10px' }}>Legg til anmeldelse</button>
+        <button style={{ marginTop: '10px' }} onClick={handleAddReview}>
+          Legg til anmeldelse
+        </button>
 
         {isAuthorizedToEditSubject && (
           <div style={{ marginTop: '20px' }}>
