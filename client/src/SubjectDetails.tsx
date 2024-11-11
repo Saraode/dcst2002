@@ -34,6 +34,7 @@ const SubjectDetails: React.FC = () => {
   const [levels, setLevels] = useState<Level[]>([]);
   const [isEditingLevel, setIsEditingLevel] = useState(false);
   const [updatedLevelId, setUpdatedLevelId] = useState<number | null>(null);
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null); // Added state
 
   useEffect(() => {
     const currentUserId = Number(localStorage.getItem('userId'));
@@ -48,9 +49,17 @@ const SubjectDetails: React.FC = () => {
         const response = await fetch(`/api/subjects/${subjectId}`);
         if (response.ok) {
           const subjectData = await response.json();
+          console.log('Fetched subject data:', subjectData);
+
+          // Normalize review properties to ensure consistency
+          const transformedReviews = subjectData.reviews.map((review: any) => ({
+            ...review,
+            userId: review.userId || review.user_id, // Ensure `userId` is present
+          }));
+
           setSubject(subjectData);
           setUpdatedLevelId(subjectData.levelId);
-          setReviews(subjectData.reviews);
+          setReviews(transformedReviews); // Use the normalized reviews
         } else {
           console.error('Failed to fetch subject');
         }
@@ -97,7 +106,7 @@ const SubjectDetails: React.FC = () => {
     }
 
     try {
-      const userId = Number(localStorage.getItem('userId'));
+      const currentUserId = Number(localStorage.getItem('userId'));
       const submitterName = localStorage.getItem('userName') || 'Anonym';
 
       const response = await fetch(`/api/subjects/${subjectId}/reviews`, {
@@ -106,22 +115,95 @@ const SubjectDetails: React.FC = () => {
         body: JSON.stringify({
           text: newReviewText,
           stars: newRating,
-          userId,
+          userId: currentUserId,
           submitterName,
         }),
       });
 
       if (response.ok) {
         const newReview = await response.json();
-        setReviews([...reviews, newReview]);
+        console.log('New review:', newReview);
+
+        // Add the new review to the state, ensuring userId is preserved
+        setReviews([
+          {
+            ...newReview,
+            userId: currentUserId, // Ensure the userId is included
+          },
+          ...reviews,
+        ]);
+
         setNewReviewText('');
         setNewRating(0);
-        fetchAverageStars();
+        fetchAverageStars(); // Recalculate average stars
       } else {
         console.error('Failed to add review');
       }
     } catch (error) {
       console.error('Error adding review:', error);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: number) => {
+    const currentUserId = localStorage.getItem('userId');
+    if (!currentUserId) return;
+
+    try {
+      const response = await fetch(`/api/reviews/${reviewId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUserId }),
+      });
+
+      if (response.ok) {
+        setReviews(reviews.filter((review) => review.id !== reviewId));
+        fetchAverageStars();
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to delete review:', errorData.error);
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error);
+    }
+  };
+
+  const handleEditReview = (review: Review) => {
+    setEditingReviewId(review.id);
+    setNewReviewText(review.text);
+    setNewRating(review.stars);
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingReviewId === null) return;
+
+    const currentUserId = localStorage.getItem('userId');
+    if (!currentUserId) return;
+
+    try {
+      const response = await fetch(`/api/reviews/${editingReviewId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: newReviewText, stars: newRating, userId: currentUserId }),
+      });
+
+      if (response.ok) {
+        setReviews(
+          reviews.map((review) =>
+            review.id === editingReviewId
+              ? { ...review, text: newReviewText, stars: newRating }
+              : review,
+          ),
+        );
+        setNewReviewText('');
+        setNewRating(0);
+        setEditingReviewId(null);
+        fetchAverageStars();
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to update review:', errorData.error);
+      }
+    } catch (error) {
+      console.error('Error updating review:', error);
     }
   };
 
@@ -156,8 +238,10 @@ const SubjectDetails: React.FC = () => {
       setUpdatedLevelId(subject.levelId);
     }
   };
-
   const handleDeleteSubject = async () => {
+    const currentUserId = Number(localStorage.getItem('userId'));
+    if (!currentUserId) return;
+
     const isConfirmed = window.confirm('Er du sikker på at du vil slette dette faget?');
     if (!isConfirmed) return;
 
@@ -165,13 +249,14 @@ const SubjectDetails: React.FC = () => {
       const response = await fetch(`/api/subjects/${subjectId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 35 }),
+        body: JSON.stringify({ userId: currentUserId }), // Include the current userId
       });
 
       if (response.ok) {
         history.push(`/fields/${fieldId}`);
       } else {
-        console.error('Failed to delete subject');
+        const errorData = await response.json();
+        console.error('Failed to delete subject:', errorData.error);
       }
     } catch (error) {
       console.error('Error deleting subject:', error);
@@ -201,8 +286,11 @@ const SubjectDetails: React.FC = () => {
           style={{ marginBottom: '10px', width: '100%', height: '100px' }}
         />
         <StarRating rating={newRating} onRatingChange={setNewRating} />
-        <button style={{ marginTop: '10px' }} onClick={handleAddReview}>
-          Legg til anmeldelse
+        <button
+          style={{ marginTop: '10px' }}
+          onClick={editingReviewId ? handleSaveEdit : handleAddReview}
+        >
+          {editingReviewId ? 'Lagre endring' : 'Legg til anmeldelse'}
         </button>
 
         {isAuthorizedToEditSubject && (
@@ -241,23 +329,50 @@ const SubjectDetails: React.FC = () => {
       <div style={{ flex: '2', border: '1px solid #ccc', padding: '10px' }}>
         <h2>Anmeldelser for {subject?.name}</h2>
         <ul style={{ listStyleType: 'none', padding: 0 }}>
-          {reviews.map((review) => (
-            <li
-              key={review.id}
-              style={{
-                marginBottom: '15px',
-                paddingBottom: '10px',
-                borderBottom: '1px solid #ccc',
-              }}
-            >
-              <p>
-                <strong>{review.submitterName}</strong>{' '}
-                <span>{new Date(review.created_date).toLocaleDateString()}</span>
-              </p>
-              <p>{review.text}</p>
-              <StarRating rating={review.stars} onRatingChange={() => {}} readOnly />
-            </li>
-          ))}
+          {reviews.map((review) => {
+            // Fetch the user ID and moderator status for every review
+            const currentUserId = Number(localStorage.getItem('userId'));
+            const isModerator = currentUserId === 35;
+            const isReviewOwner = currentUserId === review.userId;
+
+            return (
+              <li
+                key={review.id}
+                style={{
+                  marginBottom: '15px',
+                  paddingBottom: '10px',
+                  borderBottom: '1px solid #ccc',
+                }}
+              >
+                <p>
+                  <strong>{review.submitterName}</strong>{' '}
+                  <span>{new Date(review.created_date).toLocaleDateString()}</span>
+                </p>
+                <p>{review.text}</p>
+                <StarRating rating={review.stars} onRatingChange={() => {}} readOnly />
+
+                {/* Buttons for Review Owner */}
+                {isReviewOwner && (
+                  <div>
+                    <button
+                      onClick={() => handleEditReview(review)}
+                      style={{ marginRight: '10px' }}
+                    >
+                      Rediger
+                    </button>
+                    <button onClick={() => handleDeleteReview(review.id)}>Slett</button>
+                  </div>
+                )}
+
+                {/* Button for Moderator */}
+                {isModerator && !isReviewOwner && (
+                  <div>
+                    <button onClick={() => handleDeleteReview(review.id)}>Slett</button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
