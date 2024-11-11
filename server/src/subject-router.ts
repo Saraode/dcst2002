@@ -200,8 +200,8 @@ router.delete('/reviews/:reviewId', async (req, res) => {
   try {
     const review = await reviewService.getReviewById(Number(reviewId));
 
-    // Check if review exists and the user is the owner
-    if (!review || review.userId !== Number(userId)) {
+    // Allow if user is the owner or a moderator
+    if (!review || (review.userId !== Number(userId) && Number(userId) !== 35)) {
       return res.status(403).json({ error: 'Not authorized to delete this review' });
     }
 
@@ -257,12 +257,11 @@ router.delete('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
   const { userId } = req.body;
 
-  if (userId !== 35) {
+  if (Number(userId) !== 35) {
     return res.status(403).json({ error: 'Not authorized to delete this subject' });
   }
 
   try {
-    // Proceed with delete logic
     await reviewService.deleteSubject(subjectId);
     res.status(200).json({ message: 'Subject deleted successfully' });
   } catch (error) {

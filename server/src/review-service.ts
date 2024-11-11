@@ -78,11 +78,11 @@ class ReviewService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
           resolve(results[0].total || 0);
-        }
+        },
       );
     });
   }
-  
+
   async getReviewById(reviewId: number): Promise<{
     id: number;
     text: string;
@@ -130,7 +130,7 @@ class ReviewService {
   getReviewsBySubjectId(subjectId: string): Promise<Review[]> {
     return new Promise<Review[]>((resolve, reject) => {
       pool.query(
-        `SELECT id, text, stars, submitterName
+        `SELECT id, text, stars, submitterName, user_id AS userId
          FROM Reviews
          WHERE subjectId = ?
          ORDER BY id DESC`,
@@ -296,30 +296,30 @@ class ReviewService {
 
   // Hent antall emner per nivå for et spesifikt fagfelt
   // Hent antall emner per nivå, og det totale antallet emner for et spesifikt fagfelt
-getSubjectCountByLevel(fieldId: number): Promise<{ levelId: number | null; count: number }[]> {
-  return new Promise((resolve, reject) => {
-    pool.query(
-      `
+  getSubjectCountByLevel(fieldId: number): Promise<{ levelId: number | null; count: number }[]> {
+    return new Promise((resolve, reject) => {
+      pool.query(
+        `
       SELECT levelId, COUNT(*) as count 
       FROM Subjects 
       WHERE fieldId = ? 
       GROUP BY levelId WITH ROLLUP
       `,
-      [fieldId],
-      (error, results: RowDataPacket[]) => {
-        if (error) return reject(error);
-        
-        // Mapper resultatene og legger til et ekstra objekt for total antall emner
-        const counts = results.map(row => ({
-          levelId: row.levelId !== null ? row.levelId : null,
-          count: row.count
-        }));
+        [fieldId],
+        (error, results: RowDataPacket[]) => {
+          if (error) return reject(error);
 
-        resolve(counts);
-      }
-    );
-  });
-}
+          // Mapper resultatene og legger til et ekstra objekt for total antall emner
+          const counts = results.map((row) => ({
+            levelId: row.levelId !== null ? row.levelId : null,
+            count: row.count,
+          }));
+
+          resolve(counts);
+        },
+      );
+    });
+  }
 
   async updateSubject(subjectId: string, name: string, fieldId: number): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -336,12 +336,25 @@ getSubjectCountByLevel(fieldId: number): Promise<{ levelId: number | null; count
 
   async deleteSubject(subjectId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      pool.query('DELETE FROM Subjects WHERE id = ?', [subjectId], (error) => {
-        if (error) return reject(error);
-        resolve();
+      console.log('Deleting reviews for subject:', subjectId);
+      pool.query('DELETE FROM Reviews WHERE subjectId = ?', [subjectId], (reviewError) => {
+        if (reviewError) {
+          console.error('Error deleting reviews for subject:', reviewError);
+          return reject(reviewError);
+        }
+        console.log('Deleting subject:', subjectId);
+        pool.query('DELETE FROM Subjects WHERE id = ?', [subjectId], (subjectError) => {
+          if (subjectError) {
+            console.error('Error deleting subject:', subjectError);
+            return reject(subjectError);
+          }
+          console.log('Subject deleted successfully:', subjectId);
+          resolve();
+        });
       });
     });
   }
+
   async updateSubjectLevel(subjectId: string, levelId: number): Promise<void> {
     return new Promise((resolve, reject) => {
       pool.query('UPDATE Subjects SET levelId = ? WHERE id = ?', [levelId, subjectId], (error) => {
