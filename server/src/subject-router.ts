@@ -1,5 +1,3 @@
-// server/subject-router.ts
-
 import express from 'express';
 import { fieldService, reviewService } from './review-service';
 import { userService } from './user-service'; // Adjust the path if needed
@@ -130,22 +128,35 @@ router.get('/subjects/:id/average-stars', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch average stars' });
   }
 });
+//liste over emner i en versjon
+router.get('/versions/:versionId/subjects', async (req, res) => {
+  const { versionId } = req.params;
+
+  try {
+    const subjects = await reviewService.getSubjectsByVersion(Number(versionId));
+    res.json(subjects);
+  } catch (error) {
+    console.error('Error fetching subjects by version:', error);
+    res.status(500).json({ error: 'Failed to fetch subjects by version' });
+  }
+});
 
 // Legg til nytt subject med fagkode, navn og nivå (levelId) for et spesifikt field
+
 router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
   const { id, name, levelId } = req.body; // Legg til levelId her
 
   // Valider at id, name og levelId er til stede
   if (!id || !name || !levelId) {
-    console.log("Emne-ID, navn eller nivå mangler.");
+    console.log('Emne-ID, navn eller nivå mangler.');
     return res.status(400).json({ error: 'Fagkode (ID), emnenavn eller nivå mangler' });
   }
 
   try {
     console.log(`Forsøker å legge til emne med ID: ${id}, navn: ${name}, nivå: ${levelId}`);
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), levelId); // Inkluder levelId
-    console.log("Emne lagt til med ID:", newSubjectId);
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), levelId); // Inkluder levelId og userId
+
     res.json({ id: newSubjectId, name, levelId });
   } catch (error: any) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
@@ -156,6 +167,44 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
   }
 });
 
+//Endpoint for versjonering med bruker-ID
+router.post('/fields/:fieldId/version', async (req, res) => {
+  const { fieldId } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) {
+    console.error('User ID is missing for versioning');
+    return res.status(400).json({ error: 'User ID is required for versioning' });
+  }
+
+  try {
+    console.log(`Creating version for fieldId ${fieldId} with userId ${userId}`);
+    const newVersionNumber = await reviewService.createPageVersion(Number(fieldId), userId);
+    res.json({ version: newVersionNumber });
+  } catch (error) {
+    console.error('Error creating new field version:', error);
+    res.status(500).json({ error: 'Failed to create field version' });
+  }
+});
+
+//Endpoint for versjonering med bruker-ID for emner
+router.post('/subjects/:subjectId/version', async (req, res) => {
+  const { subjectId } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) {
+    console.error('User ID is missing for versioning');
+    return res.status(400).json({ error: 'User ID is required for versioning' });
+  }
+
+  try {
+    const newVersionNumber = await reviewService.createSubjectVersion(Number(subjectId), userId);
+    res.json({ version: newVersionNumber });
+  } catch (error) {
+    console.error('Error creating new subject version:', error);
+    res.status(500).json({ error: 'Failed to create subject version' });
+  }
+});
 // Hent emner for et spesifikt field basert på studienivå
 router.get('/fields/:fieldId/subjects/level/:level', async (req, res) => {
   const { fieldId, level } = req.params;
@@ -165,32 +214,8 @@ router.get('/fields/:fieldId/subjects/level/:level', async (req, res) => {
   } catch (error) {
     console.error('Error fetching subjects by level:', error);
     res.status(500).json({ error: 'Failed to fetch subjects by level' });
-  };
+  }
 });
-
-// // Legg til nytt subject med fagkode og navn for et spesifikt field
-// router.post('/fields/:fieldId/subjects', async (req, res) => {
-//   const { fieldId } = req.params;
-//   const { id, name } = req.body;
-
-//   if (!id || !name) {
-//     console.log('Emne-ID eller navn mangler.');
-//     return res.status(400).json({ error: 'Fagkode (ID) eller emnenavn mangler' });
-//   }
-
-//   try {
-//     console.log(`Forsøker å legge til emne med ID: ${id} og navn: ${name}`);
-//     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId));
-//     console.log('Emne lagt til med ID:', newSubjectId);
-//     res.json({ id: newSubjectId, name });
-//   } catch (error: any) {
-//     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
-//     if (error.message.includes('eksisterer allerede')) {
-//       return res.status(409).json({ error: 'Emnet er allerede lagt til' });
-//     }
-//     res.status(500).json({ error: 'Kunne ikke legge til emne' });
-//   }
-// });
 
 // Delete a review
 router.delete('/reviews/:reviewId', async (req, res) => {
@@ -256,7 +281,7 @@ router.put('/subjects/:subjectId', async (req, res) => {
 // Delete subject
 router.delete('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
-  const { userId } = req.body;
+  const { userId, fieldId } = req.body;
 
   if (userId !== 35) {
     return res.status(403).json({ error: 'Not authorized to delete this subject' });
@@ -265,10 +290,65 @@ router.delete('/subjects/:subjectId', async (req, res) => {
   try {
     // Proceed with delete logic
     await reviewService.deleteSubject(subjectId);
+
     res.status(200).json({ message: 'Subject deleted successfully' });
   } catch (error) {
     console.error('Error deleting subject:', error);
     res.status(500).json({ error: 'Could not delete subject' });
+  }
+});
+
+// router.post('/fields/:fieldId/subjects', async (req, res) => {
+//   const { fieldId } = req.params;
+//   const { id, name, level } = req.body;
+
+//   console.log('Received request to add new subject:', { fieldId, id, name, level });
+
+//   if (!id || !name || !level) {
+//     return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
+//   }
+
+//   try {
+//     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level);
+//     console.log('New subject created with ID:', newSubjectId);
+//     res.json({ id: newSubjectId, name, level });
+//   } catch (error) {
+//     console.error('Feil ved forsøk på å legge til emne i databasen:', error);
+//     res.status(500).json({ error: 'Kunne ikke legge til emne' });
+//   }
+// });
+
+//lage en ny versjon av en side
+router.post('/fields/:fieldId/version', async (req, res) => {
+  const { fieldId } = req.params;
+  const { userId } = req.body; // Expect userId in the body
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required for versioning' });
+  }
+
+  try {
+    const newVersionNumber = await reviewService.createPageVersion(Number(fieldId), userId);
+    res.json({ version: newVersionNumber });
+  } catch (error) {
+    console.error('Error creating new field version:', error);
+    res.status(500).json({ error: 'Failed to create field version' });
+  }
+});
+router.post('/subjects/:subjectId/version', async (req, res) => {
+  const { subjectId } = req.params;
+  const { userId } = req.body; // Expect userId in the body
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required for versioning' });
+  }
+
+  try {
+    const newVersionNumber = await reviewService.createSubjectVersion(Number(subjectId), userId);
+    res.json({ version: newVersionNumber });
+  } catch (error) {
+    console.error('Failed to create subject version:', error);
+    res.status(500).json({ error: 'Failed to create subject version' });
   }
 });
 

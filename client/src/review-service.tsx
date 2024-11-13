@@ -1,7 +1,3 @@
-// client/review-service.tsx
-
-// client/review-service.tsx
-
 import axios from 'axios';
 
 axios.defaults.baseURL = 'http://localhost:3000/api';
@@ -62,6 +58,19 @@ class ReviewService {
         id: number;
       }>(`/subjects/${subjectId}/reviews`, { text, stars, userId, submitterName })
       .then((response) => response.data.id);
+  }
+  async createPageVersion(fieldId: number, userId: string) {
+    console.log(`Calling createPageVersion with fieldId: ${fieldId} by userId: ${userId}`);
+
+    return axios
+      .post(`/api/fields/${fieldId}/version`, { userId })
+      .then((response) => response.data.version);
+  }
+  async createSubjectVersion(subjectId: number, userId: string) {
+    return axios
+      .post(`/subjects/${subjectId}/version`, { userId })
+
+      .then((response) => response.data.version);
   }
 }
 

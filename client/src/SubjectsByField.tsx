@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { SubjectNewWithRouter } from './subject-components';
 
 type Subject = {
   id: string;
@@ -85,11 +86,18 @@ const SubjectsByField: React.FC = () => {
   }, [fieldId, selectedLevel]);
 
   const handleAddSubject = async () => {
+    console.log('håper det funker');
+
     if (!newSubjectId || !newSubjectName || !newSubjectLevel) {
       setErrorMessage('ID, navn eller nivå mangler');
       return;
     }
-
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      console.error("User ID is missing from local storage. Can't create version.");
+      setErrorMessage('User ID is missing. Please log in again.');
+      return;
+    }
     try {
       const response = await fetch(`/api/fields/${fieldId}/subjects`, {
         method: 'POST',
@@ -105,6 +113,21 @@ const SubjectsByField: React.FC = () => {
 
       if (response.ok) {
         const newSubject = await response.json();
+        const versionResponse = await fetch(`/api/fields/${fieldId}/version`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId }), // Pass userId for versioning
+        });
+
+        if (!versionResponse.ok) {
+          console.error('Failed to create version for the subject');
+          setErrorMessage('Kunne ikke opprette versjon');
+          return;
+        }
+
+        console.log('Version created successfully');
 
         if (newSubjectLevel === selectedLevel || selectedLevel === null) {
           setSubjects([newSubject, ...subjects]);
@@ -129,7 +152,7 @@ const SubjectsByField: React.FC = () => {
   };
 
   const getCountForLevel = (levelId: number) => {
-    const countObj = subjectCounts.find(count => count.levelId === levelId);
+    const countObj = subjectCounts.find((count) => count.levelId === levelId);
     return countObj ? countObj.count : 0;
   };
 
@@ -214,4 +237,3 @@ const SubjectsByField: React.FC = () => {
 };
 
 export default SubjectsByField;
-
