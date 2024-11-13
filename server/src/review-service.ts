@@ -70,7 +70,6 @@ class FieldService {
 
 // ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
-
   async getTotalSubjectsCount(fieldId: number): Promise<number> {
     return new Promise<number>((resolve, reject) => {
       pool.query(
@@ -188,10 +187,6 @@ class ReviewService {
 
     return newVersionNumber;
   }
-
-
-
-
 
   // Ny funksjon for å hente alle anmeldelser for et bestemt subjectId
   getReviewsBySubjectId(subjectId: string): Promise<Review[]> {
@@ -378,7 +373,6 @@ class ReviewService {
 
           resolve(results.map((row) => ({ levelId: row.levelId, count: row.count })));
 
-
           // Mapper resultatene og legger til et ekstra objekt for total antall emner
           const counts = results.map((row) => ({
             levelId: row.levelId !== null ? row.levelId : null,
@@ -386,7 +380,6 @@ class ReviewService {
           }));
 
           resolve(counts);
-
         },
       );
     });
@@ -426,14 +419,6 @@ class ReviewService {
     });
   }
 
-  async updateSubjectLevel(subjectId: string, levelId: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      pool.query('UPDATE Subjects SET levelId = ? WHERE id = ?', [levelId, subjectId], (error) => {
-        if (error) return reject(error);
-        resolve();
-      });
-    });
-  }
   async updateSubjectLevel(subjectId: string, levelId: number): Promise<void> {
     return new Promise((resolve, reject) => {
       pool.query('UPDATE Subjects SET levelId = ? WHERE id = ?', [levelId, subjectId], (error) => {
@@ -527,12 +512,9 @@ router.post('/fields/:fieldId/subjects', async (req: Request, res: Response) => 
   const { fieldId } = req.params;
   const { id, name, level, userId } = req.body;
 
-
-  
   if (!id || !name || !level) {
     // Validerer at alle feltene mottas
     return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
-
   }
 
   try {
@@ -555,7 +537,6 @@ router.get('/fields/:fieldId/subject-counts', async (req: Request, res: Response
     res.status(500).json({ error: 'Failed to fetch subject counts' });
   }
 });
-
 
 //endringslogg:
 router.get('/api/history', async (req, res) => {
@@ -593,6 +574,8 @@ router.get('/api/history', async (req, res) => {
   } catch (error) {
     console.error('Error fetching change history:', error);
     res.status(500).json({ error: 'Failed to fetch change history' });
+  }
+}); // <-- Close this router.get method properly
 
 // Endepunkt for å hente totalt antall emner for et spesifikt field
 router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Response) => {
@@ -603,7 +586,6 @@ router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Re
   } catch (error) {
     console.error('Error fetching total subjects count:', error);
     res.status(500).json({ error: 'Failed to fetch total subjects count' });
-
   }
 });
 
