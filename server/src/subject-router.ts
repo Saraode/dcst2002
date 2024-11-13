@@ -14,6 +14,17 @@ router.get('/campus', async (req, res) => {
   }
 });
 
+router.get('/subjects/search', async (req, res) => {
+  const searchTerm = req.query.q as string;
+  try {
+    const results = await reviewService.searchSubjects(searchTerm); // Søker etter emner i databasen
+    res.json(results); // Returnerer resultatene til klienten
+  } catch (error) {
+    console.error('Error searching for subjects:', error);
+    res.status(500).json({ error: 'Failed to search for subjects' });
+  }
+});
+
 // Hent fields for en spesifikk campus
 router.get('/campus/:campus/fields', async (req, res) => {
   const { campus } = req.params;

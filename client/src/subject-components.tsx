@@ -35,14 +35,15 @@ export class CampusList extends Component<{}, CampusListState> {
 
   render() {
     return (
-      <Card title="Velkommen til NTNU emnevurderinger – Din kilde til å finne de beste emnene ved NTNU!">
-        <Column>
-          <p>Søk etter emne:</p>
-          <Button.Success onClick={this.toggleHistory}>
-            {this.state.showHistory ? 'Skjul endringshistorikk' : 'Se endringshistorikk'}
-          </Button.Success>
-          {this.state.showHistory && <ChangeHistory />}
-        </Column>
+      <Card title="">
+        <div style={{ textAlign: 'center', marginTop: '20vh' }}>
+          <h1 style={{ fontSize: '2.5rem', color: '#00509e' }}>
+            Velkommen til NTNU Emnevurderinger
+          </h1>
+          <p style={{ fontSize: '1.5rem', color: '#333', marginTop: '1rem' }}>
+            Din kilde til å finne de beste emnene ved NTNU!
+          </p>
+        </div>
       </Card>
     );
   }

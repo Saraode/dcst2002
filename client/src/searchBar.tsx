@@ -1,3 +1,5 @@
+// client/SearchBar.tsx
+
 import React, { useState, useEffect } from 'react';
 
 type Subject = {
@@ -6,7 +8,7 @@ type Subject = {
 };
 
 type SearchBarProps = {
-  onResults: (results: Subject[]) => void;
+  onResults: (results: Subject[]) => void; // Passerer søkeresultater til `onResults`
 };
 
 const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
@@ -15,16 +17,16 @@ const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
 
   const handleSearch = async () => {
     if (query.length === 0) {
-      onResults([]);
+      onResults([]); // Returner tomt resultat om query er tom
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/subjects?q=${query}`);
+      const response = await fetch(`http://localhost:3000/api/subjects/search?q=${encodeURIComponent(query)}`);
       const data = await response.json();
-      onResults(data);
+      onResults(data); // Returner søkeresultater til `onResults`
     } catch (error) {
       console.error('Error fetching search results:', error);
     } finally {
@@ -35,7 +37,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       handleSearch();
-    }, 500); // Delay the request by 500ms for debounce
+    }, 500); // Forsink søket med 500ms for debounce
 
     return () => clearTimeout(delayDebounce);
   }, [query]);
@@ -47,8 +49,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Søk etter fag..."
+        className="searchbar"
       />
-      {loading && <span>Loading...</span>}
+      {loading && <span>Laster...</span>}
     </div>
   );
 };

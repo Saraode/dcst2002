@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <title>NTNU Emneevaluering</title>
-    <link rel="stylesheet" href="styles.css">
+    <!-- Bootstrap first, then custom styles -->
     <link rel="stylesheet" href="bootstrap.min.css" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div id="root"></div>
+    <!-- Bootstrap JS, then React bundle -->
     <script src="bootstrap.min.js"></script>
-    <!-- Embed React application bundled by webpack and babel -->
     <script src="bundle.js"></script>
   </body>
 </html>
