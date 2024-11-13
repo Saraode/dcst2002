@@ -70,6 +70,16 @@ class FieldService {
 
 // ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
+  searchSubjects(searchTerm: string): Promise<Subject[]> {
+    return new Promise((resolve, reject) => {
+      const sql = `SELECT * FROM Subjects WHERE name LIKE ?`;  // Søker i 'name' feltet
+      pool.query(sql, [`%${searchTerm}%`], (error, results: RowDataPacket[]) => {
+        if (error) return reject(error);
+        resolve(results as Subject[]);
+      });
+    });
+  }
+
   async getTotalSubjectsCount(fieldId: number): Promise<number> {
     return new Promise<number>((resolve, reject) => {
       pool.query(
@@ -470,6 +480,17 @@ router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Re
   } catch (error) {
     console.error('Error fetching total subjects count:', error);
     res.status(500).json({ error: 'Failed to fetch total subjects count' });
+  }
+});
+
+router.get('/subjects/search', async (req: Request, res: Response) => {
+  const searchTerm = req.query.q as string;
+  try {
+    const subjects = await reviewService.searchSubjects(searchTerm);
+    res.json(subjects);
+  } catch (error) {
+    console.error('Error searching for subjects:', error);
+    res.status(500).json({ error: 'Failed to search for subjects' });
   }
 });
 

@@ -1,42 +1,95 @@
-// client/App.tsx
-
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { NavBar } from './widgets';
-import { HashRouter as Router, Route, Switch } from 'react-router-dom';
-import {
-  CampusList,
-  SubjectDetailsWithRouter as SubjectDetails, // Bruk withRouter-innpakkede komponenter
-  SubjectNewWithRouter as SubjectNew,
-  ReviewNewWithRouter as ReviewNew,
-} from './subject-components';
+import React, { useState, useEffect } from 'react';
+import { HashRouter as Router, Route, Switch, Link } from 'react-router-dom';
 import FieldDropdown from './FieldDropdown';
 import SubjectsByField from './SubjectsByField';
-import SearchBar from './searchBar';
+import SubjectDetails from './SubjectDetails';
+import { CampusList, SubjectNewWithRouter as SubjectNew, ReviewNewWithRouter as ReviewNew } from './subject-components';
+import SearchBar from './SearchBar';
+import axios from 'axios';
 
-const App = () => (
-  <Router>
-    <div>
-      <NavBar brand="NTNU">
-        <NavBar.Link to="/campus">Velg Campus</NavBar.Link>
-      </NavBar>
-      <Switch>
-        {/* Route for FieldDropdown */}
-        <Route exact path="/campus/:campus" component={FieldDropdown} />
+type Campus = {
+  campusId: number;
+  name: string;
+};
 
-        {/* Route for SubjectsByField */}
-        <Route exact path="/fields/:fieldId/subjects" component={SubjectsByField} />
+const App: React.FC = () => {
+  const [campuses, setCampuses] = useState<Campus[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]); // Opprett state for søkeresultater
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-        {/* Routes for existing subject-related components */}
-        <Route exact path="/campus/:campus/subjects/new" component={SubjectNew} />
-        <Route exact path="/campus/:campus/subjects/:id/reviews/new" component={ReviewNew} />
-        <Route exact path="/campus/:campus/subjects/:id" component={SubjectDetails} />
+  useEffect(() => {
+    // Hent campuser
+    axios
+      .get('http://localhost:3000/api/campuses')
+      .then((response) => setCampuses(response.data))
+      .catch((error) => console.error('Error fetching campuses:', error));
 
-        {/* Fallback route */}
-        <Route path="/" component={CampusList} />
-      </Switch>
-    </div>
-  </Router>
-);
+    // Sjekk login status
+    const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
+    setIsLoggedIn(loggedInStatus);
+  }, []);
 
-ReactDOM.render(<App />, document.getElementById('root'));
+  const handleLogout = () => {
+    localStorage.clear();
+    window.location.href = '/index.html';
+  };
+
+  // Funksjonen for å håndtere resultater fra søk
+  const handleSearchResults = (results: any[]) => {
+    setSearchResults(results);
+  };
+
+  return (
+    <Router>
+      <div>
+        {/* Top Navigation Bar */}
+        <div className="topnav">
+          <Link to="/" className="home-link">NTNU</Link>
+
+          {/* Campus Links */}
+          <div className="campus-links left-container">
+            {campuses.map((campus) => (
+              <Link key={campus.campusId} to={`/campus/${campus.name}`} className="campus-link">
+                {campus.name}
+              </Link>
+            ))}
+          </div>
+
+          {/* Search Bar */}
+          <SearchBar onResults={handleSearchResults} /> {/* Bruk riktig funksjon her */}
+
+          {/* Authentication buttons */}
+          <div className="auth-buttons">
+            {!isLoggedIn ? (
+              <Link to="/login">
+                <button id="loginButton">Logg inn</button>
+              </Link>
+            ) : (
+              <button onClick={handleLogout}>Logg Ut</button>
+            )}
+          </div>
+        </div>
+
+        {/* Routes for navigation */}
+        <Switch>
+          <Route
+            exact
+            path="/login"
+            component={() => {
+              window.location.href = '/html/indexsignup.html';
+              return null;
+            }}
+          />
+          <Route exact path="/campus/:campus" component={FieldDropdown} />
+          <Route exact path="/fields/:fieldId/subjects" component={SubjectsByField} />
+          <Route exact path="/subjects/:subjectId" component={SubjectDetails} />
+          <Route exact path="/campus/:campus/subjects/new" component={SubjectNew} />
+          <Route exact path="/campus/:campus/subjects/:id/reviews/new" component={ReviewNew} />
+          <Route path="/" component={CampusList} />
+        </Switch>
+      </div>
+    </Router>
+  );
+};
+
+export default App;
