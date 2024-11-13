@@ -5,7 +5,7 @@ import Menu from './menu';
 import FieldDropdown from './FieldDropdown';
 import SubjectsByField from './SubjectsByField';
 import SubjectDetails from './SubjectDetails';
-
+import ChangeHistory from './endringslogg';
 import {
   CampusList,
   SubjectListWithRouter as SubjectList,
@@ -59,8 +59,8 @@ const App = () => {
           <Route exact path="/campus/:campus" component={FieldDropdown} />
           <Route exact path="/fields/:fieldId/subjects" component={SubjectsByField} />
           <Route exact path="/subjects/:subjectId" component={SubjectDetails} />
-          <Route exact path="/campus/:campus/subjects/new" component={SubjectNew} />
-          <Route exact path="/campus/:campus/subjects/:id/reviews/new" component={ReviewNew} />
+          <Route exact path="/fields/:fieldId/subjects/new" component={SubjectNew} />
+
           <Route path="/" component={CampusList} />
         </Switch>
       </div>

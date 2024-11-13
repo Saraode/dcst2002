@@ -1,6 +1,6 @@
 // server/review-service.ts
 
-import { pool, updateVersion } from './mysql-pool';
+import { pool } from './mysql-pool';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import express, { Request, Response } from 'express';
 import axios from 'axios';
@@ -70,6 +70,7 @@ class FieldService {
 
 // ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
+
   async getTotalSubjectsCount(fieldId: number): Promise<number> {
     return new Promise<number>((resolve, reject) => {
       pool.query(
@@ -116,15 +117,81 @@ class ReviewService {
     });
   }
 
-  async updateVersion() {
-    try {
-      console.log('Calling updateVersion API...');
-      const response = await axios.post('http://localhost:3000/api/version/update');
-      console.log('updateVersion response:', response.data);
-    } catch (error) {
-      console.error('Error in updateVersion:', error);
-    }
+  //Funksjon for å lagre versjonen i databasen
+
+  async createPageVersion(fieldId: number, userId: string): Promise<number> {
+    console.log(`Creating version for fieldId: ${fieldId} by userId: ${userId}`);
+
+    const [rows] = await pool
+      .promise()
+      .query('SELECT MAX(version_number) AS max_version FROM page_versions WHERE field_id = ?', [
+        fieldId,
+      ]);
+
+    const currentVersion = (rows as RowDataPacket[])[0];
+    const newVersionNumber = (currentVersion?.max_version || 0) + 1;
+
+    const [subjects] = await pool
+      .promise()
+      .query<RowDataPacket[]>('SELECT id FROM Subjects WHERE fieldId = ?', [fieldId]);
+
+    const subjectIds = subjects.map((subject: RowDataPacket) => subject.id);
+    const [result] = await pool
+      .promise()
+      .query(
+        'INSERT INTO page_versions (field_id, version_number, user_id, subject_ids, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+        [fieldId, newVersionNumber, userId, JSON.stringify(subjectIds)],
+      );
+    const newVersionId = (result as ResultSetHeader).insertId;
+
+    return newVersionNumber;
   }
+
+  //vise fag i hver versjon
+  async getSubjectsByVersion(versionId: number): Promise<string[]> {
+    const [rows] = await pool
+      .promise()
+      .query<
+        RowDataPacket[]
+      >('SELECT subject_ids FROM page_versions WHERE version_id = ?', [versionId]);
+
+    if (rows.length === 0) return []; // Check if there are no rows returned
+
+    const subjectIds = JSON.parse(rows[0].subject_ids as string); // Parse JSON string into an array
+    return subjectIds;
+  }
+  // versjonering for logging av sletting og redigering av fag
+  async createSubjectVersion(subjectId: number, userId: string): Promise<number> {
+    console.log(`Creating version for subject: ${subjectId} by userId: ${userId}`);
+
+    const [rows] = await pool
+      .promise()
+      .query(
+        'SELECT MAX(version_number) AS max_version FROM subject_versions WHERE subject_id = ?',
+        [subjectId],
+      );
+
+    const currentVersion = (rows as RowDataPacket[])[0];
+    const newVersionNumber = (currentVersion?.max_version || 0) + 1;
+
+    const [subjects] = await pool
+      .promise()
+      .query<RowDataPacket[]>('SELECT id FROM Subjects WHERE id = ?', [subjectId]);
+
+    const [result] = await pool
+      .promise()
+      .query(
+        'INSERT INTO subject_versions (subject_id, user_id, version_number) VALUES (?, ?, ?)',
+        [subjectId, userId, newVersionNumber],
+      );
+    const newVersionId = (result as ResultSetHeader).insertId;
+
+    return newVersionNumber;
+  }
+
+
+
+
 
   // Ny funksjon for å hente alle anmeldelser for et bestemt subjectId
   getReviewsBySubjectId(subjectId: string): Promise<Review[]> {
@@ -157,7 +224,6 @@ class ReviewService {
         (error, results: ResultSetHeader) => {
           if (error) return reject(error);
           resolve(results.insertId);
-          this.updateVersion();
         },
       );
     });
@@ -186,26 +252,27 @@ class ReviewService {
   }
 
   async createSubject(id: string, name: string, fieldId: number, levelId: number): Promise<string> {
-    return new Promise<string>(async (resolve, reject) => {
-      try {
-        const existingSubject = await this.getSubjectByIdCaseInsensitive(id);
-        if (existingSubject) {
-          return reject(new Error(`Subject med ID '${id}' eksisterer allerede`));
-        }
-
-        pool.query(
-          'INSERT INTO Subjects (id, name, fieldId, levelId) VALUES (?, ?, ?, ?)',
-          [id, name, fieldId, levelId],
-          (error, results: ResultSetHeader) => {
-            if (error) return reject(error);
-            resolve(id);
-            this.updateVersion(); // Kall til updateVersion etter å ha opprettet et fag
-          },
-        );
-      } catch (error) {
-        reject(error);
+    try {
+      // Validate and insert subject
+      const existingSubject = await this.getSubjectByIdCaseInsensitive(id);
+      if (existingSubject) {
+        throw new Error(`Subject with ID '${id}' already exists`);
       }
-    });
+
+      const [result] = await pool
+        .promise()
+        .query('INSERT INTO Subjects (id, name, fieldId, levelId) VALUES (?, ?, ?, ?)', [
+          id,
+          name,
+          fieldId,
+          levelId,
+        ]);
+
+      // Return the new subject ID
+      return id;
+    } catch (error) {
+      throw error;
+    }
   }
 
   getSubjectByIdCaseInsensitive(id: string): Promise<Subject | null> {
@@ -309,6 +376,9 @@ class ReviewService {
         (error, results: RowDataPacket[]) => {
           if (error) return reject(error);
 
+          resolve(results.map((row) => ({ levelId: row.levelId, count: row.count })));
+
+
           // Mapper resultatene og legger til et ekstra objekt for total antall emner
           const counts = results.map((row) => ({
             levelId: row.levelId !== null ? row.levelId : null,
@@ -316,6 +386,7 @@ class ReviewService {
           }));
 
           resolve(counts);
+
         },
       );
     });
@@ -355,6 +426,14 @@ class ReviewService {
     });
   }
 
+  async updateSubjectLevel(subjectId: string, levelId: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      pool.query('UPDATE Subjects SET levelId = ? WHERE id = ?', [levelId, subjectId], (error) => {
+        if (error) return reject(error);
+        resolve();
+      });
+    });
+  }
   async updateSubjectLevel(subjectId: string, levelId: number): Promise<void> {
     return new Promise((resolve, reject) => {
       pool.query('UPDATE Subjects SET levelId = ? WHERE id = ?', [levelId, subjectId], (error) => {
@@ -446,11 +525,14 @@ router.get('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
 // Endre til å inkludere nivået korrekt
 router.post('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
   const { fieldId } = req.params;
-  const { id, name, level } = req.body;
+  const { id, name, level, userId } = req.body;
 
+
+  
   if (!id || !name || !level) {
     // Validerer at alle feltene mottas
     return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
+
   }
 
   try {
@@ -474,6 +556,44 @@ router.get('/fields/:fieldId/subject-counts', async (req: Request, res: Response
   }
 });
 
+
+//endringslogg:
+router.get('/api/history', async (req, res) => {
+  try {
+    const [rows] = await pool.promise().query(
+      `
+      SELECT 
+        pv.version_number,
+        pv.created_at AS timestamp,
+        u.name AS user_name,
+        'added' AS action_type
+      FROM 
+        page_versions pv
+      JOIN 
+        users u ON pv.user_id = u.id
+
+      UNION ALL
+
+      SELECT 
+        sv.version_number,
+        sv.created_at AS timestamp,
+        u.name AS user_name,
+        'deleted' AS action_type
+      FROM 
+        subject_versions sv
+      JOIN 
+        users u ON sv.user_id = u.id
+
+      ORDER BY 
+        timestamp DESC
+      `,
+    );
+
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching change history:', error);
+    res.status(500).json({ error: 'Failed to fetch change history' });
+
 // Endepunkt for å hente totalt antall emner for et spesifikt field
 router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Response) => {
   const { fieldId } = req.params;
@@ -483,6 +603,7 @@ router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Re
   } catch (error) {
     console.error('Error fetching total subjects count:', error);
     res.status(500).json({ error: 'Failed to fetch total subjects count' });
+
   }
 });
 

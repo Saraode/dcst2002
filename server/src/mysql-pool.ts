@@ -18,18 +18,5 @@ const pool = mysql.createPool({
   typeCast: (field, next) =>
     field.type == 'TINY' && field.length == 1 ? field.string() == '1' : next(),
 });
-const updateVersion = async () => {
-  return new Promise((resolve, reject) => {
-    console.log('Running updateVersion in MySQL');
-    pool.execute('UPDATE site_version SET version = version + 1 WHERE id = 1', (error, results) => {
-      if (error) {
-        console.error('Error in updateVersion:', error);
-        return reject(error);
-      }
-      console.log('updateVersion results:', results);
-      resolve(results);
-    });
-  });
-};
 
-export { pool, updateVersion };
+export { pool };

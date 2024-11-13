@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import StarRating from './StarRating';
+import reviewService from './review-service';
 
 type Review = {
   id: number;
@@ -246,6 +247,9 @@ const SubjectDetails: React.FC = () => {
     if (!isConfirmed) return;
 
     try {
+      const userId = localStorage.getItem('userId') || '';
+      console.log('Retrieved userId from localStorage:', userId);
+
       const response = await fetch(`/api/subjects/${subjectId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -253,7 +257,37 @@ const SubjectDetails: React.FC = () => {
       });
 
       if (response.ok) {
+
+        console.log('Subject deleted successfully');
+
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          console.error('User ID is missing from local storage. Cannot create a version.');
+          // Proceed with redirection if logging is not required
+          history.push(`/fields/${fieldId}`);
+          return;
+        }
+        try {
+          // Attempt to create a version entry after deletion
+          console.log(
+            'Attempting to create subject version with subjectId:',
+            subjectId,
+            'and userId:',
+            userId,
+          );
+          await reviewService.createSubjectVersion(Number(subjectId), userId);
+          console.log('Version created for deleted subject.');
+
+          // Only redirect if both deletion and version creation succeed
+          history.push(`/fields/${fieldId}`);
+        } catch (versionError) {
+          console.error('Failed to create version after deletion:', versionError);
+          // Redirect even if version creation fails
+          history.push(`/fields/${fieldId}`);
+        }
+
         history.push(`/fields/${fieldId}`);
+
       } else {
         const errorData = await response.json();
         console.error('Failed to delete subject:', errorData.error);

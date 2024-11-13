@@ -8,14 +8,41 @@ import reviewService, { Subject, Review } from './review-service';
 import { createHashHistory } from 'history';
 import axios from 'axios';
 import { NavBar } from './widgets';
+import ChangeHistory from './endringslogg';
 
 const history = createHashHistory(); // Use history.push(...) to navigate programmatically
 
-export class CampusList extends Component {
+// export class CampusList extends Component {
+//   render() {
+//     return (
+//       <Card title="Velkommen til NTNU emnevurderinger – Din kilde til å finne de beste emnene ved NTNU!">
+//         <Column>Søk etter emne: </Column>
+//       </Card>
+//     );
+//   }
+// }
+type CampusListState = {
+  showHistory: boolean;
+};
+export class CampusList extends Component<{}, CampusListState> {
+  state = {
+    showHistory: false,
+  };
+
+  toggleHistory = () => {
+    this.setState((prevState) => ({ showHistory: !prevState.showHistory }));
+  };
+
   render() {
     return (
       <Card title="Velkommen til NTNU emnevurderinger – Din kilde til å finne de beste emnene ved NTNU!">
-        <Column>Søk etter emne: </Column>
+        <Column>
+          <p>Søk etter emne:</p>
+          <Button.Success onClick={this.toggleHistory}>
+            {this.state.showHistory ? 'Skjul endringshistorikk' : 'Se endringshistorikk'}
+          </Button.Success>
+          {this.state.showHistory && <ChangeHistory />}
+        </Column>
       </Card>
     );
   }
@@ -117,7 +144,6 @@ export const SubjectDetailsWithRouter = withRouter(SubjectDetails);
 
 // Definer de fire studienivåene med romertall for nivåer
 
-
 class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId: string }>> {
   name = '';
   level = '';
@@ -131,12 +157,38 @@ class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId
     try {
       const response = await axios.get('/api/study-levels'); // Henter studienivåer fra serveren
       this.setState({ studyLevels: response.data });
-    } catch (error: any) { // Bruk 'any' for å spesifisere at vi forventer en error-type med en 'message'
+    } catch (error: any) {
+      // Bruk 'any' for å spesifisere at vi forventer en error-type med en 'message'
       Alert.danger('Error fetching study levels: ' + error.message);
     }
   }
+  handleCreateSubject = async () => {
+    try {
+      const newSubjectId = await reviewService.createSubject(
+        this.props.match.params.campus,
+        this.name,
+        this.level,
+      );
+      const userId = localStorage.getItem('userId');
+      console.log('Retrieved userId from localStorage:', userId);
+
+      if (!userId) {
+        console.error("User ID is missing from local storage. Can't create version.");
+        return;
+      }
+      await reviewService.createPageVersion(Number(this.props.match.params.fieldId), userId);
+
+      history.push(
+        `/campus/${this.props.match.params.campus}/fields/${this.props.match.params.fieldId}/subjects/${newSubjectId}`,
+      );
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      Alert.danger('Failed to create subject or page version: ' + errorMessage);
+    }
+  };
 
   render() {
+    console.log('Rendering SubjectNew component');
     const { studyLevels } = this.state; // Extract studyLevels from the component's state
 
     return (
@@ -172,19 +224,8 @@ class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId
             </Column>
           </Row>
         </Card>
-        
-        <Button.Success
-          onClick={() => {
-            reviewService
-              .createSubject(this.props.match.params.campus, this.name, this.level)
-              .then((id) =>
-                history.push(`/campus/${this.props.match.params.campus}/subjects/${id}`)
-              )
-              .catch((error) => Alert.danger('Error creating subject: ' + error.message));
-          }}
-        >
-          Opprett emne
-        </Button.Success>
+
+        <Button.Success onClick={this.handleCreateSubject}>Opprett emne</Button.Success>
       </>
     );
   }
