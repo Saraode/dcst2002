@@ -155,8 +155,11 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
 
   try {
     console.log(`Forsøker å legge til emne med ID: ${id}, navn: ${name}, nivå: ${levelId}`);
+
     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), levelId); // Inkluder levelId og userId
 
+
+  
     res.json({ id: newSubjectId, name, levelId });
   } catch (error: any) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
@@ -225,8 +228,8 @@ router.delete('/reviews/:reviewId', async (req, res) => {
   try {
     const review = await reviewService.getReviewById(Number(reviewId));
 
-    // Check if review exists and the user is the owner
-    if (!review || review.userId !== Number(userId)) {
+    // Allow if user is the owner or a moderator
+    if (!review || (review.userId !== Number(userId) && Number(userId) !== 35)) {
       return res.status(403).json({ error: 'Not authorized to delete this review' });
     }
 
@@ -262,19 +265,18 @@ router.put('/reviews/:reviewId', async (req, res) => {
 // Update subject
 router.put('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
-  const { userId, name, fieldId } = req.body; // Example additional fields for updating
+  const { userId, levelId } = req.body;
 
   if (userId !== 35) {
     return res.status(403).json({ error: 'Not authorized to edit this subject' });
   }
 
   try {
-    // Proceed with update logic, for example:
-    await reviewService.updateSubject(subjectId, name, fieldId);
-    res.status(200).json({ message: 'Subject updated successfully' });
+    await reviewService.updateSubjectLevel(subjectId, levelId);
+    res.status(200).json({ message: 'Subject level updated successfully' });
   } catch (error) {
-    console.error('Error updating subject:', error);
-    res.status(500).json({ error: 'Could not update subject' });
+    console.error('Error updating subject level:', error);
+    res.status(500).json({ error: 'Could not update subject level' });
   }
 });
 
@@ -283,12 +285,11 @@ router.delete('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
   const { userId, fieldId } = req.body;
 
-  if (userId !== 35) {
+  if (Number(userId) !== 35) {
     return res.status(403).json({ error: 'Not authorized to delete this subject' });
   }
 
   try {
-    // Proceed with delete logic
     await reviewService.deleteSubject(subjectId);
 
     res.status(200).json({ message: 'Subject deleted successfully' });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SubjectNewWithRouter } from './subject-components';
 
@@ -24,7 +24,9 @@ const SubjectsByField: React.FC = () => {
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [subjectCounts, setSubjectCounts] = useState<{ levelId: number; count: number }[]>([]);
+  const [totalSubjectsCount, setTotalSubjectsCount] = useState<number>(0);
 
+  // Hent nivåer én gang ved lasting av komponenten
   useEffect(() => {
     const fetchLevels = async () => {
       try {
@@ -39,21 +41,37 @@ const SubjectsByField: React.FC = () => {
     fetchLevels();
   }, []);
 
-  const fetchSubjectCounts = async () => {
+  // Hent antall emner per nivå fra databasen
+  const fetchSubjectCounts = useCallback(async () => {
     try {
       const response = await fetch(`/api/fields/${fieldId}/subject-counts`);
       if (!response.ok) throw new Error('Failed to fetch subject counts');
       const data = await response.json();
-      setSubjectCounts(data);
+      setSubjectCounts(data.filter((item: { levelId: number | null }) => item.levelId !== null));
     } catch (error) {
-      console.error('Error fetching subject counts by level:', error);
+      console.error('Error fetching subject counts:', error);
     }
-  };
-
-  useEffect(() => {
-    fetchSubjectCounts();
   }, [fieldId]);
 
+  // Hent totalantall emner direkte fra databasen
+  const fetchTotalSubjectsCount = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/fields/${fieldId}/total-subjects-count`);
+      if (!response.ok) throw new Error('Failed to fetch total subjects count');
+      const data = await response.json();
+      setTotalSubjectsCount(data.total);
+    } catch (error) {
+      console.error('Error fetching total subjects count:', error);
+    }
+  }, [fieldId]);
+
+  // Kall `fetchSubjectCounts` og `fetchTotalSubjectsCount` kun når `fieldId` endres
+  useEffect(() => {
+    fetchSubjectCounts();
+    fetchTotalSubjectsCount();
+  }, [fetchSubjectCounts, fetchTotalSubjectsCount]);
+
+  // Hent fagfeltets navn basert på `fieldId`
   useEffect(() => {
     const fetchFieldName = async () => {
       try {
@@ -68,6 +86,7 @@ const SubjectsByField: React.FC = () => {
     fetchFieldName();
   }, [fieldId]);
 
+  // Hent emnelisten basert på nivåvalg (`selectedLevel`) eller alle emner hvis ingen nivå er valgt
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
@@ -85,6 +104,7 @@ const SubjectsByField: React.FC = () => {
     fetchSubjects();
   }, [fieldId, selectedLevel]);
 
+  // Legg til nytt emne og oppdater tellingene fra databasen
   const handleAddSubject = async () => {
     console.log('håper det funker');
 
@@ -129,15 +149,19 @@ const SubjectsByField: React.FC = () => {
 
         console.log('Version created successfully');
 
+        // Oppdater emnelisten hvis det nye emnet samsvarer med valgt nivå eller hvis alle nivåer vises
         if (newSubjectLevel === selectedLevel || selectedLevel === null) {
           setSubjects([newSubject, ...subjects]);
         }
+
+        // Oppdater nivåbasert antall og totalantall fra databasen
+        fetchSubjectCounts();
+        fetchTotalSubjectsCount();
 
         setNewSubjectId('');
         setNewSubjectName('');
         setNewSubjectLevel(null);
         setErrorMessage('');
-        fetchSubjectCounts();
       } else if (response.status === 409) {
         setErrorMessage('Emnet er allerede lagt til.');
       } else {
@@ -151,6 +175,7 @@ const SubjectsByField: React.FC = () => {
     }
   };
 
+  // Få antall emner for et gitt nivå
   const getCountForLevel = (levelId: number) => {
     const countObj = subjectCounts.find((count) => count.levelId === levelId);
     return countObj ? countObj.count : 0;
@@ -187,7 +212,6 @@ const SubjectsByField: React.FC = () => {
           style={{ marginBottom: '10px' }}
         />
 
-        {/* Radio-knapper for studienivå */}
         <div style={{ marginBottom: '10px' }}>
           <label>Studienivå:</label>
           {levels.map((level) => (
@@ -216,7 +240,9 @@ const SubjectsByField: React.FC = () => {
         </div>
 
         <div style={{ marginBottom: '10px' }}>
-          <button onClick={() => setSelectedLevel(null)}>Alle nivåer</button>
+          <button onClick={() => setSelectedLevel(null)}>
+            Alle emner ({totalSubjectsCount})
+          </button>
           {levels.map((level) => (
             <button key={level.id} onClick={() => setSelectedLevel(level.id)}>
               {level.name} ({getCountForLevel(level.id)})

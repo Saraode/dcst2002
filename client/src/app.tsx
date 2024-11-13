@@ -6,12 +6,13 @@ import { NavBar } from './widgets';
 import { HashRouter as Router, Route, Switch } from 'react-router-dom';
 import {
   CampusList,
-  SubjectDetailsWithRouter as SubjectDetails,  // Bruk withRouter-innpakkede komponenter
+  SubjectDetailsWithRouter as SubjectDetails, // Bruk withRouter-innpakkede komponenter
   SubjectNewWithRouter as SubjectNew,
   ReviewNewWithRouter as ReviewNew,
 } from './subject-components';
 import FieldDropdown from './FieldDropdown';
 import SubjectsByField from './SubjectsByField';
+import SearchBar from './searchBar';
 
 const App = () => (
   <Router>
@@ -39,4 +40,3 @@ const App = () => (
 );
 
 ReactDOM.render(<App />, document.getElementById('root'));
-
