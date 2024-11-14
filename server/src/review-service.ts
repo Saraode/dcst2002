@@ -31,6 +31,12 @@ export type Campus = {
   name: string;
 };
 
+export type SearchResult = {
+  displayName: string;
+  id: number;
+  name: string;
+};
+
 // FieldService for databaseoperasjoner på fields
 class FieldService {
   getFieldsByCampus(campus: string) {
@@ -70,14 +76,32 @@ class FieldService {
 
 // ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
-  searchSubjects(searchTerm: string): Promise<Subject[]> {
-    return new Promise((resolve, reject) => {
-      const sql = `SELECT * FROM Subjects WHERE name LIKE ?`;  // Søker i 'name' feltet
-      pool.query(sql, [`%${searchTerm}%`], (error, results: RowDataPacket[]) => {
-        if (error) return reject(error);
-        resolve(results as Subject[]);
-      });
-    });
+  async searchSubjects(searchTerm: string): Promise<SearchResult[]> {
+    const sql = `
+      (SELECT CONCAT(id, ' ', name) AS displayName, id, name
+       FROM Subjects
+       WHERE id LIKE CONCAT(?, '%') OR name LIKE CONCAT(?, '%'))
+      UNION ALL
+      (SELECT CONCAT(id, ' ', name) AS displayName, id, name
+       FROM Subjects
+       WHERE (id LIKE CONCAT('%', ?, '%') OR name LIKE CONCAT('%', ?, '%'))
+         AND (id NOT LIKE CONCAT(?, '%') AND name NOT LIKE CONCAT(?, '%')))
+    `;
+  
+    try {
+      const [results] = await pool.promise().query<RowDataPacket[]>(sql, [
+        searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm,
+      ]);
+  
+      return results.map((row: RowDataPacket) => ({
+        displayName: row.displayName as string,
+        id: row.id as number,
+        name: row.name as string,
+      }));
+    } catch (error) {
+      console.error('Error fetching search results:', error);
+      throw new Error('Failed to fetch search results');
+    }
   }
 
   async getTotalSubjectsCount(fieldId: number): Promise<number> {
@@ -256,25 +280,24 @@ class ReviewService {
     });
   }
 
-  async createSubject(id: string, name: string, fieldId: number, levelId: number): Promise<string> {
+  async createSubject(id: string | number, name: string, fieldId: number, levelId: number): Promise<string> {
     try {
-      // Validate and insert subject
-      const existingSubject = await this.getSubjectByIdCaseInsensitive(id);
+      const uppercaseId = String(id).toUpperCase();
+      const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  
+      const existingSubject = await this.getSubjectByIdCaseInsensitive(uppercaseId);
       if (existingSubject) {
-        throw new Error(`Subject with ID '${id}' already exists`);
+        throw new Error(`Subject with ID '${uppercaseId}' already exists`);
       }
-
-      const [result] = await pool
-        .promise()
-        .query('INSERT INTO Subjects (id, name, fieldId, levelId) VALUES (?, ?, ?, ?)', [
-          id,
-          name,
-          fieldId,
-          levelId,
-        ]);
-
-      // Return the new subject ID
-      return id;
+  
+      await pool.promise().query('INSERT INTO Subjects (id, name, fieldId, levelId) VALUES (?, ?, ?, ?)', [
+        uppercaseId,
+        formattedName,
+        fieldId,
+        levelId,
+      ]);
+  
+      return uppercaseId;
     } catch (error) {
       throw error;
     }
@@ -599,14 +622,23 @@ router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Re
   }
 });
 
-router.get('/subjects/search', async (req: Request, res: Response) => {
+router.get('/subjects/search', async (req, res) => {
   const searchTerm = req.query.q as string;
+  if (!searchTerm) {
+      return res.json([]); // Returner tom array hvis ingen query
+  }
+
   try {
-    const subjects = await reviewService.searchSubjects(searchTerm);
-    res.json(subjects);
+      const subjects = await reviewService.searchSubjects(searchTerm);
+      const formattedSubjects = subjects.map(subject => ({
+          ...subject,
+          id: String(subject.id).toUpperCase(),
+          name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
+      }));
+      res.json(formattedSubjects);
   } catch (error) {
-    console.error('Error searching for subjects:', error);
-    res.status(500).json({ error: 'Failed to search for subjects' });
+      console.error('Error searching for subjects:', error);
+      res.status(500).json({ error: 'Failed to search for subjects' });
   }
 });
 

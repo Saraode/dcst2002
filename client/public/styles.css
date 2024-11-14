@@ -90,6 +90,7 @@ h1, h2, h3 {
 .topnav .left-container {
   display: flex;
   align-items: center;
+  flex-grow: 1;
 }
 
 /* Home link style (NTNU logo/link) */
@@ -120,7 +121,7 @@ h1, h2, h3 {
   border-radius: 5px;
   background-color: transparent;
   transition: background-color 0.3s ease, color 0.3s ease;
-  margin-right: 5px; /* Tight space between campus links */
+  margin-right: 5px;
 }
 
 /* Hover effect for campus links */
@@ -129,32 +130,56 @@ h1, h2, h3 {
   color: white;
 }
 
+/* Container for søkefelt og knapp, plassert etter campus-lenker */
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Space between search field and button */
+  position: relative;
+  margin-left: 10px; /* Litt plass mellom campus-lenkene og søkefeltet */
+}
+
 /* Search bar style */
-.topnav .searchbar {
-  width: 250px; /* Økt bredde for bedre synlighet */
+.search-container .searchbar {
+  width: 250px;
   padding: 8px 12px;
   font-size: 16px;
-  border: 2px solid #00509e; /* Tynn blå ramme */
-  border-radius: 30px; /* Avrundede kanter for å gjøre den oval */
-  background-color: #f9f9f9; /* Lys bakgrunnsfarge */
+  border: 2px solid #00509e;
+  border-radius: 30px;
+  background-color: #f9f9f9;
   transition: all 0.3s ease;
 }
 
 /* Styling når søkefeltet er i fokus */
-.topnav .searchbar:focus {
-  outline: none; /* Fjern standard fokusramme */
-  box-shadow: 0 0 5px rgba(0, 80, 158, 0.5); /* Lett skygge når det er fokusert */
+.search-container .searchbar:focus {
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 80, 158, 0.5);
 }
 
 /* Placeholder-stil */
-.topnav .searchbar::placeholder {
-  color: #888; /* Lys tekstfarge for placeholder */
-  font-style: italic; /* Gjør placeholder-teksten kursiv */
+.search-container .searchbar::placeholder {
+  color: #888;
+  font-style: italic;
+}
+
+/* Søk-knapp */
+.search-container .search-button {
+  background-color: var(--button-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 15px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.search-container .search-button:hover {
+  background-color: var(--button-hover-color);
 }
 
 /* Authentication buttons */
 .topnav .auth-buttons {
-  margin-left: auto; /* Pushed to the far right */
+  margin-left: auto;
   display: flex;
   align-items: center;
 }
@@ -167,8 +192,44 @@ h1, h2, h3 {
   padding: 10px 15px;
   cursor: pointer;
   font-size: 16px;
+  margin-left: 10px; /* Juster denne verdien for mer/mindre avstand */
 }
 
 .topnav .auth-buttons button:hover {
   background-color: var(--button-hover-color);
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%; /* Plasserer listen rett under søkefeltet */
+  left: 0;
+  width: 100%;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  list-style: none;
+  padding: 0;
+  margin-top: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.suggestions-list li {
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.suggestions-list li:hover {
+  background-color: #f0f4f8;
+}
+/* Spesifikk styling for "Ingen emner funnet" */
+.suggestions-list .no-results-suggestion {
+  color: #aaa; /* Lys grå farge */
+  cursor: default; /* Ikke-klikkbar */
+  background-color: #f5f5f5; /* Grå bakgrunnsfarge for deaktiveringseffekt */
+  font-style: italic; /* Skråskrift for å indikere inaktivitet */
+  pointer-events: none; /* Hindrer all interaksjon */
 }

@@ -51,15 +51,22 @@ const SubjectDetails: React.FC = () => {
         if (response.ok) {
           const subjectData = await response.json();
           console.log('Fetched subject data:', subjectData);
-
+  
+          // Formater `id` til store bokstaver og `name` med stor forbokstav
+          const formattedSubjectData = {
+            ...subjectData,
+            id: String(subjectData.id).toUpperCase(),
+            name: subjectData.name.charAt(0).toUpperCase() + subjectData.name.slice(1).toLowerCase(),
+          };
+  
           // Normalize review properties to ensure consistency
-          const transformedReviews = subjectData.reviews.map((review: any) => ({
+          const transformedReviews = formattedSubjectData.reviews.map((review: any) => ({
             ...review,
             userId: review.userId || review.user_id, // Ensure `userId` is present
           }));
-
-          setSubject(subjectData);
-          setUpdatedLevelId(subjectData.levelId);
+  
+          setSubject(formattedSubjectData); // Set the formatted subject data
+          setUpdatedLevelId(formattedSubjectData.levelId);
           setReviews(transformedReviews); // Use the normalized reviews
         } else {
           console.error('Failed to fetch subject');
@@ -67,7 +74,7 @@ const SubjectDetails: React.FC = () => {
       } catch (error) {
         console.error('Error fetching subject:', error);
       }
-    };
+    };  
 
     const fetchLevels = async () => {
       try {
@@ -311,7 +318,10 @@ const SubjectDetails: React.FC = () => {
         }}
       >
         <h2>Gjennomsnittlig vurdering</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <StarRating rating={averageStars} onRatingChange={() => {}} readOnly />
+        <span>({reviews.length})</span> {/* Antall anmeldelser */}
+      </div>
         <h2>Legg til anmeldelse</h2>
         <textarea
           value={newReviewText}

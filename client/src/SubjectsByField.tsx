@@ -104,33 +104,36 @@ const SubjectsByField: React.FC = () => {
     fetchSubjects();
   }, [fieldId, selectedLevel]);
 
-  // Legg til nytt emne og oppdater tellingene fra databasen
   const handleAddSubject = async () => {
-    console.log('håper det funker');
-
     if (!newSubjectId || !newSubjectName || !newSubjectLevel) {
       setErrorMessage('ID, navn eller nivå mangler');
       return;
     }
+    
     const userId = localStorage.getItem('userId');
     if (!userId) {
       console.error("User ID is missing from local storage. Can't create version.");
       setErrorMessage('User ID is missing. Please log in again.');
       return;
     }
+    
     try {
+      // Konverter `newSubjectId` til store bokstaver og `newSubjectName` til stor forbokstav
+      const formattedSubjectId = newSubjectId.toUpperCase();
+      const formattedSubjectName = newSubjectName.charAt(0).toUpperCase() + newSubjectName.slice(1).toLowerCase();
+  
       const response = await fetch(`/api/fields/${fieldId}/subjects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: newSubjectId,
-          name: newSubjectName,
+          id: formattedSubjectId,
+          name: formattedSubjectName,
           level: newSubjectLevel,
         }),
       });
-
+  
       if (response.ok) {
         const newSubject = await response.json();
         const versionResponse = await fetch(`/api/fields/${fieldId}/version`, {
@@ -140,24 +143,25 @@ const SubjectsByField: React.FC = () => {
           },
           body: JSON.stringify({ userId }), // Pass userId for versioning
         });
-
+  
         if (!versionResponse.ok) {
           console.error('Failed to create version for the subject');
           setErrorMessage('Kunne ikke opprette versjon');
           return;
         }
-
+  
         console.log('Version created successfully');
-
+  
         // Oppdater emnelisten hvis det nye emnet samsvarer med valgt nivå eller hvis alle nivåer vises
         if (newSubjectLevel === selectedLevel || selectedLevel === null) {
-          setSubjects([newSubject, ...subjects]);
+          setSubjects([{ ...newSubject, id: formattedSubjectId, name: formattedSubjectName }, ...subjects]);
         }
-
+  
         // Oppdater nivåbasert antall og totalantall fra databasen
         fetchSubjectCounts();
         fetchTotalSubjectsCount();
-
+  
+        // Tilbakestill inputfeltene etter at emnet er lagt til
         setNewSubjectId('');
         setNewSubjectName('');
         setNewSubjectLevel(null);
@@ -174,6 +178,7 @@ const SubjectsByField: React.FC = () => {
       setErrorMessage('Kunne ikke legge til emne');
     }
   };
+  
 
   // Få antall emner for et gitt nivå
   const getCountForLevel = (levelId: number) => {
