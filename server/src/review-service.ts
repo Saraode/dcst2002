@@ -160,8 +160,13 @@ class ReviewService {
     return subjectIds;
   }
   // versjonering for logging av sletting og redigering av fag
-  async createSubjectVersion(subjectId: number, userId: string): Promise<number> {
+  async createSubjectVersion(
+    subjectId: string,
+    userId: string,
+    actionType: string,
+  ): Promise<number> {
     console.log(`Creating version for subject: ${subjectId} by userId: ${userId}`);
+    console.log('Type of subjectId:', typeof subjectId);
 
     const [rows] = await pool
       .promise()
@@ -180,8 +185,8 @@ class ReviewService {
     const [result] = await pool
       .promise()
       .query(
-        'INSERT INTO subject_versions (subject_id, user_id, version_number) VALUES (?, ?, ?)',
-        [subjectId, userId, newVersionNumber],
+        'INSERT INTO subject_versions (subject_id, user_id, version_number, action_type) VALUES (?, ?, ?, ?)',
+        [subjectId, userId, newVersionNumber, actionType],
       );
     const newVersionId = (result as ResultSetHeader).insertId;
 
@@ -223,6 +228,8 @@ class ReviewService {
       );
     });
   }
+
+  //funksjon for å lagre versjonen i databasen
 
   getAllCampuses(): Promise<Campus[]> {
     return new Promise<Campus[]>((resolve, reject) => {
@@ -569,7 +576,7 @@ router.get('/api/history', async (req, res) => {
         sv.version_number,
         sv.created_at AS timestamp,
         u.name AS user_name,
-        'deleted' AS action_type
+        sv.action_type
       FROM 
         subject_versions sv
       JOIN 
@@ -585,7 +592,7 @@ router.get('/api/history', async (req, res) => {
     console.error('Error fetching change history:', error);
     res.status(500).json({ error: 'Failed to fetch change history' });
   }
-}); // <-- Close this router.get method properly
+});
 
 // Endepunkt for å hente totalt antall emner for et spesifikt field
 router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Response) => {
@@ -598,6 +605,64 @@ router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Re
     res.status(500).json({ error: 'Failed to fetch total subjects count' });
   }
 });
+//legge til reviews i loggen:
+// Assuming `pool` is your MySQL connection pool
+
+router.post('/subjects/:subjectId/reviews', async (req, res) => {
+  const { subjectId } = req.params;
+  const { userId, reviewText, rating } = req.body;
+
+  try {
+    // Fetch existing reviews for the subject
+    const [rows] = await pool
+      .promise()
+      .query('SELECT reviews, average_rating FROM subject_reviews WHERE subject_id = ?', [
+        subjectId,
+      ]);
+
+    let reviews = (rows as RowDataPacket[]).length
+      ? JSON.parse((rows as RowDataPacket[])[0].reviews)
+      : [];
+    let currentAverageRating = (rows as RowDataPacket[]).length
+      ? parseFloat((rows as RowDataPacket[])[0].average_rating) || 0
+      : 0;
+
+    // Add the new review to the reviews array
+    const newReview = {
+      user_id: userId,
+      review_text: reviewText,
+      rating: rating,
+      created_at: new Date().toISOString(),
+    };
+    reviews.push(newReview);
+
+    // Calculate the new average rating
+    const newAverageRating =
+      (currentAverageRating * reviews.length + rating) / (reviews.length + 1);
+
+    // Update the subject_reviews table with the new review and average rating
+    await pool
+      .promise()
+      .query(
+        'INSERT INTO subject_reviews (subject_id, reviews, average_rating) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE reviews = ?, average_rating = ?',
+        [
+          subjectId,
+          JSON.stringify(reviews),
+          newAverageRating,
+          JSON.stringify(reviews),
+          newAverageRating,
+        ],
+      );
+
+    res
+      .status(201)
+      .json({ message: 'Review added successfully', reviews, average_rating: newAverageRating });
+  } catch (error) {
+    console.error('Error adding review:', error);
+    res.status(500).json({ error: 'Failed to add review' });
+  }
+});
+// Endepunkt for å hente alle anmeldelser for et bestemt emne
 
 router.get('/search', async (req, res) => {
   const query = req.query.query as string;
