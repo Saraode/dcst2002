@@ -16,6 +16,7 @@ type Subject = {
   id: string;
   name: string;
   levelId: number;
+  description: string;
 };
 
 type Level = {
@@ -35,7 +36,10 @@ const SubjectDetails: React.FC = () => {
   const [levels, setLevels] = useState<Level[]>([]);
   const [isEditingLevel, setIsEditingLevel] = useState(false);
   const [updatedLevelId, setUpdatedLevelId] = useState<number | null>(null);
-  const [editingReviewId, setEditingReviewId] = useState<number | null>(null); // Added state
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [updatedDescription, setUpdatedDescription] = useState<string>('');
+
 
   useEffect(() => {
     const currentUserId = Number(localStorage.getItem('userId'));
@@ -56,26 +60,35 @@ const SubjectDetails: React.FC = () => {
           const formattedSubjectData = {
             ...subjectData,
             id: String(subjectData.id).toUpperCase(),
-            name:
-              subjectData.name.charAt(0).toUpperCase() + subjectData.name.slice(1).toLowerCase(),
-          };
 
-          // Normalize review properties to ensure consistency
-          const transformedReviews = formattedSubjectData.reviews.map((review: any) => ({
+
+            name: subjectData.name.charAt(0).toUpperCase() + subjectData.name.slice(1).toLowerCase(),
+            description: subjectData.description || 'Ingen beskrivelse tilgjengelig', // Default value for description
+          };
+    
+          // Normaliser anmeldelser (reviews) hvis de finnes
+          const transformedReviews = (formattedSubjectData.reviews || []).map((review: any) => ({
+
             ...review,
-            userId: review.userId || review.user_id, // Ensure `userId` is present
+            userId: review.userId || review.user_id, // Ensure `userId` is consistent
           }));
 
-          setSubject(formattedSubjectData); // Set the formatted subject data
-          setUpdatedLevelId(formattedSubjectData.levelId);
-          setReviews(transformedReviews); // Use the normalized reviews
+    
+          // Oppdater lokal state
+          setSubject(formattedSubjectData); // Oppdater `subject`-objektet
+          setUpdatedLevelId(formattedSubjectData.levelId); // Oppdater nivå hvis relevant
+          setUpdatedDescription(formattedSubjectData.description); // Sett beskrivelsen i tekstfeltet
+          setReviews(transformedReviews); // Oppdater anmeldelser
+
         } else {
           console.error('Failed to fetch subject');
         }
       } catch (error) {
         console.error('Error fetching subject:', error);
       }
+
     };
+
 
     const fetchLevels = async () => {
       try {
@@ -195,6 +208,8 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  
+
   const handleEditReview = (review: Review) => {
     setEditingReviewId(review.id);
     setNewReviewText(review.text);
@@ -283,6 +298,7 @@ const SubjectDetails: React.FC = () => {
       setUpdatedLevelId(subject.levelId);
     }
   };
+
   const handleDeleteSubject = async () => {
     const currentUserId = Number(localStorage.getItem('userId'));
     if (!currentUserId) return;
@@ -339,24 +355,55 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  const handleEditDescription = () => {
+    setIsEditingDescription(true);
+  };
+
+  const handleSaveDescriptionEdit = async () => {
+    if (!subject) return;
+  
+    try {
+      const response = await fetch(`/api/subjects/${subjectId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 35, // Moderator ID
+          description: updatedDescription,
+        }),
+      });
+  
+      if (response.ok) {
+        setSubject({ ...subject, description: updatedDescription }); // Oppdater lokalt
+        setIsEditingDescription(false);
+        console.log('Description updated successfully');
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to update subject description:', errorData.error);
+      }
+    } catch (error) {
+      console.error('Error updating subject description:', error);
+    }
+  };  
+  const handleCancelDescriptionEdit = () => {
+    setIsEditingDescription(false);
+    if (subject) {
+      setUpdatedDescription(subject.description);
+    }
+  };
+
   if (!subject) return <p>Loading...</p>;
 
   return (
     <div style={{ display: 'flex', gap: '20px' }}>
-      <div
-        style={{
-          flex: '1',
-          border: '1px solid #ccc',
-          padding: '10px',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      <div style={{ flex: '1', border: '1px solid #ccc', padding: '10px', display: 'flex', flexDirection: 'column' }}>
         <h2>Gjennomsnittlig vurdering</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <StarRating rating={averageStars} onRatingChange={() => {}} readOnly />
-          <span>({reviews.length})</span> {/* Antall anmeldelser */}
+
+          <span>({reviews.length})</span>
         </div>
+
+
         <h2>Legg til anmeldelse</h2>
         <textarea
           value={newReviewText}
@@ -365,19 +412,14 @@ const SubjectDetails: React.FC = () => {
           style={{ marginBottom: '10px', width: '100%', height: '100px' }}
         />
         <StarRating rating={newRating} onRatingChange={setNewRating} />
-        <button
-          style={{ marginTop: '10px' }}
-          onClick={editingReviewId ? handleSaveEdit : handleAddReview}
-        >
+        <button style={{ marginTop: '10px' }} onClick={editingReviewId ? handleSaveEdit : handleAddReview}>
           {editingReviewId ? 'Lagre endring' : 'Legg til anmeldelse'}
         </button>
 
         {isAuthorizedToEditSubject && (
           <div style={{ marginTop: '20px' }}>
             {!isEditingLevel ? (
-              <button onClick={handleEditSubject} style={{ marginRight: '10px' }}>
-                Rediger fag
-              </button>
+              <button onClick={handleEditSubject} style={{ marginRight: '10px' }}>Rediger fag</button>
             ) : (
               <>
                 <div>
@@ -394,9 +436,7 @@ const SubjectDetails: React.FC = () => {
                     </label>
                   ))}
                 </div>
-                <button onClick={handleSaveLevelEdit} style={{ marginRight: '10px' }}>
-                  Lagre
-                </button>
+                <button onClick={handleSaveLevelEdit} style={{ marginRight: '10px' }}>Lagre</button>
                 <button onClick={handleCancelLevelEdit}>Avbryt</button>
               </>
             )}
@@ -406,44 +446,53 @@ const SubjectDetails: React.FC = () => {
       </div>
 
       <div style={{ flex: '2', border: '1px solid #ccc', padding: '10px' }}>
-        <h2>Anmeldelser for {subject?.name}</h2>
+      <h2>Anmeldelser for {subject?.id} {subject?.name}</h2>
+
+        <p>
+          <strong>Emnebeskrivelse:</strong>{' '}
+          {isEditingDescription ? (
+            <textarea
+              value={updatedDescription}
+              onChange={(e) => setUpdatedDescription(e.target.value)}
+              style={{ width: '100%', height: '100px', marginBottom: '10px' }}
+            />
+          ) : (
+            subject.description
+          )}
+        </p>
+
+        {isAuthorizedToEditSubject && (
+          <div>
+            {isEditingDescription ? (
+              <>
+                <button onClick={handleSaveDescriptionEdit} style={{ marginRight: '10px' }}>Lagre</button>
+                <button onClick={handleCancelDescriptionEdit}>Avbryt</button>
+              </>
+            ) : (
+              <button onClick={() => setIsEditingDescription(true)} style={{ marginTop: '10px' }}>Rediger beskrivelse</button>
+            )}
+          </div>
+        )}
+
         <ul style={{ listStyleType: 'none', padding: 0 }}>
           {reviews.map((review) => {
-            // Fetch the user ID and moderator status for every review
             const currentUserId = Number(localStorage.getItem('userId'));
             const isModerator = currentUserId === 35;
             const isReviewOwner = currentUserId === review.userId;
 
             return (
-              <li
-                key={review.id}
-                style={{
-                  marginBottom: '15px',
-                  paddingBottom: '10px',
-                  borderBottom: '1px solid #ccc',
-                }}
-              >
-                <p>
-                  <strong>{review.submitterName}</strong>{' '}
-                  <span>{new Date(review.created_date).toLocaleDateString()}</span>
-                </p>
+              <li key={review.id} style={{ marginBottom: '15px', paddingBottom: '10px', borderBottom: '1px solid #ccc' }}>
+                <p><strong>{review.submitterName}</strong> <span>{new Date(review.created_date).toLocaleDateString()}</span></p>
                 <p>{review.text}</p>
                 <StarRating rating={review.stars} onRatingChange={() => {}} readOnly />
 
-                {/* Buttons for Review Owner */}
                 {isReviewOwner && (
                   <div>
-                    <button
-                      onClick={() => handleEditReview(review)}
-                      style={{ marginRight: '10px' }}
-                    >
-                      Rediger
-                    </button>
+                    <button onClick={() => handleEditReview(review)} style={{ marginRight: '10px' }}>Rediger</button>
                     <button onClick={() => handleDeleteReview(review.id)}>Slett</button>
                   </div>
                 )}
 
-                {/* Button for Moderator */}
                 {isModerator && !isReviewOwner && (
                   <div>
                     <button onClick={() => handleDeleteReview(review.id)}>Slett</button>

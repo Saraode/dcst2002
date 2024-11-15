@@ -1,6 +1,8 @@
 import express from 'express';
 import { fieldService, reviewService } from './review-service';
 import { userService } from './user-service'; // Adjust the path if needed
+import { pool } from './mysql-pool';
+
 
 const router = express.Router();
 
@@ -14,25 +16,6 @@ router.get('/campus', async (req, res) => {
   }
 });
 
-router.get('/subjects/search', async (req, res) => {
-  const searchTerm = req.query.q as string;
-  if (!searchTerm) {
-    return res.json([]); // Returner tom array hvis ingen query
-  }
-
-  try {
-    const subjects = await reviewService.searchSubjects(searchTerm);
-    const formattedSubjects = subjects.map((subject) => ({
-      ...subject,
-      id: String(subject.id).toUpperCase(),
-      name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
-    }));
-    res.json(formattedSubjects);
-  } catch (error) {
-    console.error('Error searching for subjects:', error);
-    res.status(500).json({ error: 'Failed to search for subjects' });
-  }
-});
 
 // Hent fields for en spesifikk campus
 router.get('/campus/:campus/fields', async (req, res) => {
@@ -48,22 +31,23 @@ router.get('/campus/:campus/fields', async (req, res) => {
 
 router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
-  const { id, name, level } = req.body;
+  const { id, name, level, description } = req.body;
 
-  if (!id || !name || !level) {
-    return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
+  // Valider at alle nødvendige felter er til stede
+  if (!id || !name || !level || !description) {
+    return res.status(400).json({ error: 'ID, navn, nivå og beskrivelse er påkrevd' });
   }
 
   try {
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level);
-    res.json({ id: newSubjectId, name, level });
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level, description);
+    res.status(201).json({ id: newSubjectId, name, level, description });
   } catch (error) {
-    console.error('Feil ved forsøk på å legge til emne i databasen:', error);
-    res.status(500).json({ error: 'Kunne ikke legge til emne' });
+    console.error('Feil ved oppretting av emne:', error);
+    res.status(500).json({ error: 'Kunne ikke opprette emne' });
   }
 });
 
-// Hent et spesifikt subject basert på id
+// Fetch a specific subject by id
 router.get('/subjects/:id', async (req, res) => {
   const id = String(req.params.id).toUpperCase(); // Konverter id til string og deretter uppercase
   try {
@@ -75,6 +59,7 @@ router.get('/subjects/:id', async (req, res) => {
         id: String(subject.id).toUpperCase(),
         name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
       });
+
     } else {
       res.status(404).json({ error: 'Subject not found' });
     }
@@ -82,6 +67,7 @@ router.get('/subjects/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch subject' });
   }
 });
+
 
 // Hent alle nivåer
 router.get('/levels', async (req, res) => {
@@ -168,29 +154,21 @@ router.get('/versions/:versionId/subjects', async (req, res) => {
   }
 });
 
-// Legg til nytt subject med fagkode, navn og nivå (levelId) for et spesifikt field
-
+// Legg til nytt emne for et spesifikt felt, inkludert emnebeskrivelse
 router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
-  const { id, name, levelId } = req.body; // Legg til levelId her
+  const { id, name, level, description } = req.body;
 
-  // Valider at id, name og levelId er til stede
-  if (!id || !name || !levelId) {
-    console.log('Emne-ID, navn eller nivå mangler.');
-    return res.status(400).json({ error: 'Fagkode (ID), emnenavn eller nivå mangler' });
+  if (!id || !name || !level || !description) {
+    console.log('ID, navn, nivå eller beskrivelse mangler.');
+    return res.status(400).json({ error: 'ID, navn, nivå eller beskrivelse mangler' });
   }
 
   try {
-    console.log(`Forsøker å legge til emne med ID: ${id}, navn: ${name}, nivå: ${levelId}`);
-
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), levelId); // Inkluder levelId og userId
-
-    res.json({ id: newSubjectId, name, levelId });
-  } catch (error: any) {
-    console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
-    if (error.message.includes('eksisterer allerede')) {
-      return res.status(409).json({ error: 'Emnet er allerede lagt til' });
-    }
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level, description);
+    res.json({ id: newSubjectId, name, level, description });
+  } catch (error) {
+    console.error('Feil ved forsøk på å legge til emne i databasen:', error);
     res.status(500).json({ error: 'Kunne ikke legge til emne' });
   }
 });
@@ -294,18 +272,31 @@ router.put('/reviews/:reviewId', async (req, res) => {
 // Update subject
 router.put('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
-  const { userId, levelId } = req.body;
+  const { userId, levelId, description } = req.body;
 
-  if (userId !== 35) {
+  if (Number(userId) !== 35) {
     return res.status(403).json({ error: 'Not authorized to edit this subject' });
   }
 
+  if (!description && !levelId) {
+    return res.status(400).json({ error: 'No updates provided (description or levelId missing)' });
+  }
+
   try {
-    await reviewService.updateSubjectLevel(subjectId, levelId);
-    res.status(200).json({ message: 'Subject level updated successfully' });
+    if (levelId) {
+      await reviewService.updateSubjectLevel(subjectId, levelId);
+    }
+
+    if (description) {
+      await pool
+        .promise()
+        .query('UPDATE Subjects SET description = ? WHERE id = ?', [description, subjectId]);
+    }
+
+    res.status(200).json({ message: 'Subject updated successfully' });
   } catch (error) {
-    console.error('Error updating subject level:', error);
-    res.status(500).json({ error: 'Could not update subject level' });
+    console.error('Error updating subject:', error);
+    res.status(500).json({ error: 'Could not update subject' });
   }
 });
 
