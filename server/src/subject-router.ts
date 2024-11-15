@@ -14,25 +14,6 @@ router.get('/campus', async (req, res) => {
   }
 });
 
-router.get('/subjects/search', async (req, res) => {
-  const searchTerm = req.query.q as string;
-  if (!searchTerm) {
-      return res.json([]); // Returner tom array hvis ingen query
-  }
-
-  try {
-      const subjects = await reviewService.searchSubjects(searchTerm);
-      const formattedSubjects = subjects.map(subject => ({
-          ...subject,
-          id: String(subject.id).toUpperCase(),
-          name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
-      }));
-      res.json(formattedSubjects);
-  } catch (error) {
-      console.error('Error searching for subjects:', error);
-      res.status(500).json({ error: 'Failed to search for subjects' });
-  }
-});
 
 // Hent fields for en spesifikk campus
 router.get('/campus/:campus/fields', async (req, res) => {
@@ -48,22 +29,24 @@ router.get('/campus/:campus/fields', async (req, res) => {
 
 router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
-  const { id, name, level } = req.body;
+  const { id, name, level, description } = req.body;
 
-  if (!id || !name || !level) {
-    return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
+  // Valider at alle nødvendige felter er til stede
+  if (!id || !name || !level || !description) {
+    return res.status(400).json({ error: 'ID, navn, nivå eller beskrivelse mangler' });
   }
 
   try {
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level);
-    res.json({ id: newSubjectId, name, level });
+    // Opprett nytt emne med `description`
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level, description);
+    res.json({ id: newSubjectId, name, level, description });
   } catch (error) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error);
     res.status(500).json({ error: 'Kunne ikke legge til emne' });
   }
 });
 
-// Hent et spesifikt subject basert på id
+// Fetch a specific subject by id
 router.get('/subjects/:id', async (req, res) => {
   const id = String(req.params.id).toUpperCase(); // Konverter id til string og deretter uppercase
   try {
@@ -75,13 +58,14 @@ router.get('/subjects/:id', async (req, res) => {
               id: String(subject.id).toUpperCase(),
               name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
           });
-      } else {
-          res.status(404).json({ error: 'Subject not found' });
-      }
+    } else {
+      res.status(404).json({ error: 'Subject not found' });
+    }
   } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch subject' });
+    res.status(500).json({ error: 'Failed to fetch subject' });
   }
 });
+
 
 // Hent alle nivåer
 router.get('/levels', async (req, res) => {
@@ -166,31 +150,21 @@ router.get('/versions/:versionId/subjects', async (req, res) => {
   }
 });
 
-// Legg til nytt subject med fagkode, navn og nivå (levelId) for et spesifikt field
-
+// Legg til nytt emne for et spesifikt felt, inkludert emnebeskrivelse
 router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
-  const { id, name, levelId } = req.body; // Legg til levelId her
+  const { id, name, level, description } = req.body;
 
-  // Valider at id, name og levelId er til stede
-  if (!id || !name || !levelId) {
-    console.log('Emne-ID, navn eller nivå mangler.');
-    return res.status(400).json({ error: 'Fagkode (ID), emnenavn eller nivå mangler' });
+  if (!id || !name || !level || !description) {
+    console.log('ID, navn, nivå eller beskrivelse mangler.');
+    return res.status(400).json({ error: 'ID, navn, nivå eller beskrivelse mangler' });
   }
 
   try {
-    console.log(`Forsøker å legge til emne med ID: ${id}, navn: ${name}, nivå: ${levelId}`);
-
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), levelId); // Inkluder levelId og userId
-
-
-  
-    res.json({ id: newSubjectId, name, levelId });
-  } catch (error: any) {
-    console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
-    if (error.message.includes('eksisterer allerede')) {
-      return res.status(409).json({ error: 'Emnet er allerede lagt til' });
-    }
+    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level, description);
+    res.json({ id: newSubjectId, name, level, description });
+  } catch (error) {
+    console.error('Feil ved forsøk på å legge til emne i databasen:', error);
     res.status(500).json({ error: 'Kunne ikke legge til emne' });
   }
 });

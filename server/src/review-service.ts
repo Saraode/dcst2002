@@ -8,8 +8,8 @@ import axios from 'axios';
 export type Subject = {
   id: string;
   name: string;
-  fieldId: number;
-  reviews: Review[];
+  fieldId?: number;
+  reviews?: Review[];
 };
 
 export type Review = {
@@ -28,12 +28,6 @@ export type Field = {
 
 export type Campus = {
   campusId: number;
-  name: string;
-};
-
-export type SearchResult = {
-  displayName: string;
-  id: number;
   name: string;
 };
 
@@ -76,34 +70,6 @@ class FieldService {
 
 // ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
-  async searchSubjects(searchTerm: string): Promise<SearchResult[]> {
-    const sql = `
-      (SELECT CONCAT(id, ' ', name) AS displayName, id, name
-       FROM Subjects
-       WHERE id LIKE CONCAT(?, '%') OR name LIKE CONCAT(?, '%'))
-      UNION ALL
-      (SELECT CONCAT(id, ' ', name) AS displayName, id, name
-       FROM Subjects
-       WHERE (id LIKE CONCAT('%', ?, '%') OR name LIKE CONCAT('%', ?, '%'))
-         AND (id NOT LIKE CONCAT(?, '%') AND name NOT LIKE CONCAT(?, '%')))
-    `;
-  
-    try {
-      const [results] = await pool.promise().query<RowDataPacket[]>(sql, [
-        searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm,
-      ]);
-  
-      return results.map((row: RowDataPacket) => ({
-        displayName: row.displayName as string,
-        id: row.id as number,
-        name: row.name as string,
-      }));
-    } catch (error) {
-      console.error('Error fetching search results:', error);
-      throw new Error('Failed to fetch search results');
-    }
-  }
-
   async getTotalSubjectsCount(fieldId: number): Promise<number> {
     return new Promise<number>((resolve, reject) => {
       pool.query(
@@ -280,29 +246,40 @@ class ReviewService {
     });
   }
 
-  async createSubject(id: string | number, name: string, fieldId: number, levelId: number): Promise<string> {
+  async createSubject(id: string, name: string, fieldId: number, levelId: number, description: string): Promise<string> {
     try {
-      const uppercaseId = String(id).toUpperCase();
+      const uppercaseId = id.toUpperCase();
       const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   
+      // Sjekk om emnet allerede eksisterer
       const existingSubject = await this.getSubjectByIdCaseInsensitive(uppercaseId);
       if (existingSubject) {
         throw new Error(`Subject with ID '${uppercaseId}' already exists`);
       }
   
-      await pool.promise().query('INSERT INTO Subjects (id, name, fieldId, levelId) VALUES (?, ?, ?, ?)', [
-        uppercaseId,
-        formattedName,
-        fieldId,
-        levelId,
-      ]);
+      // Sett inn emne i databasen
+      const [result] = await pool
+        .promise()
+        .query(
+          'INSERT INTO Subjects (id, name, fieldId, levelId, description) VALUES (?, ?, ?, ?, ?)',
+          [uppercaseId, formattedName, fieldId, levelId, description]
+        );
   
+      console.log('Database insert result:', result);
       return uppercaseId;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.code === 'ER_DUP_ENTRY') {
+        throw new Error(`Subject with ID '${id}' already exists`);
+      }
+      console.error('Error in createSubject:', {
+        message: error.message,
+        stack: error.stack,
+        params: { id, name, fieldId, levelId, description },
+      });
       throw error;
     }
   }
-
+  
   getSubjectByIdCaseInsensitive(id: string): Promise<Subject | null> {
     return new Promise<Subject | null>((resolve, reject) => {
       pool.query(
@@ -347,13 +324,14 @@ class ReviewService {
     });
   }
 
-  getSubject(id: string): Promise<Subject | undefined> {
+  async getSubject(id: string): Promise<Subject | undefined> {
     return new Promise<Subject | undefined>((resolve, reject) => {
       pool.query('SELECT * FROM Subjects WHERE id = ?', [id], (error, results: RowDataPacket[]) => {
         if (error) return reject(error);
         if (results.length === 0) return resolve(undefined);
-
+  
         const subject = results[0] as Subject;
+        // Henter også anmeldelser for faget, inkludert beskrivelse hvis den finnes
         pool.query(
           'SELECT * FROM Reviews WHERE subjectId = ? ORDER BY id DESC',
           [id],
@@ -541,21 +519,20 @@ router.get('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
 
 // Legg til nytt subject for et spesifikt field
 // Endre til å inkludere nivået korrekt
-router.post('/fields/:fieldId/subjects', async (req: Request, res: Response) => {
+router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
-  const { id, name, level, userId } = req.body;
+  const { id, name, levelId, description } = req.body;
 
-  if (!id || !name || !level) {
-    // Validerer at alle feltene mottas
-    return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
+  if (!id || !name || !levelId || !description) {
+      return res.status(400).json({ error: 'ID, navn, nivå eller beskrivelse mangler' });
   }
 
   try {
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level);
-    res.json({ id: newSubjectId, name, level });
+      const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), levelId, description);
+      res.json({ id: newSubjectId, name, levelId, description });
   } catch (error) {
-    console.error('Feil ved forsøk på å legge til emne i databasen:', error);
-    res.status(500).json({ error: 'Kunne ikke legge til emne' });
+      console.error('Feil ved forsøk på å legge til emne i databasen:', error);
+      res.status(500).json({ error: 'Kunne ikke legge til emne' });
   }
 });
 
@@ -622,24 +599,37 @@ router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Re
   }
 });
 
-router.get('/subjects/search', async (req, res) => {
-  const searchTerm = req.query.q as string;
-  if (!searchTerm) {
-      return res.json([]); // Returner tom array hvis ingen query
+router.get('/search', async (req, res) => {
+  const query = req.query.query as string;
+
+  if (!query || query.trim() === '') {
+    return res.status(400).json({ error: 'Query parameter is required' });
   }
 
   try {
-      const subjects = await reviewService.searchSubjects(searchTerm);
-      const formattedSubjects = subjects.map(subject => ({
-          ...subject,
-          id: String(subject.id).toUpperCase(),
-          name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
-      }));
-      res.json(formattedSubjects);
+    const [results] = await pool.promise().query<RowDataPacket[]>(
+      `
+      SELECT id, name
+      FROM Subjects
+      WHERE LOWER(id) LIKE LOWER(?) OR LOWER(name) LIKE LOWER(?)
+      ORDER BY 
+        CASE
+          WHEN LOWER(id) LIKE LOWER(?) THEN 1
+          WHEN LOWER(name) LIKE LOWER(?) THEN 1
+          ELSE 2
+        END,
+        id ASC
+      LIMIT 10
+      `,
+      [`${query}%`, `%${query}%`, `${query}%`, `${query}%`]
+    );
+
+    res.json(results);
   } catch (error) {
-      console.error('Error searching for subjects:', error);
-      res.status(500).json({ error: 'Failed to search for subjects' });
+    console.error('Error fetching search results:', error);
+    res.status(500).json({ error: 'Failed to fetch search results' });
   }
 });
+
 
 export { router as reviewRouter, reviewService, fieldService };
