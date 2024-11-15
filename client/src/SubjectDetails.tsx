@@ -61,24 +61,27 @@ const SubjectDetails: React.FC = () => {
             ...subjectData,
             id: String(subjectData.id).toUpperCase(),
             name: subjectData.name.charAt(0).toUpperCase() + subjectData.name.slice(1).toLowerCase(),
+            description: subjectData.description || 'Ingen beskrivelse tilgjengelig', // Default value for description
           };
-  
-          // Normalize review properties to ensure consistency
-          const transformedReviews = formattedSubjectData.reviews.map((review: any) => ({
+    
+          // Normaliser anmeldelser (reviews) hvis de finnes
+          const transformedReviews = (formattedSubjectData.reviews || []).map((review: any) => ({
             ...review,
-            userId: review.userId || review.user_id, // Ensure `userId` is present
+            userId: review.userId || review.user_id, // Ensure `userId` is consistent
           }));
-  
-          setSubject(formattedSubjectData); // Set the formatted subject data
-          setUpdatedLevelId(formattedSubjectData.levelId);
-          setReviews(transformedReviews); // Use the normalized reviews
+    
+          // Oppdater lokal state
+          setSubject(formattedSubjectData); // Oppdater `subject`-objektet
+          setUpdatedLevelId(formattedSubjectData.levelId); // Oppdater nivå hvis relevant
+          setUpdatedDescription(formattedSubjectData.description); // Sett beskrivelsen i tekstfeltet
+          setReviews(transformedReviews); // Oppdater anmeldelser
         } else {
           console.error('Failed to fetch subject');
         }
       } catch (error) {
         console.error('Error fetching subject:', error);
       }
-    };
+    };    
 
     const fetchLevels = async () => {
       try {
@@ -319,27 +322,29 @@ const SubjectDetails: React.FC = () => {
 
   const handleSaveDescriptionEdit = async () => {
     if (!subject) return;
-
+  
     try {
       const response = await fetch(`/api/subjects/${subjectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 35, // Replace with current user ID if available dynamically
+          userId: 35, // Moderator ID
           description: updatedDescription,
         }),
       });
-
+  
       if (response.ok) {
-        setSubject({ ...subject, description: updatedDescription });
+        setSubject({ ...subject, description: updatedDescription }); // Oppdater lokalt
         setIsEditingDescription(false);
+        console.log('Description updated successfully');
       } else {
-        console.error('Failed to update subject description');
+        const errorData = await response.json();
+        console.error('Failed to update subject description:', errorData.error);
       }
     } catch (error) {
       console.error('Error updating subject description:', error);
     }
-  };
+  };  
   const handleCancelDescriptionEdit = () => {
     setIsEditingDescription(false);
     if (subject) {

@@ -70,6 +70,19 @@ class FieldService {
 
 // ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
+  async updateSubjectDescription(subjectId: string, description: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      pool.query(
+        'UPDATE Subjects SET description = ? WHERE id = ?',
+        [description, subjectId],
+        (error) => {
+          if (error) return reject(error);
+          resolve();
+        },
+      );
+    });
+  }
+  
   async getTotalSubjectsCount(fieldId: number): Promise<number> {
     return new Promise<number>((resolve, reject) => {
       pool.query(
