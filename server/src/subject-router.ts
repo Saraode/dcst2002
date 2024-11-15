@@ -1,6 +1,8 @@
 import express from 'express';
 import { fieldService, reviewService } from './review-service';
 import { userService } from './user-service'; // Adjust the path if needed
+import { pool } from './mysql-pool';
+
 
 const router = express.Router();
 
@@ -33,16 +35,15 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
 
   // Valider at alle nødvendige felter er til stede
   if (!id || !name || !level || !description) {
-    return res.status(400).json({ error: 'ID, navn, nivå eller beskrivelse mangler' });
+    return res.status(400).json({ error: 'ID, navn, nivå og beskrivelse er påkrevd' });
   }
 
   try {
-    // Opprett nytt emne med `description`
     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level, description);
-    res.json({ id: newSubjectId, name, level, description });
+    res.status(201).json({ id: newSubjectId, name, level, description });
   } catch (error) {
-    console.error('Feil ved forsøk på å legge til emne i databasen:', error);
-    res.status(500).json({ error: 'Kunne ikke legge til emne' });
+    console.error('Feil ved oppretting av emne:', error);
+    res.status(500).json({ error: 'Kunne ikke opprette emne' });
   }
 });
 
@@ -268,18 +269,31 @@ router.put('/reviews/:reviewId', async (req, res) => {
 // Update subject
 router.put('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
-  const { userId, levelId } = req.body;
+  const { userId, levelId, description } = req.body;
 
-  if (userId !== 35) {
+  if (Number(userId) !== 35) {
     return res.status(403).json({ error: 'Not authorized to edit this subject' });
   }
 
+  if (!description && !levelId) {
+    return res.status(400).json({ error: 'No updates provided (description or levelId missing)' });
+  }
+
   try {
-    await reviewService.updateSubjectLevel(subjectId, levelId);
-    res.status(200).json({ message: 'Subject level updated successfully' });
+    if (levelId) {
+      await reviewService.updateSubjectLevel(subjectId, levelId);
+    }
+
+    if (description) {
+      await pool
+        .promise()
+        .query('UPDATE Subjects SET description = ? WHERE id = ?', [description, subjectId]);
+    }
+
+    res.status(200).json({ message: 'Subject updated successfully' });
   } catch (error) {
-    console.error('Error updating subject level:', error);
-    res.status(500).json({ error: 'Could not update subject level' });
+    console.error('Error updating subject:', error);
+    res.status(500).json({ error: 'Could not update subject' });
   }
 });
 
