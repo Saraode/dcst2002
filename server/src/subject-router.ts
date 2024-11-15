@@ -51,14 +51,15 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
 router.get('/subjects/:id', async (req, res) => {
   const id = String(req.params.id).toUpperCase(); // Konverter id til string og deretter uppercase
   try {
-      const subject = await reviewService.getSubject(id);
-      if (subject) {
-          // Format name med stor forbokstav
-          res.json({
-              ...subject,
-              id: String(subject.id).toUpperCase(),
-              name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
-          });
+    const subject = await reviewService.getSubject(id);
+    if (subject) {
+      // Format name med stor forbokstav
+      res.json({
+        ...subject,
+        id: String(subject.id).toUpperCase(),
+        name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
+      });
+
     } else {
       res.status(404).json({ error: 'Subject not found' });
     }
@@ -103,6 +104,8 @@ router.post('/subjects/:id/reviews', async (req, res) => {
       userId,
       submitterName,
     );
+    1;
+    const allReviews = await reviewService.getReviewsBySubjectId(subjectId);
 
     // Fetch the newly created review with `userId`, `submitterName`, and `created_date`
     const newReview = await reviewService.getReviewById(newReviewId);

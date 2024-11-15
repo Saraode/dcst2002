@@ -70,6 +70,36 @@ class FieldService {
 
 // ReviewService for databaseoperasjoner på subjects og reviews
 class ReviewService {
+
+  async searchSubjects(searchTerm: string): Promise<SearchResult[]> {
+    const sql = `
+      (SELECT CONCAT(id, ' ', name) AS displayName, id, name
+       FROM Subjects
+       WHERE id LIKE CONCAT(?, '%') OR name LIKE CONCAT(?, '%'))
+      UNION ALL
+      (SELECT CONCAT(id, ' ', name) AS displayName, id, name
+       FROM Subjects
+       WHERE (id LIKE CONCAT('%', ?, '%') OR name LIKE CONCAT('%', ?, '%'))
+         AND (id NOT LIKE CONCAT(?, '%') AND name NOT LIKE CONCAT(?, '%')))
+    `;
+
+    try {
+      const [results] = await pool
+        .promise()
+        .query<
+          RowDataPacket[]
+        >(sql, [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm]);
+
+      return results.map((row: RowDataPacket) => ({
+        displayName: row.displayName as string,
+        id: row.id as number,
+        name: row.name as string,
+      }));
+    } catch (error) {
+      console.error('Error fetching search results:', error);
+      throw new Error('Failed to fetch search results');
+    }
+
   async updateSubjectDescription(subjectId: string, description: string): Promise<void> {
     return new Promise((resolve, reject) => {
       pool.query(
@@ -81,6 +111,7 @@ class ReviewService {
         },
       );
     });
+
   }
   
   async getTotalSubjectsCount(fieldId: number): Promise<number> {
@@ -266,10 +297,12 @@ class ReviewService {
     });
   }
 
+
   async createSubject(id: string, name: string, fieldId: number, levelId: number, description: string): Promise<string> {
     try {
       const uppercaseId = id.toUpperCase();
       const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+
   
       // Sjekk om emnet allerede eksisterer
       const existingSubject = await this.getSubjectByIdCaseInsensitive(uppercaseId);
@@ -595,11 +628,24 @@ router.get('/api/history', async (req, res) => {
       JOIN 
         users u ON sv.user_id = u.id
 
+      UNION ALL
+
+      SELECT 
+        version,  -- Placeholder version number
+        rv.created_at AS timestamp,
+        u.name AS user_name,
+        rv.action_type
+      FROM 
+        subject_review_versions rv
+      JOIN 
+        users u ON rv.user_id = u.id
+
       ORDER BY 
         timestamp DESC
       `,
     );
 
+    console.log('Fetched history rows:', rows); // Log the fetched data to verify
     res.json(rows);
   } catch (error) {
     console.error('Error fetching change history:', error);
@@ -619,53 +665,103 @@ router.get('/fields/:fieldId/total-subjects-count', async (req: Request, res: Re
   }
 });
 //legge til reviews i loggen:
-// Assuming `pool` is your MySQL connection pool
 
-router.post('/subjects/:subjectId/reviews', async (req, res) => {
-  const { subjectId } = req.params;
-  const { userId, reviewText, rating } = req.body;
+// router.post('/subjects/:subjectId/reviews', async (req, res) => {
+//   const { subjectId } = req.params;
+//   const { userId, reviewText, rating } = req.body;
+
+//   try {
+//     // Fetch existing reviews for the subject
+//     const [rows] = await pool
+//       .promise()
+//       .query('SELECT reviews, average_rating FROM subject_reviews WHERE subject_id = ?', [
+//         subjectId,
+//       ]);
+
+//     let reviews = (rows as RowDataPacket[]).length
+//       ? JSON.parse((rows as RowDataPacket[])[0].reviews)
+//       : [];
+//     let currentAverageRating = (rows as RowDataPacket[]).length
+//       ? parseFloat((rows as RowDataPacket[])[0].average_rating) || 0
+//       : 0;
+
+//     // Add the new review to the reviews array
+//     const newReview = {
+//       user_id: userId,
+//       review_text: reviewText,
+//       rating: rating,
+//       created_at: new Date().toISOString(),
+//     };
+//     reviews.push(newReview);
+
+//     // Calculate the new average rating
+//     const newAverageRating =
+//       (currentAverageRating * reviews.length + rating) / (reviews.length + 1);
+
+//     // Update the subject_reviews table with the new review and average rating
+
+//     res
+//       .status(201)
+//       .json({ message: 'Review added successfully', reviews, average_rating: newAverageRating });
+//   } catch (error) {
+//     console.error('Error adding review:', error);
+//     res.status(500).json({ error: 'Failed to add review' });
+//   }
+// });
+// Endepunkt for å hente alle anmeldelser for et bestemt emne
+
+router.get('/subjects/search', async (req, res) => {
+  const searchTerm = req.query.q as string;
+  if (!searchTerm) {
+    return res.json([]); // Returner tom array hvis ingen query
+  }
 
   try {
-    // Fetch existing reviews for the subject
-    const [rows] = await pool
+    const subjects = await reviewService.searchSubjects(searchTerm);
+    const formattedSubjects = subjects.map((subject) => ({
+      ...subject,
+      id: String(subject.id).toUpperCase(),
+      name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
+    }));
+    res.json(formattedSubjects);
+  } catch (error) {
+    console.error('Error searching for subjects:', error);
+    res.status(500).json({ error: 'Failed to search for subjects' });
+  }
+});
+
+//
+router.post('/subjects/:subjectId/reviews/version', async (req, res) => {
+  const { subjectId } = req.params;
+  const { reviews, userId, actionType } = req.body; // Extract `userId` from the request body
+
+  try {
+    const [latestVersionRow] = await pool
       .promise()
-      .query('SELECT reviews, average_rating FROM subject_reviews WHERE subject_id = ?', [
-        subjectId,
-      ]);
+      .query(
+        'SELECT MAX(version) AS latestVersion FROM subject_review_versions WHERE subject_id = ?',
+        [subjectId],
+      );
 
-    let reviews = (rows as RowDataPacket[]).length
-      ? JSON.parse((rows as RowDataPacket[])[0].reviews)
-      : [];
-    let currentAverageRating = (rows as RowDataPacket[]).length
-      ? parseFloat((rows as RowDataPacket[])[0].average_rating) || 0
-      : 0;
+    const latestVersion = (latestVersionRow as RowDataPacket[])[0].latestVersion || 0;
+    const newVersion = latestVersion + 1;
 
-    // Add the new review to the reviews array
-    const newReview = {
-      user_id: userId,
-      review_text: reviewText,
-      rating: rating,
-      created_at: new Date().toISOString(),
-    };
-    reviews.push(newReview);
+    console.log('New version to insert:', newVersion);
 
-    // Calculate the new average rating
-    const newAverageRating =
-      (currentAverageRating * reviews.length + rating) / (reviews.length + 1);
-
-    // Update the subject_reviews table with the new review and average rating
+    // Step 2: Save the new version with all current reviews, along with `userId`
     await pool
       .promise()
       .query(
-        'INSERT INTO subject_reviews (subject_id, reviews, average_rating) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE reviews = ?, average_rating = ?',
-        [
-          subjectId,
-          JSON.stringify(reviews),
-          newAverageRating,
-          JSON.stringify(reviews),
-          newAverageRating,
-        ],
+        'INSERT INTO subject_review_versions (subject_id, version, reviews, action_type, user_id) VALUES (?, ?, ?, ?, ?)',
+        [subjectId, newVersion, JSON.stringify(reviews), actionType, userId],
       );
+
+
+    console.log('Successfully inserted new version');
+    res.status(201).json({ message: 'Reviews version created successfully', version: newVersion });
+  } catch (error) {
+    console.error('Error creating reviews version:', error);
+    res.status(500).json({ error: 'Failed to create reviews version' });
 
     res
       .status(201)
@@ -706,6 +802,7 @@ router.get('/search', async (req, res) => {
   } catch (error) {
     console.error('Error fetching search results:', error);
     res.status(500).json({ error: 'Failed to fetch search results' });
+
   }
 });
 

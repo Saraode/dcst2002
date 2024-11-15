@@ -43,6 +43,7 @@ export class CampusList extends Component<{}, CampusListState> {
           <p style={{ fontSize: '1.5rem', color: '#333', marginTop: '1rem' }}>
             Din kilde til å finne de beste emnene ved NTNU!
           </p>
+          {<ChangeHistory />}
         </div>
       </Card>
     );

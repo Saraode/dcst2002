@@ -3,7 +3,14 @@ import { HashRouter as Router, Route, Switch, Link } from 'react-router-dom';
 import FieldDropdown from './FieldDropdown';
 import SubjectsByField from './SubjectsByField';
 import SubjectDetails from './SubjectDetails';
-import { CampusList, SubjectNewWithRouter as SubjectNew, ReviewNewWithRouter as ReviewNew } from './subject-components';
+
+import {
+  CampusList,
+  SubjectNewWithRouter as SubjectNew,
+  ReviewNewWithRouter as ReviewNew,
+} from './subject-components';
+import SearchBar from './searchBar';
+
 import axios from 'axios';
 import SearchBar from './SearchBar';
 
@@ -38,6 +45,8 @@ const App: React.FC = () => {
     <Router>
       <div>
         <div className="topnav">
+
+
           {/* NTNU Home link */}
           <Link to="/" className="home-link">NTNU</Link>
 
@@ -50,7 +59,6 @@ const App: React.FC = () => {
             ))}
           </div>
 
-          {/* Right container for search bar and auth buttons */}
           <div className="auth-buttons">
             <div className="search-container">
               <SearchBar />
