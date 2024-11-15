@@ -51,20 +51,21 @@ const SubjectDetails: React.FC = () => {
         if (response.ok) {
           const subjectData = await response.json();
           console.log('Fetched subject data:', subjectData);
-  
+
           // Formater `id` til store bokstaver og `name` med stor forbokstav
           const formattedSubjectData = {
             ...subjectData,
             id: String(subjectData.id).toUpperCase(),
-            name: subjectData.name.charAt(0).toUpperCase() + subjectData.name.slice(1).toLowerCase(),
+            name:
+              subjectData.name.charAt(0).toUpperCase() + subjectData.name.slice(1).toLowerCase(),
           };
-  
+
           // Normalize review properties to ensure consistency
           const transformedReviews = formattedSubjectData.reviews.map((review: any) => ({
             ...review,
             userId: review.userId || review.user_id, // Ensure `userId` is present
           }));
-  
+
           setSubject(formattedSubjectData); // Set the formatted subject data
           setUpdatedLevelId(formattedSubjectData.levelId);
           setReviews(transformedReviews); // Use the normalized reviews
@@ -74,7 +75,7 @@ const SubjectDetails: React.FC = () => {
       } catch (error) {
         console.error('Error fetching subject:', error);
       }
-    };  
+    };
 
     const fetchLevels = async () => {
       try {
@@ -140,10 +141,20 @@ const SubjectDetails: React.FC = () => {
           },
           ...reviews,
         ]);
+        console.log('Attempting to create a new version with reviews:');
 
         setNewReviewText('');
         setNewRating(0);
         fetchAverageStars(); // Recalculate average stars
+        await fetch(`/api/subjects/${subjectId}/reviews/version`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reviews: [newReview, ...reviews],
+            userId: currentUserId,
+            actionType: 'commented on',
+          }),
+        });
       } else {
         console.error('Failed to add review');
       }
@@ -166,6 +177,15 @@ const SubjectDetails: React.FC = () => {
       if (response.ok) {
         setReviews(reviews.filter((review) => review.id !== reviewId));
         fetchAverageStars();
+        await fetch(`/api/subjects/${subjectId}/reviews/version`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reviews: reviews.filter((review) => review.id !== reviewId), // Include all remaining reviews
+            userId: currentUserId,
+            actionType: 'deleted a comment on',
+          }),
+        });
       } else {
         const errorData = await response.json();
         console.error('Failed to delete review:', errorData.error);
@@ -206,6 +226,19 @@ const SubjectDetails: React.FC = () => {
         setNewRating(0);
         setEditingReviewId(null);
         fetchAverageStars();
+        await fetch(`/api/subjects/${subjectId}/reviews/version`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reviews: reviews.map((review) =>
+              review.id === editingReviewId
+                ? { ...review, text: newReviewText, stars: newRating }
+                : review,
+            ),
+            userId: currentUserId,
+            actionType: 'edited a comment on',
+          }),
+        });
       } else {
         const errorData = await response.json();
         console.error('Failed to update review:', errorData.error);
@@ -320,10 +353,10 @@ const SubjectDetails: React.FC = () => {
         }}
       >
         <h2>Gjennomsnittlig vurdering</h2>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <StarRating rating={averageStars} onRatingChange={() => {}} readOnly />
-        <span>({reviews.length})</span> {/* Antall anmeldelser */}
-      </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <StarRating rating={averageStars} onRatingChange={() => {}} readOnly />
+          <span>({reviews.length})</span> {/* Antall anmeldelser */}
+        </div>
         <h2>Legg til anmeldelse</h2>
         <textarea
           value={newReviewText}

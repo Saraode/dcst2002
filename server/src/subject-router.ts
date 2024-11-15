@@ -17,20 +17,20 @@ router.get('/campus', async (req, res) => {
 router.get('/subjects/search', async (req, res) => {
   const searchTerm = req.query.q as string;
   if (!searchTerm) {
-      return res.json([]); // Returner tom array hvis ingen query
+    return res.json([]); // Returner tom array hvis ingen query
   }
 
   try {
-      const subjects = await reviewService.searchSubjects(searchTerm);
-      const formattedSubjects = subjects.map(subject => ({
-          ...subject,
-          id: String(subject.id).toUpperCase(),
-          name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
-      }));
-      res.json(formattedSubjects);
+    const subjects = await reviewService.searchSubjects(searchTerm);
+    const formattedSubjects = subjects.map((subject) => ({
+      ...subject,
+      id: String(subject.id).toUpperCase(),
+      name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
+    }));
+    res.json(formattedSubjects);
   } catch (error) {
-      console.error('Error searching for subjects:', error);
-      res.status(500).json({ error: 'Failed to search for subjects' });
+    console.error('Error searching for subjects:', error);
+    res.status(500).json({ error: 'Failed to search for subjects' });
   }
 });
 
@@ -67,19 +67,19 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
 router.get('/subjects/:id', async (req, res) => {
   const id = String(req.params.id).toUpperCase(); // Konverter id til string og deretter uppercase
   try {
-      const subject = await reviewService.getSubject(id);
-      if (subject) {
-          // Format name med stor forbokstav
-          res.json({
-              ...subject,
-              id: String(subject.id).toUpperCase(),
-              name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
-          });
-      } else {
-          res.status(404).json({ error: 'Subject not found' });
-      }
+    const subject = await reviewService.getSubject(id);
+    if (subject) {
+      // Format name med stor forbokstav
+      res.json({
+        ...subject,
+        id: String(subject.id).toUpperCase(),
+        name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
+      });
+    } else {
+      res.status(404).json({ error: 'Subject not found' });
+    }
   } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch subject' });
+    res.status(500).json({ error: 'Failed to fetch subject' });
   }
 });
 
@@ -118,6 +118,8 @@ router.post('/subjects/:id/reviews', async (req, res) => {
       userId,
       submitterName,
     );
+    1;
+    const allReviews = await reviewService.getReviewsBySubjectId(subjectId);
 
     // Fetch the newly created review with `userId`, `submitterName`, and `created_date`
     const newReview = await reviewService.getReviewById(newReviewId);

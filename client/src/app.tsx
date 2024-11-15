@@ -3,8 +3,12 @@ import { HashRouter as Router, Route, Switch, Link } from 'react-router-dom';
 import FieldDropdown from './FieldDropdown';
 import SubjectsByField from './SubjectsByField';
 import SubjectDetails from './SubjectDetails';
-import { CampusList, SubjectNewWithRouter as SubjectNew, ReviewNewWithRouter as ReviewNew } from './subject-components';
-import SearchBar from './SearchBar';
+import {
+  CampusList,
+  SubjectNewWithRouter as SubjectNew,
+  ReviewNewWithRouter as ReviewNew,
+} from './subject-components';
+import SearchBar from './searchBar';
 import axios from 'axios';
 
 type Campus = {
@@ -44,8 +48,9 @@ const App: React.FC = () => {
       <div>
         {/* Top Navigation Bar */}
         <div className="topnav">
-          <Link to="/" className="home-link">NTNU</Link>
-
+          <Link to="/" className="home-link">
+            NTNU
+          </Link>
           {/* Campus Links */}
           <div className="campus-links left-container">
             {campuses.map((campus) => (
@@ -54,10 +59,8 @@ const App: React.FC = () => {
               </Link>
             ))}
           </div>
-
           {/* Search Bar */}
           <SearchBar onResults={handleSearchResults} /> {/* Bruk riktig funksjon her */}
-
           {/* Authentication buttons */}
           <div className="auth-buttons">
             {!isLoggedIn ? (
