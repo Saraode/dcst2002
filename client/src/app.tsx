@@ -4,8 +4,8 @@ import FieldDropdown from './FieldDropdown';
 import SubjectsByField from './SubjectsByField';
 import SubjectDetails from './SubjectDetails';
 import { CampusList, SubjectNewWithRouter as SubjectNew, ReviewNewWithRouter as ReviewNew } from './subject-components';
-import SearchBar from './SearchBar';
 import axios from 'axios';
+import SearchBar from './SearchBar';
 
 type Campus = {
   campusId: number;
@@ -14,17 +14,17 @@ type Campus = {
 
 const App: React.FC = () => {
   const [campuses, setCampuses] = useState<Campus[]>([]);
-  const [searchResults, setSearchResults] = useState<any[]>([]); // Opprett state for søkeresultater
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Hent campuser
     axios
       .get('http://localhost:3000/api/campuses')
-      .then((response) => setCampuses(response.data))
+      .then((response) => {
+        console.log('Fetched campuses:', response.data);
+        setCampuses(response.data);
+      })
       .catch((error) => console.error('Error fetching campuses:', error));
 
-    // Sjekk login status
     const loggedInStatus = localStorage.getItem('isLoggedIn') === 'true';
     setIsLoggedIn(loggedInStatus);
   }, []);
@@ -34,19 +34,14 @@ const App: React.FC = () => {
     window.location.href = '/index.html';
   };
 
-  // Funksjonen for å håndtere resultater fra søk
-  const handleSearchResults = (results: any[]) => {
-    setSearchResults(results);
-  };
-
   return (
     <Router>
       <div>
-        {/* Top Navigation Bar */}
         <div className="topnav">
+          {/* NTNU Home link */}
           <Link to="/" className="home-link">NTNU</Link>
 
-          {/* Campus Links */}
+          {/* Campus links */}
           <div className="campus-links left-container">
             {campuses.map((campus) => (
               <Link key={campus.campusId} to={`/campus/${campus.name}`} className="campus-link">
@@ -55,11 +50,11 @@ const App: React.FC = () => {
             ))}
           </div>
 
-          {/* Search Bar */}
-          <SearchBar onResults={handleSearchResults} /> {/* Bruk riktig funksjon her */}
-
-          {/* Authentication buttons */}
+          {/* Right container for search bar and auth buttons */}
           <div className="auth-buttons">
+            <div className="search-container">
+              <SearchBar />
+            </div>
             {!isLoggedIn ? (
               <Link to="/login">
                 <button id="loginButton">Logg inn</button>
@@ -70,8 +65,8 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Routes for navigation */}
         <Switch>
+          {/* Routes */}
           <Route
             exact
             path="/login"
