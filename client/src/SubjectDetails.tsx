@@ -223,6 +223,9 @@ const SubjectDetails: React.FC = () => {
     if (!updatedLevelId || !subject) return;
 
     try {
+      const userId = localStorage.getItem('userId') || '';
+      console.log('Subject ID in handleSaveLevelEdit:', subjectId); // Log subjectId
+
       const response = await fetch(`/api/subjects/${subjectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -232,6 +235,7 @@ const SubjectDetails: React.FC = () => {
       if (response.ok) {
         setSubject({ ...subject, levelId: updatedLevelId });
         setIsEditingLevel(false);
+        await reviewService.createSubjectVersion(subjectId, userId, 'edited');
       } else {
         console.error('Failed to update subject level');
       }
@@ -255,7 +259,7 @@ const SubjectDetails: React.FC = () => {
 
     try {
       const userId = localStorage.getItem('userId') || '';
-      console.log('Retrieved userId from localStorage:', userId);
+      console.log('Subject ID in handleDeleteSubject:', subjectId); // Log subjectId
 
       const response = await fetch(`/api/subjects/${subjectId}`, {
         method: 'DELETE',
@@ -264,7 +268,6 @@ const SubjectDetails: React.FC = () => {
       });
 
       if (response.ok) {
-
         console.log('Subject deleted successfully');
 
         const userId = localStorage.getItem('userId');
@@ -282,7 +285,7 @@ const SubjectDetails: React.FC = () => {
             'and userId:',
             userId,
           );
-          await reviewService.createSubjectVersion(Number(subjectId), userId);
+          await reviewService.createSubjectVersion(subjectId, userId, 'deleted');
           console.log('Version created for deleted subject.');
 
           // Only redirect if both deletion and version creation succeed
@@ -294,7 +297,6 @@ const SubjectDetails: React.FC = () => {
         }
 
         history.push(`/fields/${fieldId}`);
-
       } else {
         const errorData = await response.json();
         console.error('Failed to delete subject:', errorData.error);

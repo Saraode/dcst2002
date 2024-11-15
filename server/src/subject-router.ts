@@ -183,8 +183,6 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
 
     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), levelId); // Inkluder levelId og userId
 
-
-  
     res.json({ id: newSubjectId, name, levelId });
   } catch (error: any) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error.message);
@@ -218,7 +216,7 @@ router.post('/fields/:fieldId/version', async (req, res) => {
 //Endpoint for versjonering med bruker-ID for emner
 router.post('/subjects/:subjectId/version', async (req, res) => {
   const { subjectId } = req.params;
-  const { userId } = req.body;
+  const { userId, actionType } = req.body;
 
   if (!userId) {
     console.error('User ID is missing for versioning');
@@ -226,7 +224,11 @@ router.post('/subjects/:subjectId/version', async (req, res) => {
   }
 
   try {
-    const newVersionNumber = await reviewService.createSubjectVersion(Number(subjectId), userId);
+    const newVersionNumber = await reviewService.createSubjectVersion(
+      subjectId,
+      userId,
+      actionType,
+    );
     res.json({ version: newVersionNumber });
   } catch (error) {
     console.error('Error creating new subject version:', error);
@@ -359,22 +361,6 @@ router.post('/fields/:fieldId/version', async (req, res) => {
   } catch (error) {
     console.error('Error creating new field version:', error);
     res.status(500).json({ error: 'Failed to create field version' });
-  }
-});
-router.post('/subjects/:subjectId/version', async (req, res) => {
-  const { subjectId } = req.params;
-  const { userId } = req.body; // Expect userId in the body
-
-  if (!userId) {
-    return res.status(400).json({ error: 'User ID is required for versioning' });
-  }
-
-  try {
-    const newVersionNumber = await reviewService.createSubjectVersion(Number(subjectId), userId);
-    res.json({ version: newVersionNumber });
-  } catch (error) {
-    console.error('Failed to create subject version:', error);
-    res.status(500).json({ error: 'Failed to create subject version' });
   }
 });
 

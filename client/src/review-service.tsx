@@ -59,6 +59,7 @@ class ReviewService {
       }>(`/subjects/${subjectId}/reviews`, { text, stars, userId, submitterName })
       .then((response) => response.data.id);
   }
+
   async createPageVersion(fieldId: number, userId: string) {
     console.log(`Calling createPageVersion with fieldId: ${fieldId} by userId: ${userId}`);
 
@@ -66,9 +67,9 @@ class ReviewService {
       .post(`/api/fields/${fieldId}/version`, { userId })
       .then((response) => response.data.version);
   }
-  async createSubjectVersion(subjectId: number, userId: string) {
+  async createSubjectVersion(subjectId: string, userId: string, actionType: string) {
     return axios
-      .post(`/subjects/${subjectId}/version`, { userId })
+      .post(`/subjects/${subjectId}/version`, { userId, actionType })
 
       .then((response) => response.data.version);
   }
