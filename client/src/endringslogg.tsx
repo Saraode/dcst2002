@@ -19,9 +19,11 @@ const ChangeHistory: React.FC = () => {
       setIsLoading(true);
       try {
         const response = await axios.get('/api/history');
-        setHistory(response.data);
+        console.log('API response:', response.data); // Log the API response
+        setHistory(Array.isArray(response.data) ? response.data : []); // Ensure it's an array
       } catch (error) {
         console.error('Error fetching change history:', error);
+        setHistory([]); // Fallback to empty array on error
       } finally {
         setIsLoading(false);
       }
@@ -35,7 +37,6 @@ const ChangeHistory: React.FC = () => {
 
   return (
     <div style={{ textAlign: 'center', marginTop: '20px' }}>
-      {/* "Vis endringslogg" Button */}
       <button
         onClick={openModal}
         style={{
@@ -50,7 +51,6 @@ const ChangeHistory: React.FC = () => {
         Vis endringslogg
       </button>
 
-      {/* Modal for Change History */}
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
@@ -91,14 +91,18 @@ const ChangeHistory: React.FC = () => {
           <p>Laster siste endringer...</p>
         ) : (
           <ul style={{ padding: '10px', maxHeight: '60vh', overflowY: 'auto' }}>
-            {history.map((entry, index) => (
-              <li key={index} style={{ marginBottom: '10px' }}>
-                <span>
-                  <strong>{entry.user_name}</strong> has {entry.action_type} a subject on{' '}
-                  {new Date(entry.timestamp).toLocaleString()}
-                </span>
-              </li>
-            ))}
+            {history.length > 0 ? (
+              history.map((entry, index) => (
+                <li key={index} style={{ marginBottom: '10px' }}>
+                  <span>
+                    <strong>{entry.user_name}</strong> has {entry.action_type} a subject on{' '}
+                    {new Date(entry.timestamp).toLocaleString()}
+                  </span>
+                </li>
+              ))
+            ) : (
+              <p>No changes found.</p>
+            )}
           </ul>
         )}
       </Modal>

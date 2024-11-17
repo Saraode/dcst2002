@@ -1,5 +1,6 @@
 import express from 'express';
 import subjectRouter from './subject-router';
+import versionRoutes from './version-routes';
 
 /**
  * Express application.
