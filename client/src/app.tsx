@@ -11,6 +11,7 @@ import {
 } from './Subject-Components';
 
 import axios from 'axios';
+import SearchBar from './SearchBar';
 
 type Campus = {
   campusId: number;
