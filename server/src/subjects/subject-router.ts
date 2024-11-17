@@ -28,24 +28,19 @@ router.get('/fields/:fieldId/subjects', async (req, res) => {
 // Legg til nytt fag
 router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
-  const { id, name, level } = req.body;
+  const { id, name, level, description } = req.body;
 
-  console.log('POST /fields/:fieldId/subjects route hit');
-  console.log('Request params:', req.params);
-  console.log('Request body:', req.body);
-
-  if (!id || !name || !level) {
-    console.error('Validation failed:', { id, name, level });
-    return res.status(400).json({ error: 'ID, name, or level missing' });
+  // Valider at alle nødvendige felter er til stede
+  if (!id || !name || !level || !description) {
+    return res.status(400).json({ error: 'ID, navn, nivå og beskrivelse er påkrevd' });
   }
 
   try {
-    console.log('Creating subject with values:', { id, name, fieldId, level });
-    const newSubjectId = await subjectService.createSubject(id, name, Number(fieldId), level);
-    res.json({ id: newSubjectId, name, level });
+    const newSubjectId = await subjectService.createSubject(id, name, Number(fieldId), level, description);
+    res.status(201).json({ id: newSubjectId, name, level, description });
   } catch (error) {
-    console.error('Error adding subject:', error);
-    res.status(500).json({ error: 'Failed to add subject' });
+    console.error('Feil ved oppretting av emne:', error);
+    res.status(500).json({ error: 'Kunne ikke opprette emne' });
   }
 });
 
@@ -112,19 +107,63 @@ router.delete('/subjects/:subjectId', async (req, res) => {
 // Rediger fag
 router.put('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
-  const { userId, levelId } = req.body;
+  const { userId, levelId, description } = req.body;
 
-  if (userId !== 35) {
-    // AAutorisering
+  if (Number(userId) !== 35) {
     return res.status(403).json({ error: 'Not authorized to edit this subject' });
   }
 
+  if (!description && !levelId) {
+    return res.status(400).json({ error: 'No updates provided (description or levelId missing)' });
+  }
+
   try {
-    await subjectService.updateSubjectLevel(subjectId, levelId);
-    res.status(200).json({ message: 'Subject level updated successfully' });
+    if (levelId) {
+      await subjectService.updateSubjectLevel(subjectId, levelId);
+    }
+
+    if (description) {
+      await pool
+        .promise()
+        .query('UPDATE Subjects SET description = ? WHERE id = ?', [description, subjectId]);
+    }
+
+    res.status(200).json({ message: 'Subject updated successfully' });
   } catch (error) {
-    console.error('Error updating subject level:', error);
-    res.status(500).json({ error: 'Could not update subject level' });
+    console.error('Error updating subject:', error);
+    res.status(500).json({ error: 'Could not update subject' });
+  }
+});
+
+router.get('/search', async (req, res) => {
+  const query = req.query.query as string;
+
+  if (!query || query.trim() === '') {
+    return res.status(400).json({ error: 'Query parameter is required' });
+  }
+
+  try {
+    const [results] = await pool.promise().query<RowDataPacket[]>(
+      `
+      SELECT id, name
+      FROM Subjects
+      WHERE LOWER(id) LIKE LOWER(?) OR LOWER(name) LIKE LOWER(?)
+      ORDER BY 
+        CASE
+          WHEN LOWER(id) LIKE LOWER(?) THEN 1
+          WHEN LOWER(name) LIKE LOWER(?) THEN 1
+          ELSE 2
+        END,
+        id ASC
+      LIMIT 10
+      `,
+      [`${query}%`, `%${query}%`, `${query}%`, `${query}%`]
+    );
+
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching search results:', error);
+    res.status(500).json({ error: 'Failed to fetch search results' });
   }
 });
 
