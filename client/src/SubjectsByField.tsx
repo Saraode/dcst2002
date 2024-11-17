@@ -75,7 +75,7 @@ const SubjectsByField: React.FC = () => {
   useEffect(() => {
     const fetchFieldName = async () => {
       try {
-        const response = await fetch(`/api/fields/${fieldId}`);
+        const response = await fetch(`/api/fields/${fieldId}/name`);
         if (!response.ok) throw new Error('Failed to fetch field name');
         const field = await response.json();
         setFieldName(field.name);
@@ -240,9 +240,7 @@ const SubjectsByField: React.FC = () => {
         </div>
 
         <div style={{ marginBottom: '10px' }}>
-          <button onClick={() => setSelectedLevel(null)}>
-            Alle emner ({totalSubjectsCount})
-          </button>
+          <button onClick={() => setSelectedLevel(null)}>Alle emner ({totalSubjectsCount})</button>
           {levels.map((level) => (
             <button key={level.id} onClick={() => setSelectedLevel(level.id)}>
               {level.name} ({getCountForLevel(level.id)})
