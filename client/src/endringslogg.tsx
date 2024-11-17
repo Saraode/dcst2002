@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
 
+Modal.setAppElement('#root');
+
 type ChangeHistoryEntry = {
   version_number: number;
   timestamp: string;
