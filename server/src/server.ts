@@ -1,4 +1,3 @@
-// server.ts
 /**
  * Web server entry point used in `npm start`.
  */
@@ -6,36 +5,31 @@
 import app from './app';
 import express from 'express';
 import path from 'path';
-import subjectRouter from './subject-router';
-import { reviewRouter } from './review-service';
 import cors from 'cors';
-import { userRouter } from './user-routes'; // Import userRouter
-import versionRoutes from './version-routes';
+import { reviewRouter } from './reviews/review-router'; // Fixed import path
+import { subjectRouter } from './subjects/subject-router'; // Correct import
+import { fieldRouter } from './fields/field-routes';
+import { userRouter } from './users/user-routes'; // Import userRouter
+
 // Serve client files
 app.use(express.static(path.join(__dirname, '/../../client/public')));
 app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 // Connect routers to the API
-app.use('/api', subjectRouter); // Adds subject-related routes under /api
-app.use('/api', reviewRouter); // Adds review-related routes under /api
-app.use('/api', versionRoutes);
+// Connect API routers
+app.use('/api/subjects', subjectRouter); // Subject-related routes
+app.use('/api', reviewRouter); // Review-related routes
+app.use('/api/users', userRouter); // User-related routes
+app.use('/api', fieldRouter); // Ensure this is correct
+// app.use('/api/fields', fieldRouter);
 
-// Connect routers to the API
-app.use('/api', subjectRouter); // Adds subject-related routes under /api
-app.use('/api', reviewRouter); // Adds review-related routes under /api
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '/../../client/public/index.html'));
+});
 
+// Start the server
 const port = 3000;
 app.listen(port, () => {
-  console.info(`Server running on port ${port}`);
+  console.info(`Server running on http://localhost:${port}`);
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '/../../client/public/index.html'));
-});
-
-// Connect routers to the API
-app.use('/api', subjectRouter); // Adds subject-related routes under /api
-app.use('/api', reviewRouter); // Adds review-related routes under /api
-app.use('/api/users', userRouter); // Adds user-related routes under /api/users
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '/../../client/public/index.html'));
-});
+app.use(express.static(path.join(__dirname, '/public'))); // Adjust the path to your static files
