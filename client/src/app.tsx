@@ -11,7 +11,6 @@ import {
 } from './Subject-Components';
 
 import axios from 'axios';
-import SearchBar from './SearchBar';
 
 type Campus = {
   campusId: number;
@@ -44,10 +43,10 @@ const App: React.FC = () => {
     <Router>
       <div>
         <div className="topnav">
-
-
           {/* NTNU Home link */}
-          <Link to="/" className="home-link">NTNU</Link>
+          <Link to="/" className="home-link">
+            NTNU
+          </Link>
 
           {/* Campus links */}
           <div className="campus-links left-container">

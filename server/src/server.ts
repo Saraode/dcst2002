@@ -10,13 +10,14 @@ import subjectRouter from './subject-router';
 import { reviewRouter } from './review-service';
 import cors from 'cors';
 import { userRouter } from './user-routes'; // Import userRouter
-
+import versionRoutes from './version-routes';
 // Serve client files
 app.use(express.static(path.join(__dirname, '/../../client/public')));
 app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 // Connect routers to the API
 app.use('/api', subjectRouter); // Adds subject-related routes under /api
 app.use('/api', reviewRouter); // Adds review-related routes under /api
+app.use('/api', versionRoutes);
 
 // Connect routers to the API
 app.use('/api', subjectRouter); // Adds subject-related routes under /api

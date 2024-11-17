@@ -3,7 +3,6 @@ import { fieldService, reviewService } from './review-service';
 import { userService } from './user-service'; // Adjust the path if needed
 import { pool } from './mysql-pool';
 
-
 const router = express.Router();
 
 // Hent alle campus-navn
@@ -15,7 +14,6 @@ router.get('/campus', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch campuses' });
   }
 });
-
 
 // Hent fields for en spesifikk campus
 router.get('/campus/:campus/fields', async (req, res) => {
@@ -39,7 +37,13 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
   }
 
   try {
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level, description);
+    const newSubjectId = await reviewService.createSubject(
+      id,
+      name,
+      Number(fieldId),
+      level,
+      description,
+    );
     res.status(201).json({ id: newSubjectId, name, level, description });
   } catch (error) {
     console.error('Feil ved oppretting av emne:', error);
@@ -59,7 +63,6 @@ router.get('/subjects/:id', async (req, res) => {
         id: String(subject.id).toUpperCase(),
         name: subject.name.charAt(0).toUpperCase() + subject.name.slice(1).toLowerCase(),
       });
-
     } else {
       res.status(404).json({ error: 'Subject not found' });
     }
@@ -67,7 +70,6 @@ router.get('/subjects/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch subject' });
   }
 });
-
 
 // Hent alle nivåer
 router.get('/levels', async (req, res) => {
@@ -141,18 +143,6 @@ router.get('/subjects/:id/average-stars', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch average stars' });
   }
 });
-//liste over emner i en versjon
-router.get('/versions/:versionId/subjects', async (req, res) => {
-  const { versionId } = req.params;
-
-  try {
-    const subjects = await reviewService.getSubjectsByVersion(Number(versionId));
-    res.json(subjects);
-  } catch (error) {
-    console.error('Error fetching subjects by version:', error);
-    res.status(500).json({ error: 'Failed to fetch subjects by version' });
-  }
-});
 
 // Legg til nytt emne for et spesifikt felt, inkludert emnebeskrivelse
 router.post('/fields/:fieldId/subjects', async (req, res) => {
@@ -165,7 +155,13 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
   }
 
   try {
-    const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level, description);
+    const newSubjectId = await reviewService.createSubject(
+      id,
+      name,
+      Number(fieldId),
+      level,
+      description,
+    );
     res.json({ id: newSubjectId, name, level, description });
   } catch (error) {
     console.error('Feil ved forsøk på å legge til emne i databasen:', error);
@@ -173,48 +169,6 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
   }
 });
 
-//Endpoint for versjonering med bruker-ID
-router.post('/fields/:fieldId/version', async (req, res) => {
-  const { fieldId } = req.params;
-  const { userId } = req.body;
-
-  if (!userId) {
-    console.error('User ID is missing for versioning');
-    return res.status(400).json({ error: 'User ID is required for versioning' });
-  }
-
-  try {
-    console.log(`Creating version for fieldId ${fieldId} with userId ${userId}`);
-    const newVersionNumber = await reviewService.createPageVersion(Number(fieldId), userId);
-    res.json({ version: newVersionNumber });
-  } catch (error) {
-    console.error('Error creating new field version:', error);
-    res.status(500).json({ error: 'Failed to create field version' });
-  }
-});
-
-//Endpoint for versjonering med bruker-ID for emner
-router.post('/subjects/:subjectId/version', async (req, res) => {
-  const { subjectId } = req.params;
-  const { userId, actionType } = req.body;
-
-  if (!userId) {
-    console.error('User ID is missing for versioning');
-    return res.status(400).json({ error: 'User ID is required for versioning' });
-  }
-
-  try {
-    const newVersionNumber = await reviewService.createSubjectVersion(
-      subjectId,
-      userId,
-      actionType,
-    );
-    res.json({ version: newVersionNumber });
-  } catch (error) {
-    console.error('Error creating new subject version:', error);
-    res.status(500).json({ error: 'Failed to create subject version' });
-  }
-});
 // Hent emner for et spesifikt field basert på studienivå
 router.get('/fields/:fieldId/subjects/level/:level', async (req, res) => {
   const { fieldId, level } = req.params;
@@ -316,44 +270,6 @@ router.delete('/subjects/:subjectId', async (req, res) => {
   } catch (error) {
     console.error('Error deleting subject:', error);
     res.status(500).json({ error: 'Could not delete subject' });
-  }
-});
-
-// router.post('/fields/:fieldId/subjects', async (req, res) => {
-//   const { fieldId } = req.params;
-//   const { id, name, level } = req.body;
-
-//   console.log('Received request to add new subject:', { fieldId, id, name, level });
-
-//   if (!id || !name || !level) {
-//     return res.status(400).json({ error: 'ID, navn eller nivå mangler' });
-//   }
-
-//   try {
-//     const newSubjectId = await reviewService.createSubject(id, name, Number(fieldId), level);
-//     console.log('New subject created with ID:', newSubjectId);
-//     res.json({ id: newSubjectId, name, level });
-//   } catch (error) {
-//     console.error('Feil ved forsøk på å legge til emne i databasen:', error);
-//     res.status(500).json({ error: 'Kunne ikke legge til emne' });
-//   }
-// });
-
-//lage en ny versjon av en side
-router.post('/fields/:fieldId/version', async (req, res) => {
-  const { fieldId } = req.params;
-  const { userId } = req.body; // Expect userId in the body
-
-  if (!userId) {
-    return res.status(400).json({ error: 'User ID is required for versioning' });
-  }
-
-  try {
-    const newVersionNumber = await reviewService.createPageVersion(Number(fieldId), userId);
-    res.json({ version: newVersionNumber });
-  } catch (error) {
-    console.error('Error creating new field version:', error);
-    res.status(500).json({ error: 'Failed to create field version' });
   }
 });
 
