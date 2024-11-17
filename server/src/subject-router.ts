@@ -1,6 +1,6 @@
 import express from 'express';
 import { fieldService, reviewService } from './review-service';
-import { userService } from './user-service'; // Adjust the path if needed
+import { userService } from './user-service';
 import { pool } from './mysql-pool';
 
 const router = express.Router();
