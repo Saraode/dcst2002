@@ -2,12 +2,12 @@
 
 import * as React from 'react';
 import { Component } from 'react-simplified';
-import { Alert, Card, Row, Column, Form, Button } from './widgets';
+import { Alert, Card, Row, Column, Form, Button } from './Widgets';
 import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
-import reviewService, { Subject, Review } from './review-service';
+import reviewService, { Subject, Review } from './Review-Service';
 import { createHashHistory } from 'history';
 import axios from 'axios';
-import { NavBar } from './widgets';
+import { NavBar } from './Widgets';
 import ChangeHistory from './endringslogg';
 
 const history = createHashHistory(); // Use history.push(...) to navigate programmatically

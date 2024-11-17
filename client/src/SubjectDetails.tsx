@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import StarRating from './StarRating';
-import reviewService from './review-service';
+import reviewService from './Review-Service';
 
 type Review = {
   id: number;

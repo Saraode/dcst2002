@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { TaskList, TaskNew } from '../src/task-components';
 import { shallow } from 'enzyme';
-import { Form, Button } from '../src/widgets';
+import { Form, Button } from '../src/Widgets';
 import { NavLink } from 'react-router-dom';
 
 jest.mock('../src/task-service', () => {
@@ -32,7 +32,7 @@ describe('Task component tests', () => {
           <NavLink to="/tasks/1">Les leksjon</NavLink>,
           <NavLink to="/tasks/2">Møt opp på forelesning</NavLink>,
           <NavLink to="/tasks/3">Gjør øving</NavLink>,
-        ])
+        ]),
       ).toEqual(true);
       done();
     });
