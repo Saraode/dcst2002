@@ -19,7 +19,19 @@ export type Review = {
 };
 
 class SubjectService {
-  // Søker etter fag basert
+  // Søker etter fag 
+  async updateSubjectDescription(subjectId: string, description: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      pool.query(
+        'UPDATE Subjects SET description = ? WHERE id = ?',
+        [description, subjectId],
+        (error) => {
+          if (error) return reject(error);
+          resolve();
+        },
+      );
+    });
+  }
   searchSubjects(searchTerm: string): Promise<Subject[]> {
     return new Promise((resolve, reject) => {
       const sql = `SELECT * FROM Subjects WHERE name LIKE ?`;
@@ -85,28 +97,47 @@ class SubjectService {
     });
   }
 
-  // Oppretter et nytt fag hvis det ikke allerede eksisterer
-  async createSubject(id: string, name: string, fieldId: number, levelId: number): Promise<string> {
+  // Create a new subject
+  async createSubject(
+    id: string,
+    name: string,
+    fieldId: number,
+    levelId: number,
+    description: string,
+  ): Promise<string> {
     try {
-      const existingSubject = await this.getSubjectByIdCaseInsensitive(id);
+      const uppercaseId = id.toUpperCase();
+      const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+
+      // Sjekk om emnet allerede eksisterer
+      const existingSubject = await this.getSubjectByIdCaseInsensitive(uppercaseId);
       if (existingSubject) {
         throw new Error(`Fag med ID '${id}' eksisterer allerede`);
       }
 
+      // Sett inn emne i databasen
       const [result] = await pool
         .promise()
-        .query('INSERT INTO Subjects (id, name, fieldId, levelId) VALUES (?, ?, ?, ?)', [
-          id,
-          name,
-          fieldId,
-          levelId,
-        ]);
+        .query(
+          'INSERT INTO Subjects (id, name, fieldId, levelId, description) VALUES (?, ?, ?, ?, ?)',
+          [uppercaseId, formattedName, fieldId, levelId, description],
+        );
 
-      return id;
-    } catch (error) {
+      console.log('Database insert result:', result);
+      return uppercaseId;
+    } catch (error: any) {
+      if (error.code === 'ER_DUP_ENTRY') {
+        throw new Error(`Subject with ID '${id}' already exists`);
+      }
+      console.error('Error in createSubject:', {
+        message: error.message,
+        stack: error.stack,
+        params: { id, name, fieldId, levelId, description },
+      });
       throw error;
     }
   }
+
 
   // Sjekker om et fag med en gitt ID (case-insensitive) eksisterer
   getSubjectByIdCaseInsensitive(id: string): Promise<Subject | null> {

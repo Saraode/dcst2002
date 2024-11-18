@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { SubjectNewWithRouter } from './Subject-Components';
+import { SubjectNewWithRouter } from './subject-components';
 
 type Subject = {
   id: string;
@@ -113,32 +113,33 @@ const SubjectsByField: React.FC = () => {
       setErrorMessage('ID, navn, nivå eller beskrivelse mangler');
       return;
     }
-    
+
     const userId = localStorage.getItem('userId');
     if (!userId) {
       console.error("User ID is missing from local storage. Can't create version.");
       setErrorMessage('User ID is missing. Please log in again.');
       return;
     }
-    
+
     try {
       // Konverter `newSubjectId` til store bokstaver og `newSubjectName` til stor forbokstav
       const formattedSubjectId = newSubjectId.toUpperCase();
-      const formattedSubjectName = newSubjectName.charAt(0).toUpperCase() + newSubjectName.slice(1).toLowerCase();
-  
+      const formattedSubjectName =
+        newSubjectName.charAt(0).toUpperCase() + newSubjectName.slice(1).toLowerCase();
+
       const response = await fetch(`/api/fields/${fieldId}/subjects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            id: formattedSubjectId,
-            name: formattedSubjectName,
-            level: newSubjectLevel,
+          id: formattedSubjectId,
+          name: formattedSubjectName,
+          level: newSubjectLevel,
           description: newSubjectDescription, // Send description to backend
         }),
       });
-  
+
       if (response.ok) {
         const newSubject = await response.json();
         const versionResponse = await fetch(`/api/fields/${fieldId}/version`, {
@@ -146,26 +147,26 @@ const SubjectsByField: React.FC = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ userId }), // Pass userId for versioning
+          body: JSON.stringify({ userId, description: newSubjectDescription }), // Pass userId for versioning
         });
-  
+
         if (!versionResponse.ok) {
           console.error('Failed to create version for the subject');
           setErrorMessage('Kunne ikke opprette versjon');
           return;
         }
-  
+
         console.log('Version created successfully');
-  
+
         // Update the subject list if the new subject matches the selected level or if all levels are shown
         if (newSubjectLevel === selectedLevel || selectedLevel === null) {
           setSubjects([{ ...newSubject, description: newSubjectDescription }, ...subjects]);
         }
-  
+
         // Update counts from the database
         fetchSubjectCounts();
         fetchTotalSubjectsCount();
-  
+
         // Reset input fields after adding the subject
         setNewSubjectId('');
         setNewSubjectName('');
@@ -207,38 +208,36 @@ const SubjectsByField: React.FC = () => {
       >
         <h2>Legg til nytt emne</h2>
         <input
-  type="text"
-  placeholder="Fagkode"
-  value={newSubjectId}
-  onChange={(e) => {
-    const input = e.target.value;
-    setNewSubjectId(input);
-    if (!isValidInput(input)) {
-      setErrorMessage('Fagkode kan kun inneholde bokstaver, tall og mellomrom.');
-    } else {
-      setErrorMessage('');
-    }
-  }}
-  style={{ marginBottom: '10px' }}
-/>
+          type="text"
+          placeholder="Fagkode"
+          value={newSubjectId}
+          onChange={(e) => {
+            const input = e.target.value;
+            setNewSubjectId(input);
+            if (!isValidInput(input)) {
+              setErrorMessage('Fagkode kan kun inneholde bokstaver, tall og mellomrom.');
+            } else {
+              setErrorMessage('');
+            }
+          }}
+          style={{ marginBottom: '10px' }}
+        />
 
-
-<input
-  type="text"
-  placeholder="Emnenavn"
-  value={newSubjectName}
-  onChange={(e) => {
-    const input = e.target.value;
-    setNewSubjectName(input);
-    if (!isValidInput(input)) {
-      setErrorMessage('Emnenavn kan kun inneholde bokstaver, tall og mellomrom.');
-    } else {
-      setErrorMessage('');
-    }
-  }}
-  style={{ marginBottom: '10px' }}
-/>
-
+        <input
+          type="text"
+          placeholder="Emnenavn"
+          value={newSubjectName}
+          onChange={(e) => {
+            const input = e.target.value;
+            setNewSubjectName(input);
+            if (!isValidInput(input)) {
+              setErrorMessage('Emnenavn kan kun inneholde bokstaver, tall og mellomrom.');
+            } else {
+              setErrorMessage('');
+            }
+          }}
+          style={{ marginBottom: '10px' }}
+        />
 
         <textarea
           placeholder="Emnebeskrivelse"
