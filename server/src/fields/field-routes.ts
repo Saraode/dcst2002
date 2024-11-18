@@ -27,7 +27,7 @@ router.get('/campuses', async (req, res) => {
   }
 });
 
-// Henter fields fra spesifikt campus
+// Henter fields tilhørende spesifikt campus
 router.get('/campus/:campus', async (req, res) => {
   const { campus } = req.params;
   try {
@@ -42,7 +42,7 @@ router.get('/campus/:campus', async (req, res) => {
   }
 });
 
-// Henter field etter id
+// Henter field basert på ID
 router.get('/:fieldId', async (req, res) => {
   const { fieldId } = req.params;
   try {
@@ -57,18 +57,19 @@ router.get('/:fieldId', async (req, res) => {
   }
 });
 
+// Henter fields for spesifikt campus (en spesifikk rute for strukturert data)
 router.get('/campus/:campus/fields', async (req, res) => {
   const { campus } = req.params;
   try {
     const fields = await fieldService.getFieldsByCampus(campus);
-    res.json(fields || []); // Always return an array
+    res.json(fields || []); // Returnerer alltid en liste
   } catch (error) {
     console.error('Error fetching fields for campus:', error);
     res.status(500).json({ error: 'Failed to fetch fields for campus' });
   }
 });
 
-//Henter antall subjects for fields
+// Henter totalt antall subjects for en field
 router.get('/fields/:fieldId/total-subjects-count', async (req, res) => {
   const { fieldId } = req.params;
 
@@ -78,7 +79,6 @@ router.get('/fields/:fieldId/total-subjects-count', async (req, res) => {
     console.log(`[DEBUG] Total subjects count for fieldId ${fieldId}: ${totalSubjectsCount}`);
     res.status(200).json({ total: totalSubjectsCount });
   } catch (error) {
-    // Use type assertion here
     if (error instanceof Error && error.message === 'No subjects found') {
       res.status(404).json({ error: 'No subjects found for this fieldId' });
     } else {
@@ -88,7 +88,7 @@ router.get('/fields/:fieldId/total-subjects-count', async (req, res) => {
   }
 });
 
-//Henter field navn
+// Henter navnet til en field
 router.get('/fields/:fieldId/name', async (req, res) => {
   const { fieldId } = req.params;
 
@@ -103,6 +103,7 @@ router.get('/fields/:fieldId/name', async (req, res) => {
   }
 });
 
+// Henter fields basert på campus ID
 router.get('/fields/:campusId', async (req, res) => {
   const { campusId } = req.params;
 

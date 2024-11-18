@@ -1,6 +1,7 @@
 import { pool } from '../mysql-pool';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
+// Definerer typen for et fag
 export type Subject = {
   id: string;
   name: string;
@@ -9,6 +10,7 @@ export type Subject = {
   reviews?: Review[];
 };
 
+// Definerer typen for en anmeldelse
 export type Review = {
   id: number;
   subjectId: string;
@@ -19,7 +21,7 @@ export type Review = {
 };
 
 class SubjectService {
-  // Søker etter fag 
+  // Oppdaterer beskrivelsen av et fag
   async updateSubjectDescription(subjectId: string, description: string): Promise<void> {
     return new Promise((resolve, reject) => {
       pool.query(
@@ -32,6 +34,8 @@ class SubjectService {
       );
     });
   }
+
+  // Søker etter fag basert på navn
   searchSubjects(searchTerm: string): Promise<Subject[]> {
     return new Promise((resolve, reject) => {
       const sql = `SELECT * FROM Subjects WHERE name LIKE ?`;
@@ -42,7 +46,7 @@ class SubjectService {
     });
   }
 
-  // Henter et spesifikt fag basert på ID og inkluderer anmeldelser
+  // Henter detaljer om et spesifikt fag, inkludert anmeldelser
   getSubject(subjectId: string): Promise<Subject | undefined> {
     return new Promise<Subject | undefined>((resolve, reject) => {
       pool.query(
@@ -83,7 +87,7 @@ class SubjectService {
     });
   }
 
-  // Henter fag for et gitt felt
+  // Henter fag for et spesifikt felt
   getSubjectsByField(fieldId: number): Promise<Subject[]> {
     return new Promise<Subject[]>((resolve, reject) => {
       pool.query(
@@ -97,7 +101,7 @@ class SubjectService {
     });
   }
 
-  // Create a new subject
+  // Oppretter et nytt fag
   async createSubject(
     id: string,
     name: string,
@@ -109,13 +113,13 @@ class SubjectService {
       const uppercaseId = id.toUpperCase();
       const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 
-      // Sjekk om emnet allerede eksisterer
+      // Sjekker om faget allerede eksisterer
       const existingSubject = await this.getSubjectByIdCaseInsensitive(uppercaseId);
       if (existingSubject) {
         throw new Error(`Fag med ID '${id}' eksisterer allerede`);
       }
 
-      // Sett inn emne i databasen
+      // Setter inn faget i databasen
       const [result] = await pool
         .promise()
         .query(
@@ -127,7 +131,7 @@ class SubjectService {
       return uppercaseId;
     } catch (error: any) {
       if (error.code === 'ER_DUP_ENTRY') {
-        throw new Error(`Subject with ID '${id}' already exists`);
+        throw new Error(`Fag med ID '${id}' eksisterer allerede`);
       }
       console.error('Error in createSubject:', {
         message: error.message,
@@ -138,8 +142,7 @@ class SubjectService {
     }
   }
 
-
-  // Sjekker om et fag med en gitt ID (case-insensitive) eksisterer
+  // Sjekker om et fag eksisterer basert på ID (case-insensitive)
   getSubjectByIdCaseInsensitive(id: string): Promise<Subject | null> {
     return new Promise<Subject | null>((resolve, reject) => {
       pool.query(
@@ -163,7 +166,7 @@ class SubjectService {
     });
   }
 
-  // Henter antall fag gruppert etter nivå for et spesifikt felt
+  // Henter antall fag gruppert etter nivå for et felt
   getSubjectCountByLevel(fieldId: number): Promise<{ levelId: number | null; count: number }[]> {
     return new Promise((resolve, reject) => {
       pool.query(
@@ -188,7 +191,7 @@ class SubjectService {
     });
   }
 
-  // Oppdaterer navn og felt for et eksisterende fag
+  // Oppdaterer et fags navn og felt
   async updateSubject(subjectId: string, name: string, fieldId: number): Promise<void> {
     return new Promise((resolve, reject) => {
       pool.query(
@@ -222,7 +225,7 @@ class SubjectService {
     });
   }
 
-  // Oppdaterer nivået for et fag
+  // Oppdaterer nivået til et fag
   async updateSubjectLevel(subjectId: string, levelId: number): Promise<void> {
     return new Promise((resolve, reject) => {
       pool.query('UPDATE Subjects SET levelId = ? WHERE id = ?', [levelId, subjectId], (error) => {
@@ -242,7 +245,7 @@ class SubjectService {
     });
   }
 
-  // Henter totalt antall fag for et spesifikt felt
+  // Henter totalt antall fag for et felt
   async getTotalSubjectsCount(fieldId: number): Promise<number> {
     return new Promise<number>((resolve, reject) => {
       pool.query(
@@ -257,5 +260,6 @@ class SubjectService {
   }
 }
 
+// Eksporterer SubjectService for bruk andre steder
 const subjectService = new SubjectService();
 export default subjectService;
