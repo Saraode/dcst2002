@@ -308,50 +308,29 @@ const SubjectDetails: React.FC = () => {
 
   const handleDeleteSubject = async () => {
     const currentUserId = Number(localStorage.getItem('userId'));
-    if (!currentUserId) return;
-
+    if (!currentUserId) {
+      console.error('User ID is missing. Cannot delete subject.');
+      return;
+    }
+  
+    if (!subjectId) {
+      console.error('Subject ID is missing. Cannot delete subject.');
+      return;
+    }
+  
     const isConfirmed = window.confirm('Er du sikker på at du vil slette dette faget?');
     if (!isConfirmed) return;
-
+  
     try {
-      const userId = localStorage.getItem('userId') || '';
-      console.log('Subject ID in handleDeleteSubject:', subjectId); // Log subjectId
-
-      const response = await fetch(`/api/subjects/${subjectId}`, {
+      console.log('Deleting subject:', { subjectId, userId: currentUserId });
+  
+      const response = await fetch(`/api/subjects/${subjectId}?userId=${currentUserId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUserId }), // Include the current userId
       });
-
+  
       if (response.ok) {
         console.log('Subject deleted successfully');
-
-        const userId = localStorage.getItem('userId');
-        if (!userId) {
-          console.error('User ID is missing from local storage. Cannot create a version.');
-          // Proceed with redirection if logging is not required
-          history.push(`/fields/${fieldId}`);
-          return;
-        }
-        try {
-          // Attempt to create a version entry after deletion
-          console.log(
-            'Attempting to create subject version with subjectId:',
-            subjectId,
-            'and userId:',
-            userId,
-          );
-          await reviewService.createSubjectVersion(subjectId as string, userId, 'deleted');
-          console.log('Version created for deleted subject.');
-
-          // Only redirect if both deletion and version creation succeed
-          history.push(`/fields/${fieldId}`);
-        } catch (versionError) {
-          console.error('Failed to create version after deletion:', versionError);
-          // Redirect even if version creation fails
-          history.push(`/fields/${fieldId}`);
-        }
-
         history.push(`/fields/${fieldId}`);
       } else {
         const errorData = await response.json();
@@ -361,6 +340,7 @@ const SubjectDetails: React.FC = () => {
       console.error('Error deleting subject:', error);
     }
   };
+  
 
   const handleEditDescription = () => {
     setIsEditingDescription(true);

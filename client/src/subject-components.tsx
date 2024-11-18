@@ -1,26 +1,18 @@
 import * as React from 'react';
 import { Component } from 'react-simplified';
-import { Alert, Card, Row, Column, Form, Button } from './widgets';
+import { Alert, Card, Row, Column, Form, Button} from './Widgets';
 import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
 import reviewService, { Subject, Review } from './review-service';
 import { createHashHistory } from 'history';
 import axios from 'axios';
 import ChangeHistory from './endringslogg';
 
-const history = createHashHistory(); // Use history.push(...) to navigate programmatically
+const history = createHashHistory();
 
-// export class CampusList extends Component {
-//   render() {
-//     return (
-//       <Card title="Velkommen til NTNU emnevurderinger – Din kilde til å finne de beste emnene ved NTNU!">
-//         <Column>Søk etter emne: </Column>
-//       </Card>
-//     );
-//   }
-// }
 type CampusListState = {
   showHistory: boolean;
 };
+
 export class CampusList extends Component<{}, CampusListState> {
   state = {
     showHistory: false,
@@ -40,7 +32,7 @@ export class CampusList extends Component<{}, CampusListState> {
           <p style={{ fontSize: '1.5rem', color: '#333', marginTop: '1rem' }}>
             Din kilde til å finne de beste emnene ved NTNU!
           </p>
-          {<ChangeHistory />}
+          <ChangeHistory />
         </div>
       </Card>
     );
@@ -58,7 +50,7 @@ class SubjectList extends Component<RouteComponentProps<{ campus: string }>> {
             <Row key={subject.id}>
               <Column>
                 <NavLink to={`/campus/${this.props.match.params.campus}/subjects/${subject.id}`}>
-                  {subject.id} {subject.name} {/* Display both ID and name */}
+                  {subject.id} {subject.name}
                 </NavLink>
               </Column>
             </Row>
@@ -80,7 +72,6 @@ class SubjectList extends Component<RouteComponentProps<{ campus: string }>> {
       .getSubjectsByCampus(this.props.match.params.campus)
       .then((subjects: Subject[]) => {
         this.subjects = subjects;
-        console.log('Mounted subjects:', subjects); // Debugging log
       })
       .catch((error: { message: string }) =>
         Alert.danger('Error getting subjects: ' + error.message),
@@ -141,26 +132,25 @@ class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id:
 
 export const SubjectDetailsWithRouter = withRouter(SubjectDetails);
 
-// Definer de fire studienivåene med romertall for nivåer
 
 class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId: string }>> {
   name = '';
   level = '';
-  studyLevels: string[] = []; // Initialize studyLevels as an empty array
+  studyLevels: string[] = [];
 
   state = {
-    studyLevels: [] as string[], // Initialize studyLevels in the component's state
+    studyLevels: [] as string[], 
   };
 
   async componentDidMount() {
     try {
-      const response = await axios.get('/api/study-levels'); // Henter studienivåer fra serveren
+      const response = await axios.get('/api/study-levels'); 
       this.setState({ studyLevels: response.data });
     } catch (error: any) {
-      // Bruk 'any' for å spesifisere at vi forventer en error-type med en 'message'
       Alert.danger('Error fetching study levels: ' + error.message);
     }
   }
+
   handleCreateSubject = async () => {
     try {
       const newSubjectId = await reviewService.createSubject(
@@ -169,26 +159,21 @@ class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId
         this.level,
       );
       const userId = localStorage.getItem('userId');
-      console.log('Retrieved userId from localStorage:', userId);
-
       if (!userId) {
         console.error("User ID is missing from local storage. Can't create version.");
         return;
       }
       await reviewService.createPageVersion(Number(this.props.match.params.fieldId), userId);
-
       history.push(
         `/campus/${this.props.match.params.campus}/fields/${this.props.match.params.fieldId}/subjects/${newSubjectId}`,
       );
     } catch (error) {
-      const errorMessage = (error as Error).message;
-      Alert.danger('Failed to create subject or page version: ' + errorMessage);
+      Alert.danger('Failed to create subject or page version: ' + (error as Error).message);
     }
   };
 
   render() {
-    console.log('Rendering SubjectNew component');
-    const { studyLevels } = this.state; // Extract studyLevels from the component's state
+    const { studyLevels } = this.state;
 
     return (
       <>
@@ -205,8 +190,6 @@ class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId
               />
             </Column>
           </Row>
-
-          {/* Studienivå-avkryssingsbokser */}
           <Row>
             <Column width={2}>
               <Form.Label>Studienivå:</Form.Label>
@@ -223,7 +206,6 @@ class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId
             </Column>
           </Row>
         </Card>
-
         <Button.Success onClick={this.handleCreateSubject}>Opprett emne</Button.Success>
       </>
     );
@@ -258,19 +240,17 @@ class ReviewNew extends Component<
         <Button.Success
           onClick={() => {
             const userId = localStorage.getItem('userId');
-
             if (!userId) {
               Alert.danger('User is not logged in. Please log in to submit a review.');
               return;
             }
-
             reviewService
               .createReview(
                 Number(this.props.match.params.id),
                 this.reviewText,
                 this.stars,
                 Number(userId),
-                this.props.submitterName, // Access `submitterName` from props passed down from a parent component or global state
+                this.props.submitterName,
               )
               .then(() =>
                 history.push(

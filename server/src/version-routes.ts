@@ -136,16 +136,36 @@ versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
     res.status(500).json({ error: 'Failed to save versioning data' });
   }
 });
-// antall visninger
+
 versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   const { subjectId } = req.params;
+
+  if (!subjectId) {
+    console.error('Missing subjectId in request');
+    return res.status(400).json({ error: 'Subject ID is required' });
+  }
+
   try {
-    await pool.query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
+    console.log(`Incrementing view count for subjectId: ${subjectId}`);
+
+    // Utfør spørringen og typecast resultatet
+    const [result] = await pool.promise().query<ResultSetHeader>(
+      'UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?',
+      [subjectId]
+    );
+
+    // Sjekk affectedRows
+    if (result.affectedRows === 0) {
+      console.warn(`Subject not found for ID: ${subjectId}`);
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
     res.status(200).send({ message: 'View count incremented successfully' });
   } catch (error) {
     console.error('Error incrementing view count:', error);
     res.status(500).send({ error: 'Failed to increment view count' });
   }
 });
+
 
 export default versionRouter;
