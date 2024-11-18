@@ -101,7 +101,7 @@ const ChangeHistory: React.FC = () => {
                 </li>
               ))
             ) : (
-              <p>No changes found.</p>
+              <p>Ingen logg å finne.</p>
             )}
           </ul>
         )}
