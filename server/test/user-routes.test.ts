@@ -1,113 +1,111 @@
-import axios from 'axios';
-import app from '../src/app'; // Adjust the path to your app file
-import { Server } from 'http';
-import { pool } from '../src/mysql-pool'; // Direct access to the database for cleanup
+import request from 'supertest';
+import app from '../src/app';
+import { userService } from '../src/users/user-service';
 
-axios.defaults.baseURL = 'http://localhost:3000/api/v2'; // Base URL for API
+jest.mock('../src/users/user-service', () => ({
+  userService: {
+    registerUser: jest.fn(),
+    verifyUser: jest.fn(),
+  },
+}));
 
-let server: Server;
-
-beforeAll(() => {
-  const TEST_PORT = 3001; // Use a different port for testing
-  server = app.listen(TEST_PORT, () => {
-    console.log(`Test server running on port ${TEST_PORT}`);
+describe('User Routes (Mocked)', () => {
+  afterEach(() => {
+    jest.clearAllMocks(); // Nullstiller mocks etter hver test
   });
-  axios.defaults.baseURL = `http://localhost:${TEST_PORT}/api/v2`; // Update base URL dynamically
-});
 
-afterAll(async () => {
-  if (server) {
-    await server.close();
-  }
-});
-
-beforeEach(async () => {
-  // Clean up test users from the database
-  await pool.promise().query('DELETE FROM users WHERE email = ?', ['testuser@example.com']);
-});
-
-describe('User Routes', () => {
   describe('POST /register', () => {
-    test('should successfully register a new user', async () => {
+    it('should successfully register a new user', async () => {
+      // Tester om en ny bruker blir registrert vellykket
+      const mockUserId = 1;
+      (userService.registerUser as jest.Mock).mockResolvedValue(mockUserId);
+
       const userData = {
         name: 'Test User',
         email: 'testuser@example.com',
         password: 'password123',
       };
 
-      const response = await axios.post('/users/register', userData);
+      const response = await request(app).post('/api/v2/users/register').send(userData);
 
       expect(response.status).toBe(201);
-      expect(response.data).toEqual({
+      expect(response.body).toEqual({
         message: 'User registered successfully',
-        userId: expect.any(Number),
+        userId: mockUserId,
       });
+      expect(userService.registerUser).toHaveBeenCalledWith(
+        userData.name,
+        userData.email,
+        userData.password,
+      );
     });
 
-    test('should fail if email is already in use', async () => {
+    it('should fail if email is already in use', async () => {
+      // Tester om registreringen feiler når e-posten allerede er i bruk
+      (userService.registerUser as jest.Mock).mockRejectedValue(new Error('Email already in use'));
+
       const userData = {
         name: 'Test User',
         email: 'testuser@example.com',
         password: 'password123',
       };
 
-      // First registration
-      await axios.post('/users/register', userData);
+      const response = await request(app).post('/api/v2/users/register').send(userData);
 
-      try {
-        // Attempt to register again with the same email
-        await axios.post('/users/register', userData);
-      } catch (error: any) {
-        expect(error.response.status).toBe(400);
-        expect(error.response.data).toEqual({
-          error: 'Email already in use',
-        });
-      }
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ error: 'Email already in use' });
+      expect(userService.registerUser).toHaveBeenCalledWith(
+        userData.name,
+        userData.email,
+        userData.password,
+      );
     });
   });
 
   describe('POST /login', () => {
-    beforeEach(async () => {
-      // Register a user for login tests
-      const userData = {
+    it('should successfully log in with valid credentials', async () => {
+      // Tester om innlogging lykkes med gyldige opplysninger
+      const mockUser = {
+        id: 1,
         name: 'Test User',
         email: 'testuser@example.com',
-        password: 'password123',
+        password: 'hashedpassword123',
       };
+      (userService.verifyUser as jest.Mock).mockResolvedValue(mockUser);
 
-      await axios.post('/users/register', userData);
-    });
-
-    test('should successfully log in with valid credentials', async () => {
       const loginData = {
         email: 'testuser@example.com',
         password: 'password123',
       };
 
-      const response = await axios.post('/users/login', loginData);
+      const response = await request(app).post('/api/v2/users/login').send(loginData);
 
       expect(response.status).toBe(200);
-      expect(response.data).toEqual({
+      expect(response.body).toEqual({
         message: 'Login successful',
-        userId: expect.any(Number),
-        userName: 'Test User',
+        userId: mockUser.id,
+        userName: mockUser.name,
       });
+      expect(userService.verifyUser).toHaveBeenCalledWith(loginData.email, loginData.password);
     });
 
-    test('should fail if email or password is incorrect', async () => {
+    it('should fail if email or password is incorrect', async () => {
+      // Tester om innlogging feiler når e-post eller passord er feil
+      (userService.verifyUser as jest.Mock).mockResolvedValue(null);
+
       const invalidLoginData = {
         email: 'testuser@example.com',
         password: 'wrongpassword',
       };
 
-      try {
-        await axios.post('/users/login', invalidLoginData);
-      } catch (error: any) {
-        expect(error.response.status).toBe(401);
-        expect(error.response.data).toEqual({
-          error: 'Invalid email or password',
-        });
-      }
+      const response = await request(app).post('/api/v2/users/login').send(invalidLoginData);
+
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ error: 'Invalid email or password' });
+      expect(userService.verifyUser).toHaveBeenCalledWith(
+        invalidLoginData.email,
+        invalidLoginData.password,
+      );
     });
   });
 });

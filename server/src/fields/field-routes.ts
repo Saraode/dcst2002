@@ -27,7 +27,7 @@ router.get('/campuses', async (req, res) => {
   }
 });
 
-// Henter fields fra spesifikt campus
+// Henter fields tilhørende spesifikt campus
 router.get('/campus/:campus', async (req, res) => {
   const { campus } = req.params;
   try {
@@ -42,7 +42,7 @@ router.get('/campus/:campus', async (req, res) => {
   }
 });
 
-// Henter field etter id
+// Henter field basert på ID
 router.get('/:fieldId', async (req, res) => {
   const { fieldId } = req.params;
   try {
@@ -57,64 +57,68 @@ router.get('/:fieldId', async (req, res) => {
   }
 });
 
+// Henter fields for spesifikt campus (en spesifikk rute for strukturert data)
 router.get('/campus/:campus/fields', async (req, res) => {
   const { campus } = req.params;
   try {
     const fields = await fieldService.getFieldsByCampus(campus);
-    res.json(fields || []); // Always return an array
+    res.json(fields || []); // Returnerer alltid en liste
   } catch (error) {
     console.error('Error fetching fields for campus:', error);
     res.status(500).json({ error: 'Failed to fetch fields for campus' });
   }
 });
 
-//Henter antall subjects for fields
+// Henter totalt antall subjects for en field
 router.get('/fields/:fieldId/total-subjects-count', async (req, res) => {
   const { fieldId } = req.params;
 
   try {
-    console.log(`[INFO] Fetching total subjects count for field ID: ${fieldId}`);
+    console.log(`[DEBUG] Received fieldId: ${fieldId}`);
     const totalSubjectsCount = await fieldService.getTotalSubjectsCount(Number(fieldId));
-    console.log(`[SUCCESS] Total subjects count for field ID ${fieldId}: ${totalSubjectsCount}`);
+    console.log(`[DEBUG] Total subjects count for fieldId ${fieldId}: ${totalSubjectsCount}`);
     res.status(200).json({ total: totalSubjectsCount });
   } catch (error) {
-    console.error(`[ERROR] Failed to fetch total subjects count for field ID ${fieldId}:`, error);
-    res.status(500).json({ error: 'Failed to fetch total subjects count' });
+    if (error instanceof Error && error.message === 'No subjects found') {
+      res.status(404).json({ error: 'No subjects found for this fieldId' });
+    } else {
+      console.error(`[ERROR] Failed to fetch total subjects count for fieldId ${fieldId}:`, error);
+      res.status(500).json({ error: 'Failed to fetch total subjects count' });
+    }
   }
 });
 
-//Henter field navn
+// Henter navnet til en field
 router.get('/fields/:fieldId/name', async (req, res) => {
   const { fieldId } = req.params;
 
   try {
-    console.log(`[INFO] Fetching field name for field ID: ${fieldId}`);
     const fieldName = await fieldService.getFieldNameById(Number(fieldId));
-
-    if (fieldName) {
-      console.log(`[SUCCESS] Field name fetched: ${fieldName}`);
-      res.status(200).json({ name: fieldName });
-    } else {
-      console.error(`[ERROR] Field ID ${fieldId} not found.`);
-      res.status(404).json({ error: 'Field not found' });
+    if (!fieldName) {
+      return res.status(404).json({ error: 'Field not found' });
     }
+    res.status(200).json({ name: fieldName });
   } catch (error) {
-    console.error(`[ERROR] Failed to fetch field name for field ID ${fieldId}:`, error);
     res.status(500).json({ error: 'Failed to fetch field name' });
   }
 });
 
+// Henter fields basert på campus ID
 router.get('/fields/:campusId', async (req, res) => {
   const { campusId } = req.params;
 
   try {
-    // Execute the query to fetch fields for the given campus ID
     const [fields] = await pool
       .promise()
-      .query<RowDataPacket[]>('SELECT id, name FROM Fields WHERE campus_id = ?', [campusId]);
+      .query<
+        RowDataPacket[]
+      >('SELECT id, name, campus_id AS campusId FROM Fields WHERE campus_id = ?', [campusId]);
 
-    // Always return an array, even if no fields are found
-    res.json(fields || []);
+    if (!fields.length) {
+      return res.status(200).json([]);
+    }
+
+    res.status(200).json(fields);
   } catch (error) {
     console.error('Error fetching fields:', error);
     res.status(500).json({ error: 'Failed to fetch fields' });
