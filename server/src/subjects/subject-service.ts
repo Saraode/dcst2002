@@ -113,11 +113,13 @@ class SubjectService {
       const uppercaseId = id.toUpperCase();
       const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 
+
       // Sjekker om faget allerede eksisterer
       const existingSubject = await this.getSubjectByIdCaseInsensitive(uppercaseId);
       if (existingSubject) {
-        throw new Error(`Fag med ID '${id}' eksisterer allerede`);
+        throw new Error(`Subject with ID '${id}' already exists`);
       }
+
 
       // Setter inn faget i databasen
       const [result] = await pool
@@ -127,12 +129,11 @@ class SubjectService {
           [uppercaseId, formattedName, fieldId, levelId, description],
         );
 
-      console.log('Database insert result:', result);
+      console.log('Subject created, forcing commit:', result);
+      await pool.promise().query('COMMIT;'); // Explicitly commit the transaction
+
       return uppercaseId;
     } catch (error: any) {
-      if (error.code === 'ER_DUP_ENTRY') {
-        throw new Error(`Fag med ID '${id}' eksisterer allerede`);
-      }
       console.error('Error in createSubject:', {
         message: error.message,
         stack: error.stack,
@@ -141,6 +142,7 @@ class SubjectService {
       throw error;
     }
   }
+
 
   // Sjekker om et fag eksisterer basert på ID (case-insensitive)
   getSubjectByIdCaseInsensitive(id: string): Promise<Subject | null> {
@@ -235,7 +237,7 @@ class SubjectService {
           console.warn(`Subject with ID ${subjectId} does not exist.`);
           throw new Error('Subject not found');
         }
-
+        
         // Commit transaction
         await connection.commit();
 

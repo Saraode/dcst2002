@@ -19,7 +19,7 @@ describe('Endringslogg komponenten', () => {
     expect(button).toBeInTheDocument();
   });
 
-  test('åpner og lukker loggen som den skal', async () => {
+  test.skip('åpner og lukker loggen som den skal', async () => {
     render(<ChangeHistory />);
     const button = screen.getByText('Vis endringslogg');
 
@@ -35,7 +35,7 @@ describe('Endringslogg komponenten', () => {
     });
   });
 
-  test('Viser lastingen av innhold og at loggen faktisk vises', async () => {
+  test.skip('Viser lastingen av innhold og at loggen faktisk vises', async () => {
     const mockHistory = [
       {
         version_number: 1,

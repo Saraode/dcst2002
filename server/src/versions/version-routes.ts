@@ -1,4 +1,4 @@
-import { pool } from './mysql-pool';
+import { pool } from '../mysql-pool';
 import { versionService } from './version-service';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import express, { Request, Response } from 'express';
@@ -47,7 +47,7 @@ versionRouter.get('/api/history', async (req, res) => {
 
       ORDER BY 
         timestamp DESC;
-      `
+      `,
     );
 
     res.json(rows);
@@ -87,7 +87,7 @@ versionRouter.post('/fields/:fieldId/version', async (req, res) => {
     const newVersionNumber = await versionService.createPageVersion(
       Number(fieldId),
       userId,
-      description
+      description,
     );
     res.json({ version: newVersionNumber });
   } catch (error) {
@@ -112,7 +112,7 @@ versionRouter.post('/subjects/:subjectId/version', async (req, res) => {
       subjectId,
       userId,
       actionType,
-      description
+      description,
     );
     res.status(200).json({ message: 'Versjon opprettet', version: versionNumber });
   } catch (error) {
@@ -131,7 +131,7 @@ versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
       .promise()
       .query(
         'INSERT INTO subject_review_versions (subject_Id, reviews, user_Id, action_type, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
-        [subjectId, JSON.stringify(reviews), userId, actionType]
+        [subjectId, JSON.stringify(reviews), userId, actionType],
       );
 
     res.status(201).json({ message: 'Versjonering fullført' });
@@ -151,13 +151,18 @@ versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   }
 
   try {
+    await pool
+      .promise()
+      .query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
+    res.status(200).send({ message: 'View count incremented successfully' });
     console.log(`Øker antall visninger for emne-ID: ${subjectId}`);
 
     // Utfør spørringen og typecast resultatet
-    const [result] = await pool.promise().query<ResultSetHeader>(
-      'UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?',
-      [subjectId]
-    );
+    const [result] = await pool
+      .promise()
+      .query<ResultSetHeader>('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [
+        subjectId,
+      ]);
 
     // Sjekker om noen rader ble påvirket
     if (result.affectedRows === 0) {
