@@ -10,7 +10,7 @@ import { reviewRouter } from './reviews/review-router'; // Fixed import path
 import { subjectRouter } from './subjects/subject-router'; // Correct import
 import { fieldRouter } from './fields/field-routes';
 import { userRouter } from './users/user-routes'; // Import userRouter
-import versionRouter from './version-routes'; // Import versionRouter
+import versionRouter from './versions/version-routes'; // Import versionRouter
 // Serve client files
 app.use(express.static(path.join(__dirname, '/../../client/public')));
 app.use(cors({ origin: 'http://localhost:3000', credentials: true }));

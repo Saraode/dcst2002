@@ -36,7 +36,13 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
   }
 
   try {
-    const newSubjectId = await subjectService.createSubject(id, name, Number(fieldId), level, description);
+    const newSubjectId = await subjectService.createSubject(
+      id,
+      name,
+      Number(fieldId),
+      level,
+      description,
+    );
     res.status(201).json({ id: newSubjectId, name, level, description });
   } catch (error) {
     console.error('Feil ved oppretting av emne:', error);
@@ -157,7 +163,7 @@ router.get('/search', async (req, res) => {
         id ASC
       LIMIT 10
       `,
-      [`${query}%`, `%${query}%`, `${query}%`, `${query}%`]
+      [`${query}%`, `%${query}%`, `${query}%`, `${query}%`],
     );
 
     res.json(results);

@@ -1,4 +1,4 @@
-import { pool } from './mysql-pool';
+import { pool } from '../mysql-pool';
 import { versionService } from './version-service';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 import express, { Request, Response } from 'express';
@@ -140,7 +140,9 @@ versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
 versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   const { subjectId } = req.params;
   try {
-    await pool.query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
+    await pool
+      .promise()
+      .query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
     res.status(200).send({ message: 'View count incremented successfully' });
   } catch (error) {
     console.error('Error incrementing view count:', error);
