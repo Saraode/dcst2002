@@ -18,7 +18,6 @@ export type Review = {
 };
 
 class SubjectService {
-
   async updateSubjectDescription(subjectId: string, description: string): Promise<void> {
     return new Promise((resolve, reject) => {
       pool.query(
@@ -30,7 +29,6 @@ class SubjectService {
         },
       );
     });
-
   }
   // Search for subjects by name
   searchSubjects(searchTerm: string): Promise<Subject[]> {
@@ -98,26 +96,31 @@ class SubjectService {
   }
 
   // Create a new subject
-  async createSubject(id: string, name: string, fieldId: number, levelId: number, description: string): Promise<string> {
+  async createSubject(
+    id: string,
+    name: string,
+    fieldId: number,
+    levelId: number,
+    description: string,
+  ): Promise<string> {
     try {
       const uppercaseId = id.toUpperCase();
       const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 
-  
       // Sjekk om emnet allerede eksisterer
       const existingSubject = await this.getSubjectByIdCaseInsensitive(uppercaseId);
       if (existingSubject) {
         throw new Error(`Subject with ID '${uppercaseId}' already exists`);
       }
-  
+
       // Sett inn emne i databasen
       const [result] = await pool
         .promise()
         .query(
           'INSERT INTO Subjects (id, name, fieldId, levelId, description) VALUES (?, ?, ?, ?, ?)',
-          [uppercaseId, formattedName, fieldId, levelId, description]
+          [uppercaseId, formattedName, fieldId, levelId, description],
         );
-  
+
       console.log('Database insert result:', result);
       return uppercaseId;
     } catch (error: any) {

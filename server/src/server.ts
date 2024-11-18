@@ -10,7 +10,7 @@ import { reviewRouter } from './reviews/review-router'; // Fixed import path
 import { subjectRouter } from './subjects/subject-router'; // Correct import
 import { fieldRouter } from './fields/field-routes';
 import { userRouter } from './users/user-routes'; // Import userRouter
-
+import versionRouter from './version-routes'; // Import versionRouter
 // Serve client files
 app.use(express.static(path.join(__dirname, '/../../client/public')));
 app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
@@ -21,7 +21,7 @@ app.use('/api', reviewRouter); // Review-related routes
 app.use('/api/users', userRouter); // User-related routes
 app.use('/api', fieldRouter); // Ensure this is correct
 // app.use('/api/fields', fieldRouter);
-
+app.use('/api', versionRouter);
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '/../../client/public/index.html'));
 });
