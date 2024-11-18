@@ -8,7 +8,7 @@ import {
   CampusList,
   SubjectNewWithRouter as SubjectNew,
   ReviewNewWithRouter as ReviewNew,
-} from './Subject-Components';
+} from './subject-components';
 
 import axios from 'axios';
 import SearchBar from './SearchBar';
