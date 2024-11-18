@@ -367,18 +367,33 @@ const SubjectDetails: React.FC = () => {
   };
 
   const handleSaveDescriptionEdit = async () => {
-    if (!subject) return;
-
+    if (!subject) {
+      console.error('Subject is missing. Cannot update description.');
+      return;
+    }
+  
+    const currentUserId = localStorage.getItem('userId');
+    if (!currentUserId) {
+      console.error('User ID is missing. Cannot update description.');
+      return;
+    }
+  
+    if (!subject.levelId) {
+      console.error('Level ID is missing in subject.');
+      return;
+    }
+  
     try {
       const response = await fetch(`/api/subjects/${subjectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 35, // Moderator ID
-          description: updatedDescription,
+          userId: Number(currentUserId), // Bruk innlogget bruker-ID
+          levelId: subject.levelId,     // Sørg for at nivå-ID sendes
+          description: updatedDescription, // Oppdatert beskrivelse
         }),
       });
-
+  
       if (response.ok) {
         setSubject({ ...subject, description: updatedDescription }); // Oppdater lokalt
         setIsEditingDescription(false);
@@ -391,6 +406,7 @@ const SubjectDetails: React.FC = () => {
       console.error('Error updating subject description:', error);
     }
   };
+  
   const handleCancelDescriptionEdit = () => {
     setIsEditingDescription(false);
     if (subject) {
