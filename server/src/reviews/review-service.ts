@@ -1,6 +1,7 @@
 import { pool } from '../mysql-pool';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
+// Type for en anmeldelse
 export type Review = {
   id: number;
   subjectId: string;
@@ -8,11 +9,11 @@ export type Review = {
   stars: number;
   submitterName: string;
   userId: number;
-  created_date?: string;
+  created_date?: string; // Valgfri, siden den kanskje ikke alltid brukes
 };
 
 class ReviewService {
-  // Henter anmeldelser for et gitt fag-ID, sortert etter ID i synkende rekkefølge
+  // Henter alle anmeldelser for et gitt fag-ID, sortert i synkende rekkefølge (nyeste først)
   getReviewsBySubjectId(subjectId: string): Promise<Review[]> {
     return new Promise((resolve, reject) => {
       console.log(`Henter anmeldelser for fag-ID: ${subjectId}`);
@@ -34,7 +35,7 @@ class ReviewService {
     });
   }
 
-  // Oppretter en ny anmeldelse for et gitt fag-ID og returnerer ID-en til den opprettede anmeldelsen
+  // Oppretter en ny anmeldelse og returnerer ID-en til den opprettede anmeldelsen
   createReview(
     subjectId: string,
     text: string,
@@ -59,7 +60,7 @@ class ReviewService {
     });
   }
 
-  // Henter en anmeldelse basert på ID og returnerer den, eller null hvis den ikke finnes
+  // Henter en anmeldelse basert på ID, returnerer null hvis ingen anmeldelse finnes
   getReviewById(reviewId: number): Promise<Review | null> {
     return new Promise((resolve, reject) => {
       console.log(`Henter anmeldelse med ID: ${reviewId}`);
@@ -117,7 +118,7 @@ class ReviewService {
     });
   }
 
-  // Henter gjennomsnittlig stjerner for et gitt fag-ID, returnerer 0 hvis ingen anmeldelser finnes
+  // Henter gjennomsnittlig stjerner for et fag-ID, returnerer 0 hvis ingen anmeldelser finnes
   getAverageStarsForSubject(subjectId: string): Promise<number> {
     return new Promise<number>((resolve, reject) => {
       pool.query(
@@ -141,4 +142,5 @@ class ReviewService {
   }
 }
 
+// Eksporterer tjenesten for gjenbruk
 export const reviewService = new ReviewService();

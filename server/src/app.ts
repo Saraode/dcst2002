@@ -1,5 +1,5 @@
 import express from 'express';
-import { reviewRouter } from './reviews/review-router'; // Changed to import from the correct file
+import { reviewRouter } from './reviews/review-router';
 import { userRouter } from './users/user-routes';
 import { fieldRouter } from './fields/field-routes';
 import { subjectRouter } from './subjects/subject-router';
@@ -9,22 +9,23 @@ const app = express();
 
 app.use(express.json());
 
-// Mount subject-related routes under `/api/v2/subjects`
+// Legger til fagrelaterte ruter under `/api/v2/subjects`
 app.use('/api/v2/subjects', subjectRouter);
-console.log('Subject routes registered at /api/v2/subjects');
+console.log('Fagruter registrert på /api/v2/subjects');
 
-// Mount review-related routes under `/api/v2/reviews`
+// Legger til anmeldelsesrelaterte ruter under `/api/v2/reviews`
 app.use('/api/reviews', reviewRouter);
-console.log('Review routes registered at /api/v2/reviews');
+console.log('Anmeldelsesruter registrert på /api/v2/reviews');
 
-// Mount user-related routes under `/api/v2/users`
+// Legger til brukerrelaterte ruter under `/api/v2/users`
 app.use('/api/v2/users', userRouter);
-console.log('User routes registered at /api/v2/users');
+console.log('Brukerruter registrert på /api/v2/users');
 
-// Mount field-related routes under `/api/v2/fields`
-app.use('/api/v2/fields', fieldRouter); // Added namespace consistency
-console.log('Field routes registered at /api/v2/fields');
+// Legger til feltrelaterte ruter under `/api/v2/fields`
+app.use('/api/v2/fields', fieldRouter); // Sikrer konsistens i navnsetting
+console.log('Feltruter registrert på /api/v2/fields');
 
+// Legger til generelle API-ruter
 app.use('/api', subjectRouter);
 app.use('/api', versionRouter);
 

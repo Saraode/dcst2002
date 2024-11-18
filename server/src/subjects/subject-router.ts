@@ -5,6 +5,7 @@ import type { RowDataPacket } from 'mysql2';
 
 const router = express.Router();
 
+// Henter fag for et spesifikt felt, med eller uten nivåfilter
 router.get('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
   const levelId = req.query.levelId;
@@ -24,12 +25,12 @@ router.get('/fields/:fieldId/subjects', async (req, res) => {
   }
 });
 
-// Legg til nytt fag
+// Legger til nytt fag
 router.post('/fields/:fieldId/subjects', async (req, res) => {
   const { fieldId } = req.params;
   const { id, name, level, description } = req.body;
 
-  // Valider at alle nødvendige felter er til stede
+  // Validerer at alle nødvendige felter er til stede
   if (!id || !name || !level || !description) {
     return res.status(400).json({ error: 'ID, navn, nivå og beskrivelse er påkrevd' });
   }
@@ -43,7 +44,7 @@ router.post('/fields/:fieldId/subjects', async (req, res) => {
   }
 });
 
-// Antall fag per level
+// Henter antall fag per nivå for et felt
 router.get('/fields/:fieldId/subject-counts', async (req, res) => {
   const { fieldId } = req.params;
   try {
@@ -55,6 +56,7 @@ router.get('/fields/:fieldId/subject-counts', async (req, res) => {
   }
 });
 
+// Henter alle nivåer
 router.get('/levels', async (req, res) => {
   try {
     const levels = await subjectService.getAllLevels();
@@ -65,6 +67,7 @@ router.get('/levels', async (req, res) => {
   }
 });
 
+// Henter detaljer for et spesifikt fag
 router.get('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
   try {
@@ -79,14 +82,14 @@ router.get('/subjects/:subjectId', async (req, res) => {
   }
 });
 
-//Slett fag
+// Sletter et fag (krever autorisering)
 router.delete('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
   const { userId } = req.body;
 
   console.log(`Delete request received for subjectId: ${subjectId} by userId: ${userId}`);
 
-  // Autorisering
+  // Autorisering for sletting
   if (!userId || Number(userId) !== 35) {
     console.error(`Unauthorized attempt to delete subject: ${subjectId} by user: ${userId}`);
     return res.status(403).json({ error: 'Not authorized to delete this subject' });
@@ -103,12 +106,12 @@ router.delete('/subjects/:subjectId', async (req, res) => {
   }
 });
 
-// Rediger fag
+// Redigerer et fag
 router.put('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
   const { userId, levelId, description } = req.body;
 
-
+  // Validerer inngangsdata
   if (!userId || !levelId) {
     return res.status(400).json({ error: 'User ID and level ID are required' });
   }
@@ -121,11 +124,12 @@ router.put('/subjects/:subjectId', async (req, res) => {
     return res.status(400).json({ error: 'Level ID must be a number' });
   }
 
-
+  // Sjekker autorisering
   if (Number(userId) !== 35) {
     return res.status(403).json({ error: 'Not authorized to edit this subject' });
   }
 
+  // Validerer oppdateringer
   if (!description && !levelId) {
     return res.status(400).json({ error: 'No updates provided (description or levelId missing)' });
   }
@@ -148,9 +152,11 @@ router.put('/subjects/:subjectId', async (req, res) => {
   }
 });
 
+// Søker etter fag basert på ID eller navn
 router.get('/search', async (req, res) => {
   const query = req.query.query as string;
 
+  // Validerer søkeparameter
   if (!query || query.trim() === '') {
     return res.status(400).json({ error: 'Query parameter is required' });
   }
