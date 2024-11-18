@@ -71,7 +71,9 @@ versionRouter.get('/versions/:versionId/subjects', async (req, res) => {
 //Endpoint for versjonering med bruker-ID
 versionRouter.post('/fields/:fieldId/version', async (req, res) => {
   const { fieldId } = req.params;
-  const { userId } = req.body;
+  const { userId, description } = req.body;
+
+  console.log(`Incoming versioning request:`, { fieldId, userId, description });
 
   if (!userId) {
     console.error('User ID is missing for versioning');
@@ -80,17 +82,22 @@ versionRouter.post('/fields/:fieldId/version', async (req, res) => {
 
   try {
     console.log(`Creating version for fieldId ${fieldId} with userId ${userId}`);
-    const newVersionNumber = await versionService.createPageVersion(Number(fieldId), userId);
+    const newVersionNumber = await versionService.createPageVersion(
+      Number(fieldId),
+      userId,
+      description,
+    );
     res.json({ version: newVersionNumber });
   } catch (error) {
     console.error('Error creating new field version:', error);
     res.status(500).json({ error: 'Failed to create field version' });
   }
 });
+
 //Endpoint for versjonering med bruker-ID for emner
 versionRouter.post('/subjects/:subjectId/version', async (req, res) => {
   const { subjectId } = req.params;
-  const { userId, actionType } = req.body;
+  const { userId, actionType, description } = req.body;
 
   if (!userId || !actionType) {
     console.error('Missing data for versioning:', { userId, actionType });
@@ -99,7 +106,12 @@ versionRouter.post('/subjects/:subjectId/version', async (req, res) => {
 
   try {
     console.log(`Creating version for subject ${subjectId} by userId ${userId}`);
-    const versionNumber = await versionService.createSubjectVersion(subjectId, userId, actionType);
+    const versionNumber = await versionService.createSubjectVersion(
+      subjectId,
+      userId,
+      actionType,
+      description,
+    );
     res.status(200).json({ message: 'Version created successfully', version: versionNumber });
   } catch (error) {
     console.error('Error creating subject version:', error);
@@ -122,6 +134,17 @@ versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
   } catch (error) {
     console.error('Error saving versioning data to database:', error);
     res.status(500).json({ error: 'Failed to save versioning data' });
+  }
+});
+// antall visninger
+versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
+  const { subjectId } = req.params;
+  try {
+    await pool.query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
+    res.status(200).send({ message: 'View count incremented successfully' });
+  } catch (error) {
+    console.error('Error incrementing view count:', error);
+    res.status(500).send({ error: 'Failed to increment view count' });
   }
 });
 

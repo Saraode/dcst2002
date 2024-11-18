@@ -1,13 +1,10 @@
-// client/SubjectComponents.tsx
-
 import * as React from 'react';
 import { Component } from 'react-simplified';
-import { Alert, Card, Row, Column, Form, Button } from './Widgets';
+import { Alert, Card, Row, Column, Form, Button } from './widgets';
 import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
-import reviewService, { Subject, Review } from './Review-Service';
+import reviewService, { Subject, Review } from './review-service';
 import { createHashHistory } from 'history';
 import axios from 'axios';
-import { NavBar } from './Widgets';
 import ChangeHistory from './endringslogg';
 
 const history = createHashHistory(); // Use history.push(...) to navigate programmatically

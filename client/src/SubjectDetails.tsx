@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import StarRating from './StarRating';
-import reviewService from './Review-Service';
+import reviewService from './review-service';
 
 type Review = {
   id: number;
@@ -17,6 +17,7 @@ type Subject = {
   name: string;
   levelId: number;
   description: string;
+  view_count: number;
 };
 
 type Level = {
@@ -46,6 +47,20 @@ const SubjectDetails: React.FC = () => {
       setIsAuthorizedToEditSubject(true);
     }
   }, []);
+  useEffect(() => {
+    const incrementViewCount = async () => {
+      try {
+        await fetch(`/api/subjects/${subjectId}/increment-view`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (error) {
+        console.error('Failed to increment view count:', error);
+      }
+    };
+
+    incrementViewCount();
+  }, [subjectId]);
 
   useEffect(() => {
     const fetchSubject = async () => {
@@ -275,7 +290,7 @@ const SubjectDetails: React.FC = () => {
       if (response.ok) {
         setSubject({ ...subject, levelId: updatedLevelId });
         setIsEditingLevel(false);
-        await reviewService.createSubjectVersion(subjectId, userId, 'edited');
+        await reviewService.createSubjectVersion(subjectId as string, userId, 'edited');
       } else {
         console.error('Failed to update subject level');
       }
@@ -326,7 +341,7 @@ const SubjectDetails: React.FC = () => {
             'and userId:',
             userId,
           );
-          await reviewService.createSubjectVersion(subjectId, userId, 'deleted');
+          await reviewService.createSubjectVersion(subjectId as string, userId, 'deleted');
           console.log('Version created for deleted subject.');
 
           // Only redirect if both deletion and version creation succeed
@@ -455,7 +470,9 @@ const SubjectDetails: React.FC = () => {
         <h2>
           Anmeldelser for {subject?.id} {subject?.name}
         </h2>
-
+        <p>
+          <strong>Antall visninger:</strong> {subject?.view_count || 0}
+        </p>
         <p>
           <strong>Emnebeskrivelse:</strong>{' '}
           {isEditingDescription ? (
