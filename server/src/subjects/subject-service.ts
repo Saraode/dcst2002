@@ -113,11 +113,13 @@ class SubjectService {
       const uppercaseId = id.toUpperCase();
       const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
 
+
       // Sjekker om faget allerede eksisterer
       const existingSubject = await this.getSubjectByIdCaseInsensitive(uppercaseId);
       if (existingSubject) {
-        throw new Error(`Fag med ID '${id}' eksisterer allerede`);
+        throw new Error(`Subject with ID '${id}' already exists`);
       }
+
 
       // Setter inn faget i databasen
       const [result] = await pool
@@ -127,12 +129,11 @@ class SubjectService {
           [uppercaseId, formattedName, fieldId, levelId, description],
         );
 
-      console.log('Database insert result:', result);
+      console.log('Subject created, forcing commit:', result);
+      await pool.promise().query('COMMIT;'); // Explicitly commit the transaction
+
       return uppercaseId;
     } catch (error: any) {
-      if (error.code === 'ER_DUP_ENTRY') {
-        throw new Error(`Fag med ID '${id}' eksisterer allerede`);
-      }
       console.error('Error in createSubject:', {
         message: error.message,
         stack: error.stack,
@@ -141,6 +142,7 @@ class SubjectService {
       throw error;
     }
   }
+
 
   // Sjekker om et fag eksisterer basert på ID (case-insensitive)
   getSubjectByIdCaseInsensitive(id: string): Promise<Subject | null> {
@@ -207,20 +209,51 @@ class SubjectService {
 
   // Sletter et fag og tilhørende anmeldelser
   async deleteSubject(subjectId: string): Promise<void> {
+    console.log(`Starting deletion for subjectId: ${subjectId}`);
+
     return new Promise((resolve, reject) => {
-      pool.query<ResultSetHeader>('DELETE FROM Subjects WHERE id = ?', [subjectId], (subjectError, result) => {
-        if (subjectError) {
-          console.error(`Feil ved sletting av fag med ID ${subjectId}:`, subjectError);
-          return reject(subjectError);
+      // Step 1: Delete associated rows in dependent tables
+      pool.query('DELETE FROM Reviews WHERE subjectId = ?', [subjectId], (reviewError) => {
+        if (reviewError) {
+          console.error(`Error deleting reviews for subjectId ${subjectId}:`, reviewError);
+          return reject(reviewError);
         }
-  
-        if (result.affectedRows === 0) {
-          console.warn(`Ingen fag funnet med ID ${subjectId}.`);
-          return reject(new Error(`Fag med ID ${subjectId} ikke funnet.`));
-        }
-  
-        console.log(`Fag med ID ${subjectId} slettet.`);
-        resolve();
+
+        pool.query('DELETE FROM page_versions WHERE subject_id = ?', [subjectId], (pageError) => {
+          if (pageError) {
+            console.error(`Error deleting page versions for subjectId ${subjectId}:`, pageError);
+            return reject(pageError);
+          }
+
+          console.log(`Page versions deleted for subjectId ${subjectId}`);
+
+          pool.query(
+            'DELETE FROM subject_review_versions WHERE subject_id = ?',
+            [subjectId],
+            (reviewVersionError) => {
+              if (reviewVersionError) {
+                console.error(
+                  `Error deleting subject review versions for subjectId ${subjectId}:`,
+                  reviewVersionError,
+                );
+                return reject(reviewVersionError);
+              }
+
+              console.log(`Subject review versions deleted for subjectId ${subjectId}`);
+
+              // Step 2: Delete the subject
+              pool.query('DELETE FROM Subjects WHERE id = ?', [subjectId], (subjectError) => {
+                if (subjectError) {
+                  console.error(`Error deleting subject with ID ${subjectId}:`, subjectError);
+                  return reject(subjectError);
+                }
+
+                console.log(`Subject with ID ${subjectId} deleted successfully`);
+                resolve();
+              });
+            },
+          );
+        });
       });
     });
   }
