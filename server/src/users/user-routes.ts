@@ -3,11 +3,10 @@ import { userService } from './user-service';
 
 const userRouter = express.Router();
 
-/// Register a new user
+/// Ny bruker
 userRouter.post('/register', async (req: Request, res: Response) => {
   const { name, email, password } = req.body;
 
-  // Validate required fields
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -23,7 +22,7 @@ userRouter.post('/register', async (req: Request, res: Response) => {
   }
 });
 
-// Log in a user
+// Log in
 userRouter.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
