@@ -205,21 +205,19 @@ class SubjectService {
   // Sletter et fag og tilhørende anmeldelser
   async deleteSubject(subjectId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      pool.query('DELETE FROM Reviews WHERE subjectId = ?', [subjectId], (reviewError) => {
-        if (reviewError) {
-          console.error(`Feil ved sletting av anmeldelser for fagId ${subjectId}:`, reviewError);
-          return reject(reviewError);
+      pool.query<ResultSetHeader>('DELETE FROM Subjects WHERE id = ?', [subjectId], (subjectError, result) => {
+        if (subjectError) {
+          console.error(`Feil ved sletting av fag med ID ${subjectId}:`, subjectError);
+          return reject(subjectError);
         }
-
-        pool.query('DELETE FROM Subjects WHERE id = ?', [subjectId], (subjectError) => {
-          if (subjectError) {
-            console.error(`Feil ved sletting av fag med ID ${subjectId}:`, subjectError);
-            return reject(subjectError);
-          }
-
-          console.log(`Fag med ID ${subjectId} slettet`);
-          resolve();
-        });
+  
+        if (result.affectedRows === 0) {
+          console.warn(`Ingen fag funnet med ID ${subjectId}.`);
+          return reject(new Error(`Fag med ID ${subjectId} ikke funnet.`));
+        }
+  
+        console.log(`Fag med ID ${subjectId} slettet.`);
+        resolve();
       });
     });
   }
