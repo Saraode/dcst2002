@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Alert } from '../src/widgets';
+import { Alert } from '../src/Widgets';
 import { shallow } from 'enzyme';
 
 describe('Alert tests', () => {
@@ -23,8 +23,8 @@ describe('Alert tests', () => {
               test
               <button />
             </div>
-          </div>
-        )
+          </div>,
+        ),
       ).toEqual(true);
 
       done();
@@ -45,8 +45,8 @@ describe('Alert tests', () => {
               test
               <button />
             </div>
-          </div>
-        )
+          </div>,
+        ),
       ).toEqual(true);
 
       wrapper.find('button.btn-close').simulate('click');

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { SubjectNewWithRouter } from './subject-components';
+import { SubjectNewWithRouter } from './Subject-Components';
 
 type Subject = {
   id: string;
@@ -13,6 +13,8 @@ type Level = {
   id: number;
   name: string;
 };
+
+const isValidInput = (input: string) => /^[a-zA-Z0-9æøåÆØÅ\s]*$/.test(input);
 
 const SubjectsByField: React.FC = () => {
   const { fieldId } = useParams<{ fieldId: string }>();
@@ -77,7 +79,7 @@ const SubjectsByField: React.FC = () => {
   useEffect(() => {
     const fetchFieldName = async () => {
       try {
-        const response = await fetch(`/api/fields/${fieldId}`);
+        const response = await fetch(`/api/fields/${fieldId}/name`);
         if (!response.ok) throw new Error('Failed to fetch field name');
         const field = await response.json();
         setFieldName(field.name);
@@ -205,19 +207,38 @@ const SubjectsByField: React.FC = () => {
       >
         <h2>Legg til nytt emne</h2>
         <input
-          type="text"
-          placeholder="Fagkode"
-          value={newSubjectId}
-          onChange={(e) => setNewSubjectId(e.target.value)}
-          style={{ marginBottom: '10px' }}
-        />
-        <input
-          type="text"
-          placeholder="Emnenavn"
-          value={newSubjectName}
-          onChange={(e) => setNewSubjectName(e.target.value)}
-          style={{ marginBottom: '10px' }}
-        />
+  type="text"
+  placeholder="Fagkode"
+  value={newSubjectId}
+  onChange={(e) => {
+    const input = e.target.value;
+    setNewSubjectId(input);
+    if (!isValidInput(input)) {
+      setErrorMessage('Fagkode kan kun inneholde bokstaver, tall og mellomrom.');
+    } else {
+      setErrorMessage('');
+    }
+  }}
+  style={{ marginBottom: '10px' }}
+/>
+
+
+<input
+  type="text"
+  placeholder="Emnenavn"
+  value={newSubjectName}
+  onChange={(e) => {
+    const input = e.target.value;
+    setNewSubjectName(input);
+    if (!isValidInput(input)) {
+      setErrorMessage('Emnenavn kan kun inneholde bokstaver, tall og mellomrom.');
+    } else {
+      setErrorMessage('');
+    }
+  }}
+  style={{ marginBottom: '10px' }}
+/>
+
 
         <textarea
           placeholder="Emnebeskrivelse"
@@ -254,9 +275,7 @@ const SubjectsByField: React.FC = () => {
         </div>
 
         <div style={{ marginBottom: '10px' }}>
-          <button onClick={() => setSelectedLevel(null)}>
-            Alle emner ({totalSubjectsCount})
-          </button>
+          <button onClick={() => setSelectedLevel(null)}>Alle emner ({totalSubjectsCount})</button>
           {levels.map((level) => (
             <button key={level.id} onClick={() => setSelectedLevel(level.id)}>
               {level.name} ({getCountForLevel(level.id)})
