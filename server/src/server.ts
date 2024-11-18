@@ -2,22 +2,14 @@ import app from './app';
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
-<<<<<<< HEAD
+
 import { reviewRouter } from './reviews/review-router'; // Fixed import path
 import { subjectRouter } from './subjects/subject-router'; // Correct import
 import { fieldRouter } from './fields/field-routes';
 import { userRouter } from './users/user-routes'; // Import userRouter
 import versionRouter from './versions/version-routes'; // Import versionRouter
 // Serve client files
-=======
-import { reviewRouter } from './reviews/review-router'; // Riktig importsti for anmeldelser
-import { subjectRouter } from './subjects/subject-router'; // Riktig importsti for fag
-import { fieldRouter } from './fields/field-routes'; // Import for felt-relaterte ruter
-import { userRouter } from './users/user-routes'; // Import for bruker-relaterte ruter
-import versionRouter from './version-routes'; // Import for versjonsinformasjon
 
-// Serverer klientfiler
->>>>>>> 84973e16689af6da90a6af1a424922c5d0686e6d
 app.use(express.static(path.join(__dirname, '/../../client/public')));
 
 // Aktiverer CORS for spesifikke klienter
