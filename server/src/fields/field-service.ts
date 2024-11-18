@@ -1,12 +1,14 @@
 import { pool } from '../mysql-pool';
 import type { RowDataPacket } from 'mysql2';
 
+// Type for Field
 export type Field = {
   id: number;
   name: string;
   campusId: number;
 };
 
+// Type for Campus
 export type Campus = {
   campusId: number;
   name: string;
@@ -108,5 +110,6 @@ export class FieldService {
   }
 }
 
+// Instans av FieldService for gjenbruk i andre moduler
 const fieldService = new FieldService();
 export default fieldService;
