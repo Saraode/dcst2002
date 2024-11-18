@@ -211,53 +211,50 @@ class SubjectService {
   async deleteSubject(subjectId: string): Promise<void> {
     console.log(`Starting deletion for subjectId: ${subjectId}`);
 
-    return new Promise((resolve, reject) => {
-      // Step 1: Delete associated rows in dependent tables
-      pool.query('DELETE FROM Reviews WHERE subjectId = ?', [subjectId], (reviewError) => {
-        if (reviewError) {
-          console.error(`Error deleting reviews for subjectId ${subjectId}:`, reviewError);
-          return reject(reviewError);
+    try {
+      const connection = await pool.promise().getConnection();
+
+      try {
+        // Begin transaction
+        await connection.beginTransaction();
+
+        // Step 1: Delete associated rows in dependent tables
+        await connection.query('DELETE FROM Reviews WHERE subjectId = ?', [subjectId]);
+        await connection.query('DELETE FROM search WHERE subject_id = ?', [subjectId]);
+        await connection.query('DELETE FROM page_versions WHERE subject_id = ?', [subjectId]);
+        await connection.query('DELETE FROM subject_versions WHERE subject_id = ?', [subjectId]);
+        await connection.query('DELETE FROM subject_review_versions WHERE subject_id = ?', [
+          subjectId,
+        ]);
+
+        // Step 2: Delete the subject from the Subjects table
+        const [result] = await connection.query<ResultSetHeader>(
+          'DELETE FROM Subjects WHERE id = ?',
+          [subjectId],
+        );
+
+        if (result.affectedRows === 0) {
+          console.warn(`Subject with ID ${subjectId} does not exist.`);
+          throw new Error('Subject not found');
         }
+        
+        // Commit transaction
+        await connection.commit();
 
-        pool.query('DELETE FROM page_versions WHERE subject_id = ?', [subjectId], (pageError) => {
-          if (pageError) {
-            console.error(`Error deleting page versions for subjectId ${subjectId}:`, pageError);
-            return reject(pageError);
-          }
-
-          console.log(`Page versions deleted for subjectId ${subjectId}`);
-
-          pool.query(
-            'DELETE FROM subject_review_versions WHERE subject_id = ?',
-            [subjectId],
-            (reviewVersionError) => {
-              if (reviewVersionError) {
-                console.error(
-                  `Error deleting subject review versions for subjectId ${subjectId}:`,
-                  reviewVersionError,
-                );
-                return reject(reviewVersionError);
-              }
-
-              console.log(`Subject review versions deleted for subjectId ${subjectId}`);
-
-              // Step 2: Delete the subject
-              pool.query('DELETE FROM Subjects WHERE id = ?', [subjectId], (subjectError) => {
-                if (subjectError) {
-                  console.error(`Error deleting subject with ID ${subjectId}:`, subjectError);
-                  return reject(subjectError);
-                }
-
-                console.log(`Subject with ID ${subjectId} deleted successfully`);
-                resolve();
-              });
-            },
-          );
-        });
-      });
-    });
+        console.log(`Subject with ID ${subjectId} deleted successfully`);
+      } catch (error) {
+        // Rollback transaction on error
+        await connection.rollback();
+        throw error;
+      } finally {
+        // Release the connection back to the pool
+        connection.release();
+      }
+    } catch (error) {
+      console.error(`Error during deletion for subjectId ${subjectId}:`, error);
+      throw error;
+    }
   }
-
   // Oppdaterer nivået til et fag
   async updateSubjectLevel(subjectId: string, levelId: number): Promise<void> {
     return new Promise((resolve, reject) => {

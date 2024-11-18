@@ -1,7 +1,7 @@
 import express from 'express';
 import subjectService from './subject-service';
 import { pool } from '../mysql-pool';
-import type { RowDataPacket } from 'mysql2';
+import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 const router = express.Router();
 
@@ -88,23 +88,18 @@ router.get('/subjects/:subjectId', async (req, res) => {
   }
 });
 
+// Sletter et fag
 // Sletter et fag (krever autorisering)
 router.delete('/subjects/:subjectId', async (req, res) => {
-  const { subjectId } = req.params;
-  const { userId } = req.body;
+  const { subjectId } = req.params; // Subject ID to delete
 
-  console.log(`Delete request received for subjectId: ${subjectId} by userId: ${userId}`);
-
-  // Autorisering for sletting
-  if (!userId || Number(userId) !== 35) {
-    console.error(`Unauthorized attempt to delete subject: ${subjectId} by user: ${userId}`);
-    return res.status(403).json({ error: 'Not authorized to delete this subject' });
-  }
+  console.log(`Attempting to delete subject with ID: ${subjectId}`);
 
   try {
-    console.log(`Attempting to delete subject with ID: ${subjectId}`);
+    // Delegate deletion logic to the service
     await subjectService.deleteSubject(subjectId);
-    console.log(`Subject with ID ${subjectId} deleted successfully`);
+
+    console.log(`Subject with ID ${subjectId} deleted successfully.`);
     res.status(200).json({ message: 'Subject deleted successfully' });
   } catch (error) {
     console.error('Error deleting subject:', error);
