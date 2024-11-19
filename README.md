@@ -1,5 +1,8 @@
-# NTNU Emnevurderinger (DCST2002 Webutviklingsprosjekt h24)
-Dette er en side for å legge inn emner og anmeldelser av emner på NTNU. Man velger hvilket campus og fagområde man vil legge inn emner under, og legger inn anmeldelse der.
+# NTNU EmneVurderinger (DCST2002 Webutviklingsprosjekt h24)
+
+EmneVurderinger er en webapplikasjon som lar brukere utforske og vurdere emner ved NTNU. Brukere kan søke etter emner, filtrere dem etter fagområde, og sortere emnene etter nivå. Applikasjonen lar brukere også legge til, redigere og slette egne anmeldelser av emner. I tillegg kan brukere se gjennomsnittlig vurdering for hvert emne. 
+Brukere kan navigere mellom forskjellige campus ved NTNU, velge fagområder og emner, og lese detaljer om hvert emne, inkludert beskrivelser og vurderinger. Administrasjon av emner og anmeldelser kan utføres av moderatorer som har spesifik tilgang til å opprette, redigere og slette emner og anmeldelser.
+Applikasjonen har funksjonalitet for både vanlige brukere og moderatorer, med mulighet for å vise endringslogg og versjonshåndtering for emner og anmeldelser, som gir innsikt i hvilke endringer som har blitt gjort over tid. 
 
 # Innhold
 - [Hovedfunksjon](#Hovedfunksjon)
@@ -110,6 +113,8 @@ INSERT INTO Fields (id, name, campusId) VALUES
 (9, 'Cybersikkerhet', 4),
 (10, 'Statsvitenskap', 5);
 ```
+Vi har valgt og fokusere på campus Gløshaugen i denne applikasjonen, og derfor er dette et eksempel på insert-setninger for fagfelt på Gløshaugen. 
+Det vil være en lignende implementasjon for de andre campusene (viser det ved "statsvitenskap").
 
 ### Tabeller som avhenger av nivå 2-tabeller
 Tabeller som refererer til Fields og/eller Levels:
