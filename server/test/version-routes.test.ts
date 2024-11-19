@@ -1,92 +1,300 @@
+import express from 'express';
 import request from 'supertest';
-import app from '../src/app';
-import { versionService } from '../src/version-service';
+import versionRouter from '../src/versions/version-routes';
+import { versionService } from '../src/versions/version-service';
 
-// Mock version
-jest.mock('../src/version-service', () => ({
-  versionService: {
-    createPageVersion: jest.fn(),
-    getSubjectsByVersion: jest.fn(),
-    createSubjectVersion: jest.fn(),
-  },
-}));
-
-// Mock pool.promise().query
 jest.mock('../src/mysql-pool', () => {
+  const queryMock = jest.fn();
   return {
+    queryMock,
     pool: {
-      promise: jest.fn().mockReturnValue({
-        query: jest.fn(),
-      }),
+      promise: jest.fn(() => ({
+        query: queryMock,
+      })),
     },
   };
 });
 
-describe('Versioning API (Mocked)', () => {
+jest.mock('../src/versions/version-service', () => ({
+  versionService: {
+    getSubjectsByVersion: jest.fn(),
+    createPageVersion: jest.fn(),
+    createSubjectVersion: jest.fn(),
+  },
+}));
+
+const { queryMock } = jest.requireMock('../src/mysql-pool');
+
+const app = express();
+app.use(express.json());
+app.use('/api/v2', versionRouter);
+
+describe('Version Routes - POST /subjects/:subjectId/reviews/version', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('createPageVersion', () => {
-    it('should create a new field version', async () => {
-      // Tester om en ny versjon for feltet blir opprettet
-      (versionService.createPageVersion as jest.Mock).mockResolvedValue(2);
+  it('skal opprette en ny anmeldelseversjon', async () => {
+    const mockSubjectId = '123';
+    const mockReviews = [{ id: 1, comment: 'Great subject!' }];
+    const mockUserId = 'user1';
+    const mockActionType = 'edit';
 
-      const response = await request(app).post('/api/fields/101/version').send({ userId: '1' });
+    queryMock.mockResolvedValueOnce([{ insertId: 1 }]);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({ version: 2 });
-      // Adjusted to match the implementation
-      expect(versionService.createPageVersion).toHaveBeenCalledWith(101, '1', undefined);
-    });
+    const response = await request(app)
+      .post(`/api/v2/subjects/${mockSubjectId}/reviews/version`)
+      .send({
+        reviews: mockReviews,
+        userId: mockUserId,
+        actionType: mockActionType,
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toEqual({ message: 'Versjonering fullført' });
+
+    expect(queryMock).toHaveBeenCalledWith(
+      'INSERT INTO subject_review_versions (subject_Id, reviews, user_Id, action_type, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+      [mockSubjectId, JSON.stringify(mockReviews), mockUserId, mockActionType],
+    );
   });
 
-  describe('createSubjectVersion', () => {
-    it('should create a new subject version', async () => {
-      // Tester om en ny versjon for et emne blir opprettet
-      (versionService.createSubjectVersion as jest.Mock).mockResolvedValue(3);
+  it('skal returnere 500 ved databasefeil', async () => {
+    const mockSubjectId = '123';
+    const mockReviews = [{ id: 1, comment: 'Great subject!' }];
+    const mockUserId = 'user1';
+    const mockActionType = 'edit';
 
-      const response = await request(app).post('/api/subjects/1001/version').send({
-        userId: '1',
+    queryMock.mockRejectedValueOnce(new Error('Database error'));
+
+    const response = await request(app)
+      .post(`/api/v2/subjects/${mockSubjectId}/reviews/version`)
+      .send({
+        reviews: mockReviews,
+        userId: mockUserId,
+        actionType: mockActionType,
+      });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Kunne ikke lagre versjonsdata' });
+
+    expect(queryMock).toHaveBeenCalledWith(
+      'INSERT INTO subject_review_versions (subject_Id, reviews, user_Id, action_type, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+      [mockSubjectId, JSON.stringify(mockReviews), mockUserId, mockActionType],
+    );
+  });
+
+  it('skal returnere 400 hvis påkrevde felter mangler', async () => {
+    const response = await request(app)
+      .post('/api/v2/subjects/123/reviews/version')
+      .send({
+        reviews: [{ id: 1, comment: 'Great subject!' }],
+        userId: null,
         actionType: 'edit',
       });
 
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ error: 'Missing required fields: userId or actionType' });
+    expect(queryMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('Version Router - Increment View', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('skal øke antall visninger', async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
+
+    const response = await request(app).post('/api/v2/subjects/123/increment-view');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ message: 'Antall visninger økt' });
+    expect(queryMock).toHaveBeenCalledWith(
+      'UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?',
+      ['123'],
+    );
+  });
+
+  it('skal returnere 404 hvis emne ikke finnes', async () => {
+    queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
+
+    const response = await request(app).post('/api/v2/subjects/123/increment-view');
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: 'Emne ikke funnet' });
+    expect(queryMock).toHaveBeenCalledWith(
+      'UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?',
+      ['123'],
+    );
+  });
+
+  it('skal returnere 500 ved databasefeil', async () => {
+    queryMock.mockRejectedValueOnce(new Error('Database error'));
+
+    const response = await request(app).post('/api/v2/subjects/123/increment-view');
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: 'Kunne ikke øke antall visninger' });
+    expect(queryMock).toHaveBeenCalledWith(
+      'UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?',
+      ['123'],
+    );
+  });
+});
+
+describe('Version Routes', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('GET /api/history', () => {
+    it('skal hente endringshistorikk', async () => {
+      const mockHistory = [
+        {
+          version_number: 1,
+          timestamp: '2024-01-01',
+          user_name: 'Test User',
+          action_type: 'added',
+        },
+      ];
+
+      queryMock.mockResolvedValueOnce([mockHistory]);
+
+      const response = await request(app).get('/api/v2/api/history');
+
       expect(response.status).toBe(200);
-      expect(response.body).toEqual({ message: 'Version created successfully', version: 3 });
-      // Adjusted to match the implementation
-      expect(versionService.createSubjectVersion).toHaveBeenCalledWith(
-        '1001',
-        '1',
-        'edit',
-        undefined,
-      );
+      expect(response.body).toEqual(mockHistory);
+      expect(queryMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('skal returnere 500 ved feil under henting av historikk', async () => {
+      queryMock.mockRejectedValueOnce(new Error('Database error'));
+
+      const response = await request(app).get('/api/v2/api/history');
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: 'Kunne ikke hente endringshistorikk' });
+      expect(queryMock).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('getSubjectsByVersion', () => {
-    it('should fetch subjects by version', async () => {
-      // Tester om emnene blir hentet riktig basert på versjon
-      (versionService.getSubjectsByVersion as jest.Mock).mockResolvedValue(['Math', 'Physics']);
+  describe('GET /versions/:versionId/subjects', () => {
+    it('skal hente emner for en gitt versjon', async () => {
+      const mockSubjects = ['subject1', 'subject2'];
 
-      const response = await request(app).get('/api/versions/1/subjects');
+      (versionService.getSubjectsByVersion as jest.Mock).mockResolvedValueOnce(mockSubjects);
+
+      const response = await request(app).get('/api/v2/versions/1/subjects');
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual(['Math', 'Physics']);
+      expect(response.body).toEqual(mockSubjects);
+      expect(versionService.getSubjectsByVersion).toHaveBeenCalledWith(1);
+    });
+
+    it('skal returnere 500 ved feil under tjenestekall', async () => {
+      (versionService.getSubjectsByVersion as jest.Mock).mockRejectedValueOnce(
+        new Error('Service error'),
+      );
+
+      const response = await request(app).get('/api/v2/versions/1/subjects');
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: 'Kunne ikke hente emner for versjon' });
       expect(versionService.getSubjectsByVersion).toHaveBeenCalledWith(1);
     });
   });
 
-  describe('Error Handling', () => {
-    it('should handle errors gracefully', async () => {
-      // Tester feilhåndtering når oppretting av versjon mislykkes
-      (versionService.createPageVersion as jest.Mock).mockRejectedValue(
-        new Error('Database error'),
+  describe('POST /fields/:fieldId/version', () => {
+    it('skal opprette en ny versjon av felt', async () => {
+      (versionService.createPageVersion as jest.Mock).mockResolvedValueOnce(2);
+
+      const response = await request(app).post('/api/v2/fields/101/version').send({
+        userId: 'testUser',
+        description: 'New version',
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ version: 2 });
+      expect(versionService.createPageVersion).toHaveBeenCalledWith(101, 'testUser', 'New version');
+    });
+
+    it('skal returnere 400 hvis bruker-ID mangler', async () => {
+      const response = await request(app).post('/api/v2/fields/101/version').send({
+        description: 'New version',
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ error: 'Bruker-ID er påkrevd for versjonering' });
+      expect(versionService.createPageVersion).not.toHaveBeenCalled();
+    });
+
+    it('skal returnere 500 ved feil under oppretting av versjon', async () => {
+      (versionService.createPageVersion as jest.Mock).mockRejectedValueOnce(
+        new Error('Service error'),
       );
 
-      const response = await request(app).post('/api/fields/101/version').send({ userId: '1' });
+      const response = await request(app).post('/api/v2/fields/101/version').send({
+        userId: 'testUser',
+        description: 'New version',
+      });
 
       expect(response.status).toBe(500);
-      expect(response.body).toEqual({ error: 'Failed to create field version' });
+      expect(response.body).toEqual({ error: 'Kunne ikke opprette feltversjon' });
+      expect(versionService.createPageVersion).toHaveBeenCalledWith(101, 'testUser', 'New version');
+    });
+  });
+
+  describe('POST /subjects/:subjectId/version', () => {
+    it('skal opprette en ny emneversjon', async () => {
+      (versionService.createSubjectVersion as jest.Mock).mockResolvedValueOnce(1);
+
+      const response = await request(app).post('/api/v2/subjects/123/version').send({
+        userId: 'user1',
+        actionType: 'edit',
+        description: 'Updated version',
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ message: 'Versjon opprettet', version: 1 });
+      expect(versionService.createSubjectVersion).toHaveBeenCalledWith(
+        '123',
+        'user1',
+        'edit',
+        'Updated version',
+      );
+    });
+
+    it('skal returnere 400 hvis bruker-ID eller handlingstype mangler', async () => {
+      const response = await request(app).post('/api/v2/subjects/123/version').send({
+        description: 'Updated version',
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ error: 'Bruker-ID og handlingstype er påkrevd' });
+      expect(versionService.createSubjectVersion).not.toHaveBeenCalled();
+    });
+
+    it('skal returnere 500 ved feil under tjenestekall', async () => {
+      (versionService.createSubjectVersion as jest.Mock).mockRejectedValueOnce(
+        new Error('Service error'),
+      );
+
+      const response = await request(app).post('/api/v2/subjects/123/version').send({
+        userId: 'user1',
+        actionType: 'edit',
+        description: 'Updated version',
+      });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: 'Kunne ikke opprette emneversjon' });
+      expect(versionService.createSubjectVersion).toHaveBeenCalledWith(
+        '123',
+        'user1',
+        'edit',
+        'Updated version',
+      );
     });
   });
 });

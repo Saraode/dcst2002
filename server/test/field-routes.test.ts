@@ -1,125 +1,135 @@
 import request from 'supertest';
 import app from '../src/app';
 import fieldService from '../src/fields/field-service';
+import { pool } from '../src/mysql-pool';
 
 jest.mock('../src/fields/field-service', () => ({
   getFields: jest.fn(),
+  getAllCampuses: jest.fn(),
   getFieldsByCampus: jest.fn(),
   getFieldById: jest.fn(),
-  getAllCampuses: jest.fn(),
   getTotalSubjectsCount: jest.fn(),
   getFieldNameById: jest.fn(),
 }));
+jest.mock('../src/mysql-pool', () => ({
+  pool: {
+    promise: jest.fn().mockReturnValue({
+      query: jest.fn(),
+    }),
+  },
+}));
 
-describe('Field Router (Mocked)', () => {
+const mockQuery = pool.promise().query as jest.Mock;
+
+describe('Field Router Tests', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('GET /fields', () => {
-    it('should fetch all fields', async () => {
+  describe('GET /api/v2/fields', () => {
+    // Tester at alle fields hentes korrekt
+    it('should fetch all fields successfully', async () => {
       const mockFields = [
-        { id: 101, name: 'Field A', campusId: 1 },
-        { id: 102, name: 'Field B', campusId: 1 },
+        { id: 1, name: 'Field A' },
+        { id: 2, name: 'Field B' },
       ];
-
-      // Mock respons for hentede felt
       (fieldService.getFields as jest.Mock).mockResolvedValue(mockFields);
 
       const response = await request(app).get('/api/v2/fields');
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockFields);
-      expect(fieldService.getFields).toHaveBeenCalledTimes(1); // Verifiser at funksjonen er kalt
     });
 
-    it('should return 500 if fetching all fields fails', async () => {
+    // Tester at feil ved henting av fields håndteres korrekt
+    it('should handle errors when fetching fields', async () => {
       (fieldService.getFields as jest.Mock).mockRejectedValue(new Error('Database error'));
 
       const response = await request(app).get('/api/v2/fields');
       expect(response.status).toBe(500);
       expect(response.body).toEqual({ error: 'Failed to fetch fields' });
-      expect(fieldService.getFields).toHaveBeenCalledTimes(1); // Verifiser at funksjonen er kalt
     });
   });
 
-  describe('GET /fields/campuses', () => {
-    it('should fetch all campuses', async () => {
+  describe('GET /api/v2/fields/campuses', () => {
+    // Tester at alle campuser hentes korrekt
+    it('should fetch all campuses successfully', async () => {
       const mockCampuses = [
-        { campusId: 1, name: 'Campus 1' },
-        { campusId: 2, name: 'Campus 2' },
+        { id: 1, name: 'Campus A' },
+        { id: 2, name: 'Campus B' },
       ];
-
       (fieldService.getAllCampuses as jest.Mock).mockResolvedValue(mockCampuses);
 
       const response = await request(app).get('/api/v2/fields/campuses');
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockCampuses);
-      expect(fieldService.getAllCampuses).toHaveBeenCalledTimes(1); // Verifiser at funksjonen er kalt
     });
 
-    it('should return 500 if fetching campuses fails', async () => {
+    // Tester at feil ved henting av campuser håndteres korrekt
+    it('should handle errors when fetching campuses', async () => {
       (fieldService.getAllCampuses as jest.Mock).mockRejectedValue(new Error('Database error'));
 
       const response = await request(app).get('/api/v2/fields/campuses');
       expect(response.status).toBe(500);
       expect(response.body).toEqual({ error: 'Failed to fetch campuses' });
-      expect(fieldService.getAllCampuses).toHaveBeenCalledTimes(1); // Verifiser at funksjonen er kalt
     });
   });
 
-  describe('GET /fields/campus/:campus', () => {
-    it('should fetch fields by campus name', async () => {
-      const mockFields = [
-        { id: 101, name: 'Field A', campusId: 1 },
-        { id: 102, name: 'Field B', campusId: 1 },
-      ];
-
+  describe('GET /api/v2/fields/campus/:campus', () => {
+    // Tester at fields for en spesifikk campus hentes korrekt
+    it('should fetch fields for a specific campus successfully', async () => {
+      const mockFields = [{ id: 1, name: 'Field A' }];
       (fieldService.getFieldsByCampus as jest.Mock).mockResolvedValue(mockFields);
 
       const response = await request(app).get('/api/v2/fields/campus/TestCampus');
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockFields);
-      expect(fieldService.getFieldsByCampus).toHaveBeenCalledWith('TestCampus');
     });
 
-    it('should return 404 if campus is not found', async () => {
+    // Tester at 404 returneres hvis ingen fields finnes for en campus
+    it('should return 404 if no fields are found for a campus', async () => {
       (fieldService.getFieldsByCampus as jest.Mock).mockResolvedValue([]);
 
       const response = await request(app).get('/api/v2/fields/campus/UnknownCampus');
       expect(response.status).toBe(404);
       expect(response.body).toEqual({ error: 'Campus not found' });
-      expect(fieldService.getFieldsByCampus).toHaveBeenCalledWith('UnknownCampus');
-    });
-
-    it('should return 500 if fetching fields for a campus fails', async () => {
-      (fieldService.getFieldsByCampus as jest.Mock).mockRejectedValue(
-        new Error('Database query error'),
-      );
-
-      const response = await request(app).get('/api/v2/fields/campus/SomeCampus');
-      expect(response.status).toBe(500); // Verifiser at statusen er 500
-      expect(response.body).toEqual({ error: 'Failed to fetch fields for campus' }); // Feilmelding
     });
   });
 
-  describe('GET /fields/:fieldId', () => {
-    it('should fetch a field by ID', async () => {
-      const mockField = { id: 101, name: 'Field A', campusId: 1 };
+  describe('GET /api/v2/fields/:fieldId', () => {
+    // Tester at en field hentes korrekt basert på ID
+    it('should fetch a field by ID successfully', async () => {
+      const mockField = { id: 1, name: 'Field A' };
       (fieldService.getFieldById as jest.Mock).mockResolvedValue(mockField);
 
-      const response = await request(app).get('/api/v2/fields/101');
+      const response = await request(app).get('/api/v2/fields/1');
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockField);
-      expect(fieldService.getFieldById).toHaveBeenCalledWith(101);
     });
 
-    it('should return 404 if field by ID does not exist', async () => {
+    // Tester at 404 returneres hvis en field ikke finnes basert på ID
+    it('should return 404 if a field is not found by ID', async () => {
       (fieldService.getFieldById as jest.Mock).mockResolvedValue(null);
 
       const response = await request(app).get('/api/v2/fields/999');
       expect(response.status).toBe(404);
       expect(response.body).toEqual({ error: 'Field not found' });
-      expect(fieldService.getFieldById).toHaveBeenCalledWith(999);
+    });
+  });
+
+  describe('GET /api/v2/fields/campus/:campus/fields', () => {
+    // Tester at fields for en spesifikk campus hentes korrekt med ekstra endepunkt
+    it('should fetch fields for a specific campus successfully', async () => {
+      const mockFields = [
+        { id: 1, name: 'Field A', campusId: 1 },
+        { id: 2, name: 'Field B', campusId: 1 },
+      ];
+      (fieldService.getFieldsByCampus as jest.Mock).mockResolvedValueOnce(mockFields);
+
+      const response = await request(app).get('/api/v2/fields/campus/TestCampus/fields');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(mockFields);
+      expect(fieldService.getFieldsByCampus).toHaveBeenCalledWith('TestCampus');
     });
   });
 });

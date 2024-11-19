@@ -1,4 +1,4 @@
-import { versionService } from '../src/version-service';
+import { versionService } from '../src/versions/version-service';
 import { pool } from '../src/mysql-pool';
 
 jest.mock('../src/mysql-pool', () => ({
@@ -15,19 +15,19 @@ describe('VersionService', () => {
   });
 
   describe('createPageVersion', () => {
-    it('should create a new page version and return the version number', async () => {
+    it('skal opprette en ny sideversjon og returnere versjonsnummer', async () => {
       const mockFieldId = 101;
       const mockUserId = '1';
-      const mockDescription = 'Version description';
+      const mockDescription = 'Testbeskrivelse';
       const mockSubjects = [{ id: 'subject1' }, { id: 'subject2' }];
       const mockInsertResult = [{ insertId: 2 }];
 
       const mockPromiseQuery = pool.promise().query as jest.Mock;
 
       mockPromiseQuery
-        .mockResolvedValueOnce([[{ max_version: 1 }], []]) // MAX(version_number) query
-        .mockResolvedValueOnce([mockSubjects, []]) // Subject IDs query
-        .mockResolvedValueOnce([mockInsertResult, []]); // INSERT query
+        .mockResolvedValueOnce([[{ max_version: 1 }], []]) // Spørring for MAX(version_number)
+        .mockResolvedValueOnce([mockSubjects, []]) // Spørring for emne-IDer
+        .mockResolvedValueOnce([mockInsertResult, []]); // Spørring for INSERT
 
       const result = await versionService.createPageVersion(
         mockFieldId,
@@ -35,7 +35,7 @@ describe('VersionService', () => {
         mockDescription,
       );
 
-      expect(result).toBe(2); // New version number
+      expect(result).toBe(2); // Nytt versjonsnummer
       expect(mockPromiseQuery).toHaveBeenCalledTimes(3);
       expect(mockPromiseQuery).toHaveBeenCalledWith(
         'SELECT MAX(version_number) AS max_version FROM page_versions WHERE field_id = ?',
@@ -45,14 +45,15 @@ describe('VersionService', () => {
         mockFieldId,
       ]);
       expect(mockPromiseQuery).toHaveBeenCalledWith(
-        'INSERT INTO page_versions (field_id, version_number, user_id, subject_ids, created_at) VALUES ( ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+        'INSERT INTO page_versions (field_id, version_number, user_id, subject_ids, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
         [mockFieldId, 2, mockUserId, JSON.stringify(['subject1', 'subject2']), mockDescription],
       );
     });
+    // Tester om en ny sideversjon blir opprettet og versjonsnummer returneres
   });
 
   describe('getSubjectsByVersion', () => {
-    it('should return a list of subject IDs for a version', async () => {
+    it('skal returnere en liste med emne-IDer for en versjon', async () => {
       const mockVersionId = 1;
       const mockVersionData = [[{ subject_ids: '["subject1", "subject2"]' }], []];
 
@@ -66,13 +67,13 @@ describe('VersionService', () => {
         'SELECT subject_ids FROM page_versions WHERE version_id = ?',
         [mockVersionId],
       );
-    });
+    }); // Tester om en liste med emne-IDer hentes for en spesifikk versjon
 
-    it('should return an empty array if no subjects are found', async () => {
+    it('skal returnere en tom liste hvis ingen emner finnes', async () => {
       const mockVersionId = 1;
 
       const mockPromiseQuery = pool.promise().query as jest.Mock;
-      mockPromiseQuery.mockResolvedValueOnce([[{ subject_ids: '[]' }], []]); // Valid empty JSON
+      mockPromiseQuery.mockResolvedValueOnce([[], []]);
 
       const result = await versionService.getSubjectsByVersion(mockVersionId);
 
@@ -81,42 +82,40 @@ describe('VersionService', () => {
         'SELECT subject_ids FROM page_versions WHERE version_id = ?',
         [mockVersionId],
       );
-    });
+    }); // Tester om en tom liste returneres når ingen emner finnes
   });
 
   describe('createSubjectVersion', () => {
-    describe('createSubjectVersion', () => {
-      it('should create a new subject version and return the version number', async () => {
-        const mockSubjectId = '1001';
-        const mockUserId = '1';
-        const mockActionType = 'edit';
-        const mockDescription = 'Subject description';
-        const mockInsertResult = [{ insertId: 3 }];
+    it('skal opprette en ny emneversjon og returnere versjonsnummer', async () => {
+      const mockSubjectId = '1001';
+      const mockUserId = '1';
+      const mockActionType = 'edit';
+      const mockDescription = 'Testbeskrivelse';
+      const mockInsertResult = [{ insertId: 3 }];
 
-        const mockPromiseQuery = pool.promise().query as jest.Mock;
+      const mockPromiseQuery = pool.promise().query as jest.Mock;
 
-        mockPromiseQuery
-          .mockResolvedValueOnce([[{ max_version: 2 }], []]) // MAX(version_number) query
-          .mockResolvedValueOnce([mockInsertResult, []]); // INSERT query
+      mockPromiseQuery
+        .mockResolvedValueOnce([[{ max_version: 2 }], []]) // Spørring for MAX(version_number)
+        .mockResolvedValueOnce([mockInsertResult, []]); // Spørring for INSERT
 
-        const result = await versionService.createSubjectVersion(
-          mockSubjectId,
-          mockUserId,
-          mockActionType,
-          mockDescription,
-        );
+      const result = await versionService.createSubjectVersion(
+        mockSubjectId,
+        mockUserId,
+        mockActionType,
+        mockDescription,
+      );
 
-        expect(result).toBe(3); // New version number
-        expect(mockPromiseQuery).toHaveBeenCalledTimes(2); // Adjusted to match the implementation
-        expect(mockPromiseQuery).toHaveBeenCalledWith(
-          'SELECT MAX(version_number) AS max_version FROM subject_versions WHERE subject_id = ?',
-          [mockSubjectId],
-        );
-        expect(mockPromiseQuery).toHaveBeenCalledWith(
-          'INSERT INTO subject_versions (subject_id, user_id, version_number, action_type, description) VALUES (?, ?, ?, ?, ?)',
-          [mockSubjectId, mockUserId, 3, mockActionType, mockDescription],
-        );
-      });
-    });
+      expect(result).toBe(3); // Nytt versjonsnummer
+      expect(mockPromiseQuery).toHaveBeenCalledTimes(2);
+      expect(mockPromiseQuery).toHaveBeenCalledWith(
+        'SELECT MAX(version_number) AS max_version FROM subject_versions WHERE subject_id = ?',
+        [mockSubjectId],
+      );
+      expect(mockPromiseQuery).toHaveBeenCalledWith(
+        'INSERT INTO subject_versions (subject_id, user_id, version_number, action_type, description) VALUES (?, ?, ?, ?, ?)',
+        [mockSubjectId, mockUserId, 3, mockActionType, mockDescription],
+      );
+    }); // Tester om en ny versjon av et emne opprettes og returnerer riktig versjonsnummer
   });
 });
