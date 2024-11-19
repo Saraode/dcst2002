@@ -14,6 +14,11 @@ Dette er en side for å legge inn emner + anmeldelser av emner på NTNU. Man vel
 - Databaser, SQL
 - Frontend, Client
 - Backend, Server
+
+### Bruk av KI-verktøy
+I utviklingen av dette prosjektet har disse KI-verktøyene blir benyttet:
+- OpenAI ChatGPT 4o
+- Github Copilot
   
 ## Database oppsett
 
@@ -261,6 +266,20 @@ npm test
 ```
 
 ## Informasjon om Klient Tester
+Vi har tester på klient siden for å sørge for at applikasjonen vil fungere som forventet når det kommer til brukeropplevelse og kommunikasjon med API.
+Utviklingen av testene er basert på leksjonen som omhandler klient tester, men fått hjelp med rettting av ChatGPT og Github Copilot.
+
+Filene som er testet:
+- endringslogg.tsx
+- review-service.tsx
+- searchbar.tsx
+- starrating.tsx
+- subjectsByField.tsx
+- widgets.tsx
+
+  ## Versjonering
+
+På grunn av mangel på eksempler og forklaringer på implementering som kunne tilpasses vårt prosjekt ble Chat GPT brukt for å lage en generell regel på hvordan det skal se ut. Deretter ble det utviklet selv basert på dette, med retting ved help av KI-verktøy.
 
 ## Bidrag
 Dette prosjektet er utviklet av:
