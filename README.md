@@ -46,7 +46,7 @@ I utviklingen av dette prosjektet har disse KI-verktøyene blir benyttet:
   
 ## Databaseoppsett
 
-Du må logge deg inn på databasen vår (mysqladmin.it.ntnu.no). Du finner innlogging på config.ts i /server. 
+Du må logge deg inn på databasen vår (mysqladmin.it.ntnu.no). Du finner innlogging på /server/config.ts. 
 Husk at du må være på på NTNU-nett, eller VPN hvis du befinner deg et annet sted enn på campus. 
 
 ### SQL - Setninger
