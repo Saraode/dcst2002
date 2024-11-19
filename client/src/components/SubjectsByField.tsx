@@ -1,18 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SubjectNewWithRouter } from './subject-components';
+import { Subject, Level } from '../types/ServiceTypes'
 
-type Subject = {
-  id: string;
-  name: string;
-  levelId: number;
-  description?: string;
-};
-
-type Level = {
-  id: number;
-  name: string;
-};
 
 const isValidInput = (input: string) => /^[a-zA-Z0-9æøåÆØÅ\s]*$/.test(input);
 

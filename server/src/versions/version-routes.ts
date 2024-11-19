@@ -123,6 +123,7 @@ versionRouter.post('/subjects/:subjectId/version', async (req, res) => {
 });
 
 // Oppretter en ny versjon for anmeldelser knyttet til et emne
+
 versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
   const { subjectId } = req.params;
   const { reviews, userId, actionType } = req.body;
@@ -173,6 +174,7 @@ versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   } catch (error) {
     console.error('Feil ved økning av visninger:', error);
     return res.status(500).json({ error: 'Kunne ikke øke antall visninger' });
+
   }
 });
 

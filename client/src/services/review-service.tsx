@@ -1,27 +1,7 @@
 import axios from 'axios';
+import { Subject, Review, Campus } from '../types/ServiceTypes';
 
 axios.defaults.baseURL = 'http://localhost:3000/api';
-
-export type Subject = {
-  id: number;
-  name: string;
-  fieldId: number;
-  reviews: Review[];
-  level?: string; // Legg til level-felt
-};
-
-export type Review = {
-  id: number;
-  text: string;
-  stars: number;
-  submitterName: string;
-  userId: number;
-};
-
-export type Campus = {
-  campusId: number;
-  name: string;
-};
 
 class ReviewService {
   getAllCampuses() {
