@@ -146,33 +146,12 @@ versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
 // Oppretter en ny versjon for et felt med bruker-ID
 versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   const { subjectId } = req.params;
-
-  if (!subjectId) {
-    return res.status(400).json({ error: 'Emne-ID er påkrevd' });
-  }
-
   try {
-    // Utfør spørringen og typecast resultatet
-
-    const [result] = await pool
-      .promise()
-      .query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
-
-    return res.status(200).send({ message: 'Antall visninger økt' });
+    await pool.query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
+    res.status(200).send({ message: 'View count incremented successfully' });
   } catch (error) {
-    return res.status(500).send({ error: 'Kunne ikke øke antall visninger' });
-    // Check if any rows were affected
-    if (result.affectedRows === 0) {
-      console.warn(`Emne ikke funnet for ID: ${subjectId}`);
-      return res.status(404).json({ error: 'Emne ikke funnet' }); // Response sent here
-    }
-
-    // If rows were updated, send success response
-    console.log(`Øker antall visninger for emne-ID: ${subjectId}`);
-    return res.status(200).json({ message: 'Antall visninger økt' }); // Response sent here
-  } catch (error) {
-    console.error('Feil ved økning av visninger:', error);
-    return res.status(500).json({ error: 'Kunne ikke øke antall visninger' }); // Response sent here
+    console.error('Error incrementing view count:', error);
+    res.status(500).send({ error: 'Failed to increment view count' });
   }
 });
 
