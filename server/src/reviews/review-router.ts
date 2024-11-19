@@ -1,6 +1,6 @@
 import express from 'express';
 import { reviewService } from './review-service';
-import { userService } from '../users/user-service'; // Sikrer at brukerdata kan valideres
+import { userService } from '../users/user-service';
 
 const router = express.Router();
 

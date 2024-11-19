@@ -35,6 +35,7 @@ describe('Version Routes - POST /subjects/:subjectId/reviews/version', () => {
   });
 
   it('skal opprette en ny anmeldelseversjon', async () => {
+    // Tester at en ny anmeldelseversjon opprettes med gyldige data
     const mockSubjectId = '123';
     const mockReviews = [{ id: 1, comment: 'Great subject!' }];
     const mockUserId = 'user1';
@@ -60,6 +61,7 @@ describe('Version Routes - POST /subjects/:subjectId/reviews/version', () => {
   });
 
   it('skal returnere 500 ved databasefeil', async () => {
+    // Tester at det returneres status 500 hvis en databasefeil oppstår
     const mockSubjectId = '123';
     const mockReviews = [{ id: 1, comment: 'Great subject!' }];
     const mockUserId = 'user1';
@@ -85,6 +87,7 @@ describe('Version Routes - POST /subjects/:subjectId/reviews/version', () => {
   });
 
   it('skal returnere 400 hvis påkrevde felter mangler', async () => {
+    // Tester at det returneres status 400 hvis påkrevde felter mangler i forespørselen
     const response = await request(app)
       .post('/api/v2/subjects/123/reviews/version')
       .send({
@@ -105,6 +108,7 @@ describe('Version Router - Increment View', () => {
   });
 
   it('skal øke antall visninger', async () => {
+    // Tester at antall visninger for et emne økes korrekt
     queryMock.mockResolvedValueOnce([{ affectedRows: 1 }]);
 
     const response = await request(app).post('/api/v2/subjects/123/increment-view');
@@ -118,6 +122,7 @@ describe('Version Router - Increment View', () => {
   });
 
   it('skal returnere 404 hvis emne ikke finnes', async () => {
+    // Tester at det returneres status 404 hvis emnet ikke eksisterer
     queryMock.mockResolvedValueOnce([{ affectedRows: 0 }]);
 
     const response = await request(app).post('/api/v2/subjects/123/increment-view');
@@ -131,6 +136,7 @@ describe('Version Router - Increment View', () => {
   });
 
   it('skal returnere 500 ved databasefeil', async () => {
+    // Tester at det returneres status 500 hvis en databasefeil oppstår
     queryMock.mockRejectedValueOnce(new Error('Database error'));
 
     const response = await request(app).post('/api/v2/subjects/123/increment-view');
@@ -151,6 +157,7 @@ describe('Version Routes', () => {
 
   describe('GET /api/history', () => {
     it('skal hente endringshistorikk', async () => {
+      // Tester at endringshistorikk hentes korrekt fra databasen
       const mockHistory = [
         {
           version_number: 1,
@@ -170,6 +177,7 @@ describe('Version Routes', () => {
     });
 
     it('skal returnere 500 ved feil under henting av historikk', async () => {
+      // Tester at det returneres status 500 ved en databasefeil under henting av historikk
       queryMock.mockRejectedValueOnce(new Error('Database error'));
 
       const response = await request(app).get('/api/v2/api/history');
@@ -182,6 +190,7 @@ describe('Version Routes', () => {
 
   describe('GET /versions/:versionId/subjects', () => {
     it('skal hente emner for en gitt versjon', async () => {
+      // Tester at emner for en gitt versjon hentes korrekt fra tjenesten
       const mockSubjects = ['subject1', 'subject2'];
 
       (versionService.getSubjectsByVersion as jest.Mock).mockResolvedValueOnce(mockSubjects);
@@ -194,6 +203,7 @@ describe('Version Routes', () => {
     });
 
     it('skal returnere 500 ved feil under tjenestekall', async () => {
+      // Tester at det returneres status 500 hvis tjenesten feiler
       (versionService.getSubjectsByVersion as jest.Mock).mockRejectedValueOnce(
         new Error('Service error'),
       );
@@ -208,6 +218,7 @@ describe('Version Routes', () => {
 
   describe('POST /fields/:fieldId/version', () => {
     it('skal opprette en ny versjon av felt', async () => {
+      // Tester at en ny versjon av et felt opprettes korrekt
       (versionService.createPageVersion as jest.Mock).mockResolvedValueOnce(2);
 
       const response = await request(app).post('/api/v2/fields/101/version').send({
@@ -221,6 +232,7 @@ describe('Version Routes', () => {
     });
 
     it('skal returnere 400 hvis bruker-ID mangler', async () => {
+      // Tester at det returneres status 400 hvis bruker-ID mangler i forespørselen
       const response = await request(app).post('/api/v2/fields/101/version').send({
         description: 'New version',
       });
@@ -231,6 +243,7 @@ describe('Version Routes', () => {
     });
 
     it('skal returnere 500 ved feil under oppretting av versjon', async () => {
+      // Tester at det returneres status 500 ved en feil under oppretting av versjon
       (versionService.createPageVersion as jest.Mock).mockRejectedValueOnce(
         new Error('Service error'),
       );
@@ -248,6 +261,7 @@ describe('Version Routes', () => {
 
   describe('POST /subjects/:subjectId/version', () => {
     it('skal opprette en ny emneversjon', async () => {
+      // Tester at en ny versjon av et emne opprettes korrekt
       (versionService.createSubjectVersion as jest.Mock).mockResolvedValueOnce(1);
 
       const response = await request(app).post('/api/v2/subjects/123/version').send({
@@ -267,6 +281,7 @@ describe('Version Routes', () => {
     });
 
     it('skal returnere 400 hvis bruker-ID eller handlingstype mangler', async () => {
+      // Tester at det returneres status 400 hvis bruker-ID eller handlingstype mangler
       const response = await request(app).post('/api/v2/subjects/123/version').send({
         description: 'Updated version',
       });
@@ -277,6 +292,7 @@ describe('Version Routes', () => {
     });
 
     it('skal returnere 500 ved feil under tjenestekall', async () => {
+      // Tester at det returneres status 500 hvis tjenesten feiler under oppretting av emneversjon
       (versionService.createSubjectVersion as jest.Mock).mockRejectedValueOnce(
         new Error('Service error'),
       );
