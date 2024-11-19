@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Route, Switch, Link } from 'react-router-dom';
-import FieldDropdown from './FieldDropdown';
-import SubjectsByField from './SubjectsByField';
-import SubjectDetails from './SubjectDetails';
+import FieldDropdown from './components/FieldDropdown';
+import SubjectsByField from './components/SubjectsByField';
+import SubjectDetails from './components/SubjectDetails';
 
 import {
   CampusList,
   SubjectNewWithRouter as SubjectNew,
   ReviewNewWithRouter as ReviewNew,
-} from './subject-components';
+} from './Subject-Components';
 
 import axios from 'axios';
-import SearchBar from './searchBar';
+import SearchBar from './SearchBar';
 
 type Campus = {
   campusId: number;

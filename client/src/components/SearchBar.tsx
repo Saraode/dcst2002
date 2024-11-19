@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLocation, useHistory } from 'react-router-dom';
+import { SearchResult } from '../types/ServiceTypes'
 
-type SearchResult = {
-  id: string;
-  name: string;
-};
 
 const SearchBar: React.FC = () => {
   const [query, setQuery] = useState('');

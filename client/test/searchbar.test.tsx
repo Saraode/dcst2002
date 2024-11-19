@@ -3,7 +3,8 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom';
 import axios from 'axios';
 import { MemoryRouter, useHistory } from 'react-router-dom';
-import SearchBar from '../src/searchBar';
+
+import SearchBar from '../src/components/SearchBar';
 
 // Mock axios
 jest.mock('axios');

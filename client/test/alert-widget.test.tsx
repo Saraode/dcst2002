@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Alert } from '../src/widgets';
+import { Alert } from '../src/components/widgets';
 import { shallow } from 'enzyme';
 
 describe('Alert tests', () => {

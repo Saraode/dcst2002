@@ -97,6 +97,7 @@ versionRouter.post('/fields/:fieldId/version', async (req, res) => {
 });
 
 // Oppretter en ny versjon for et emne med bruker-ID
+// Oppretter en ny versjon for et emne med bruker-ID
 versionRouter.post('/subjects/:subjectId/version', async (req, res) => {
   const { subjectId } = req.params;
   const { userId, actionType, description } = req.body;
@@ -122,6 +123,27 @@ versionRouter.post('/subjects/:subjectId/version', async (req, res) => {
 });
 
 // Oppretter en ny versjon for anmeldelser knyttet til et emne
+
+versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
+  const { subjectId } = req.params;
+  const { reviews, userId, actionType } = req.body;
+
+  try {
+    const [result] = await pool
+      .promise()
+      .query(
+        'INSERT INTO subject_review_versions (subject_Id, reviews, user_Id, action_type, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+        [subjectId, JSON.stringify(reviews), userId, actionType],
+      );
+
+    res.status(201).json({ message: 'Versjonering fullført' });
+  } catch (error) {
+    console.error('Feil ved lagring av versjonsdata til databasen:', error);
+    res.status(500).json({ error: 'Kunne ikke lagre versjonsdata' });
+  }
+});
+
+// Oppretter en ny versjon for et felt med bruker-ID
 versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   const { subjectId } = req.params;
 
@@ -131,6 +153,7 @@ versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
 
   try {
     // Utfør spørringen og typecast resultatet
+
     const [result] = await pool
       .promise()
       .query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
@@ -138,6 +161,18 @@ versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
     return res.status(200).send({ message: 'Antall visninger økt' });
   } catch (error) {
     return res.status(500).send({ error: 'Kunne ikke øke antall visninger' });
+    // Check if any rows were affected
+    if (result.affectedRows === 0) {
+      console.warn(`Emne ikke funnet for ID: ${subjectId}`);
+      return res.status(404).json({ error: 'Emne ikke funnet' }); // Response sent here
+    }
+
+    // If rows were updated, send success response
+    console.log(`Øker antall visninger for emne-ID: ${subjectId}`);
+    return res.status(200).json({ message: 'Antall visninger økt' }); // Response sent here
+  } catch (error) {
+    console.error('Feil ved økning av visninger:', error);
+    return res.status(500).json({ error: 'Kunne ikke øke antall visninger' }); // Response sent here
   }
 });
 

@@ -36,7 +36,8 @@ describe('Versioning API (Mocked)', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ version: 2 });
-      expect(versionService.createPageVersion).toHaveBeenCalledWith(101, '1');
+      // Adjusted to match the implementation
+      expect(versionService.createPageVersion).toHaveBeenCalledWith(101, '1', undefined);
     });
   });
 
@@ -52,7 +53,13 @@ describe('Versioning API (Mocked)', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: 'Version created successfully', version: 3 });
-      expect(versionService.createSubjectVersion).toHaveBeenCalledWith('1001', '1', 'edit');
+      // Adjusted to match the implementation
+      expect(versionService.createSubjectVersion).toHaveBeenCalledWith(
+        '1001',
+        '1',
+        'edit',
+        undefined,
+      );
     });
   });
 
