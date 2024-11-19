@@ -144,7 +144,7 @@ class SubjectService {
   }
 
 
-  // Sjekker om et fag eksisterer basert på ID (case-insensitive)
+  // Sjekker om et fag eksisterer basert på ID
   getSubjectByIdCaseInsensitive(id: string): Promise<Subject | null> {
     return new Promise<Subject | null>((resolve, reject) => {
       pool.query(
@@ -215,10 +215,10 @@ class SubjectService {
       const connection = await pool.promise().getConnection();
 
       try {
-        // Begin transaction
+        
         await connection.beginTransaction();
 
-        // Step 1: Delete associated rows in dependent tables
+       
         await connection.query('DELETE FROM Reviews WHERE subjectId = ?', [subjectId]);
         await connection.query('DELETE FROM search WHERE subject_id = ?', [subjectId]);
         await connection.query('DELETE FROM page_versions WHERE subject_id = ?', [subjectId]);
@@ -227,7 +227,7 @@ class SubjectService {
           subjectId,
         ]);
 
-        // Step 2: Delete the subject from the Subjects table
+        
         const [result] = await connection.query<ResultSetHeader>(
           'DELETE FROM Subjects WHERE id = ?',
           [subjectId],
@@ -238,16 +238,16 @@ class SubjectService {
           throw new Error('Subject not found');
         }
         
-        // Commit transaction
+        
         await connection.commit();
 
         console.log(`Subject with ID ${subjectId} deleted successfully`);
       } catch (error) {
-        // Rollback transaction on error
+        
         await connection.rollback();
         throw error;
       } finally {
-        // Release the connection back to the pool
+        
         connection.release();
       }
     } catch (error) {
@@ -290,6 +290,6 @@ class SubjectService {
   }
 }
 
-// Eksporterer SubjectService for bruk andre steder
+
 const subjectService = new SubjectService();
 export default subjectService;
