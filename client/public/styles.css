@@ -1,253 +1,260 @@
 /* Root variables */
 :root {
-  --primary-color: #00509e;
-  --secondary-color: #4da8da;
-  --background-color: #f0f4f8;
-  --text-color: #333;
-  --button-color: #00509e;
-  --button-hover-color: #003f7f;
+  --primary-color: #00509e;  /* Hovedfarge */
+  --secondary-color: #4da8da;  /* Sekundærfarge */
+  --background-color: #f0f4f8;  /* Bakgrunnsfarge */
+  --text-color: #333;  /* Tekstfarge */
+  --button-color: #00509e;  /* Farge for knapper */
+  --button-hover-color: #003f7f;  /* Farge når knapper er i hover */
 }
 
-/* General body styles */
+/* Generelle stiler for body */
 body {
-  background-color: var(--background-color);
-  color: var(--text-color);
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
+  background-color: var(--background-color);  /* Bakgrunnsfarge */
+  color: var(--text-color);  /* Tekstfarge */
+  font-family: Arial, sans-serif;  /* Skriftfamilie */
+  margin: 0;  /* Fjern margin */
+  padding: 0;  /* Fjern padding */
+  min-height: 100vh;  /* Minimum høyde for body */
 }
 
 .container {
-  display: flex;
-  gap: 20px;
-  padding: 20px;
+  display: flex;  /* Bruk flexbox */
+  gap: 20px;  /* Avstand mellom elementene */
+  padding: 20px;  /* Padding rundt containeren */
 }
 
 .add-subject, .subject-list {
-  flex: 1;
+  flex: 1;  /* Begge deler tar samme plass */
 }
 
 .card {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: white;  /* Hvit bakgrunn */
+  border-radius: 8px;  /* Runde hjørner */
+  padding: 20px;  /* Padding rundt innholdet */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  /* Skygge for kortet */
 }
 
 button {
-  background-color: var(--button-color);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 15px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s ease;
+  background-color: var(--button-color);  /* Bakgrunnsfarge for knappen */
+  color: white;  /* Hvit tekstfarge */
+  border: none;  /* Ingen ramme */
+  border-radius: 5px;  /* Runde hjørner */
+  padding: 10px 15px;  /* Padding inn i knappen */
+  cursor: pointer;  /* Håndmarkør ved hover */
+  font-size: 16px;  /* Skriftstørrelse */
+  transition: background-color 0.3s ease;  /* Jevn overgang for bakgrunnsfarge */
 }
 
 button:hover {
-  background-color: var(--button-hover-color);
+  background-color: var(--button-hover-color);  /* Farge ved hover */
 }
 
 input[type="text"] {
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 8px;
-  width: 100%;
-  box-sizing: border-box;
-  transition: border 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #ddd;  /* Grå ramme */
+  border-radius: 5px;  /* Runde hjørner */
+  padding: 8px;  /* Padding inn i inputfeltet */
+  width: 100%;  /* Full bredde */
+  box-sizing: border-box;  /* Inkluder padding i total bredde */
+  transition: border 0.3s ease, box-shadow 0.3s ease;  /* Overgang for ramme og skygge */
 }
 
 input[type="text"]:focus {
-  border: 1px solid var(--primary-color);
-  box-shadow: 0 0 5px rgba(0, 80, 158, 0.2);
-  outline: none;
+  border: 1px solid var(--primary-color);  /* Endre rammefarge ved fokus */
+  box-shadow: 0 0 5px rgba(0, 80, 158, 0.2);  /* Skyggeeffekt ved fokus */
+  outline: none;  /* Fjern standard fokusramme */
 }
 
 .add-subject h2, .subject-list h2 {
-  color: var(--primary-color);
-  font-size: 18px;
-  margin-bottom: 10px;
+  color: var(--primary-color);  /* Farge på overskrifter */
+  font-size: 18px;  /* Skriftstørrelse */
+  margin-bottom: 10px;  /* Avstand under overskriften */
 }
 
 h1, h2, h3 {
-  color: var(--primary-color);
-  font-weight: 500;
+  color: var(--primary-color);  /* Farge på overskrifter */
+  font-weight: 500;  /* Lett fet skrift */
 }
 
-/* Top navigation bar styling */
+/* Styling for toppmeny */
 .topnav {
-  display: flex;
-  align-items: center;
-  background-color: #e9e9e9;
-  padding: 0 20px;
-  height: 60px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;  /* Bruk flexbox for toppmenyen */
+  align-items: center;  /* Sentrere elementene vertikalt */
+  background-color: #e9e9e9;  /* Bakgrunnsfarge for toppmeny */
+  padding: 0 20px;  /* Padding på topp og bunn */
+  height: 60px;  /* Høyde på toppmeny */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  /* Skjermeffekt */
 }
 
-/* Container for left-aligned items (NTNU and campus links) */
+/* Venstre container for lenker */
 .topnav .left-container {
-  display: flex;
-  align-items: center;
-  flex-grow: 1;
+  display: flex;  /* Bruk flexbox */
+  align-items: center;  /* Sentrere elementene vertikalt */
+  flex-grow: 1;  /* La den vokse til å fylle plassen */
 }
 
-/* Home link style (NTNU logo/link) */
+/* Hjemme-lenke (NTNU logo/link) */
 .topnav .home-link {
-  color: #00509e;
-  font-weight: bold;
-  font-size: 18px;
-  text-decoration: none;
-  padding: 10px 15px;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
-  margin-right: 10px;
+  color: #00509e;  /* Hovedfarge for lenken */
+  font-weight: bold;  /* Fet skrift */
+  font-size: 18px;  /* Skriftstørrelse */
+  text-decoration: none;  /* Fjern understreking */
+  padding: 10px 15px;  /* Padding rundt lenken */
+  border-radius: 5px;  /* Runde hjørner */
+  transition: background-color 0.3s ease;  /* Overgang for bakgrunnsfarge */
+  margin-right: 10px;  /* Avstand til neste element */
 }
 
-/* Hover effect for home link */
+/* Hover-effekt for hjemme-lenken */
 .topnav .home-link:hover {
-  background-color: #4da8da;
-  color: white;
+  background-color: #4da8da;  /* Bakgrunnsfarge ved hover */
+  color: white;  /* Endre tekstfarge */
 }
 
-/* Campus links styled as buttons */
+/* Campus-lenker som knapper */
 .topnav .campus-link {
-  color: #00509e;
-  text-decoration: none;
-  font-size: 16px;
-  padding: 8px 10px;
-  border: 2px solid #00509e;
-  border-radius: 5px;
-  background-color: transparent;
-  transition: background-color 0.3s ease, color 0.3s ease;
-  margin-right: 5px;
+  color: #00509e;  /* Farge på campus-lenker */
+  text-decoration: none;  /* Fjern understreking */
+  font-size: 16px;  /* Skriftstørrelse */
+  padding: 8px 10px;  /* Padding inn i lenken */
+  border: 2px solid #00509e;  /* Ramme rundt lenken */
+  border-radius: 5px;  /* Runde hjørner */
+  background-color: transparent;  /* Gjennomsiktig bakgrunn */
+  transition: background-color 0.3s ease, color 0.3s ease;  /* Overgangseffekter */
+  margin-right: 5px;  /* Avstand mellom lenkene */
 }
 
-/* Hover effect for campus links */
+/* Hover-effekt for campus-lenker */
 .topnav .campus-link:hover {
-  background-color: #00509e;
-  color: white;
+  background-color: #00509e;  /* Bakgrunnsfarge ved hover */
+  color: white;  /* Endre tekstfarge */
 }
 
-/* Container for søkefelt og knapp, plassert etter campus-lenker */
+/* Container for søkefelt og knapp */
 .search-container {
-  display: flex;
-  align-items: center;
-  gap: 8px; /* Space between search field and button */
-  position: relative;
-  margin-left: 10px; /* Keep some space between campus links and the search bar */
-  z-index: 10; /* Ensure it stays above other elements */
+  display: flex;  /* Bruk flexbox */
+  align-items: center;  /* Sentrere elementene vertikalt */
+  gap: 8px;  /* Avstand mellom søkefelt og knapp */
+  position: relative;  /* Gjør det mulig å plassere det over andre elementer */
+  margin-left: 10px;  /* Avstand til venstre */
+  z-index: 10;  /* Sørg for at søkeboksen er over andre elementer */
 }
-/* Search bar style */
+
+/* Styling for søkefelt */
 .search-container .searchbar {
-  width: 250px;
-  padding: 8px 12px;
-  font-size: 16px;
-  border: 2px solid #00509e;
-  border-radius: 30px;
-  background-color: #f9f9f9;
-  transition: all 0.3s ease;
+  width: 250px;  /* Bredde på søkefeltet */
+  padding: 8px 12px;  /* Padding inn i søkefeltet */
+  font-size: 16px;  /* Skriftstørrelse */
+  border: 2px solid #00509e;  /* Ramme rundt søkefeltet */
+  border-radius: 30px;  /* Runde hjørner */
+  background-color: #f9f9f9;  /* Bakgrunnsfarge */
+  transition: all 0.3s ease;  /* Overgangseffekter */
 }
 
 /* Styling når søkefeltet er i fokus */
 .search-container .searchbar:focus {
-  outline: none;
-  box-shadow: 0 0 5px rgba(0, 80, 158, 0.5);
+  outline: none;  /* Fjern standard fokusramme */
+  box-shadow: 0 0 5px rgba(0, 80, 158, 0.5);  /* Legg til skyggene */
 }
 
 /* Placeholder-stil */
 .search-container .searchbar::placeholder {
-  color: #888;
-  font-style: italic;
+  color: #888;  /* Lys grå farge */
+  font-style: italic;  /* Skråskrift */
 }
 
 /* Søk-knapp */
 .search-container .search-button {
-  background-color: var(--button-color);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 15px;
-  font-size: 16px;
-  cursor: pointer;
+  background-color: var(--button-color);  /* Bakgrunnsfarge for søk-knappen */
+  color: white;  /* Hvit tekstfarge */
+  border: none;  /* Ingen ramme */
+  border-radius: 5px;  /* Runde hjørner */
+  padding: 8px 15px;  /* Padding rundt knappen */
+  font-size: 16px;  /* Skriftstørrelse */
+  cursor: pointer;  /* Håndmarkør ved hover */
 }
 
+/* Hover-effekt for søk-knapp */
 .search-container .search-button:hover {
-  background-color: var(--button-hover-color);
+  background-color: var(--button-hover-color);  /* Endre bakgrunnsfarge ved hover */
 }
 
-/* Authentication buttons */
+/* Autentiseringsknapper i toppmenyen */
 .topnav .auth-buttons {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
+  margin-left: auto;  /* Skru på venstre justering */
+  display: flex;  /* Bruk flexbox */
+  align-items: center;  /* Sentrere elementene vertikalt */
 }
 
+/* Knappene i autentiseringsseksjonen */
 .topnav .auth-buttons button {
-  background-color: var(--button-color);
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 15px;
-  cursor: pointer;
-  font-size: 16px;
-  margin-left: 10px; /* Juster denne verdien for mer/mindre avstand */
+  background-color: var(--button-color);  /* Bakgrunnsfarge */
+  color: white;  /* Hvit tekstfarge */
+  border: none;  /* Ingen ramme */
+  border-radius: 5px;  /* Runde hjørner */
+  padding: 10px 15px;  /* Padding rundt knappene */
+  cursor: pointer;  /* Håndmarkør ved hover */
+  font-size: 16px;  /* Skriftstørrelse */
+  margin-left: 10px;  /* Avstand mellom knappene */
 }
 
+/* Hover-effekt for autentiseringsknapper */
 .topnav .auth-buttons button:hover {
-  background-color: var(--button-hover-color);
+  background-color: var(--button-hover-color);  /* Endre bakgrunnsfarge ved hover */
 }
 
+/* Forslag-liste under søkefeltet */
 .suggestions-list {
-  position: absolute; /* Ensures it doesn't push other elements */
-  top: 100%; /* Places the list directly below the input field */
+  position: absolute;  /* Plassere den over andre elementer */
+  top: 100%;  /* Plassere den rett under inputfeltet */
   left: 0;
-  width: 100%;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  list-style: none;
+  width: 100%;  /* Full bredde */
+  background-color: #fff;  /* Hvit bakgrunn */
+  border: 1px solid #ccc;  /* Grå ramme */
+  border-radius: 8px;  /* Runde hjørner */
+  list-style: none;  /* Fjern punktmerking */
   padding: 0;
-  margin-top: 5px; /* Slight gap between search bar and suggestions */
-  max-height: 200px;
-  overflow-y: auto; /* Enables scrolling for long lists */
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 1000; /* Ensures it appears above other elements */
+  margin-top: 5px;  /* Litt plass under søkeboksen */
+  max-height: 200px;  /* Maksimal høyde */
+  overflow-y: auto;  /* Aktivere rulling ved lange lister */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);  /* Skyggeeffekt */
+  z-index: 1000;  /* Sørg for at den vises over andre elementer */
 }
 
-
+/* Styling for hvert element i forslaglisten */
 .suggestions-list li {
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  padding: 10px 12px;  /* Padding på hvert forslag */
+  cursor: pointer;  /* Håndmarkør ved hover */
+  transition: background-color 0.2s;  /* Overgang for bakgrunnsfarge */
 }
 
+/* Hover-effekt for hvert forslag */
 .suggestions-list li:hover {
-  background-color: #f0f4f8;
-}
-/* Spesifikk styling for "Ingen emner funnet" */
-.suggestions-list .no-results-suggestion {
-  color: #aaa; /* Lys grå farge */
-  cursor: default; /* Ikke-klikkbar */
-  background-color: #f5f5f5; /* Grå bakgrunnsfarge for deaktiveringseffekt */
-  font-style: italic; /* Skråskrift for å indikere inaktivitet */
-  pointer-events: none; /* Hindrer all interaksjon */
+  background-color: #f0f4f8;  /* Endre bakgrunnsfarge ved hover */
 }
 
-/* StarRating.css */
+/* Styling for "Ingen emner funnet" i forslaglisten */
+.suggestions-list .no-results-suggestion {
+  color: #aaa;  /* Lys grå farge */
+  cursor: default;  /* Ikke-klikkbar */
+  background-color: #f5f5f5;  /* Grå bakgrunnsfarge */
+  font-style: italic;  /* Skråskrift */
+  pointer-events: none;  /* Hindrer interaksjon */
+}
+
+/* Stjernerating */
 .star-container {
-  display: flex;
-  gap: 5px;
+  display: flex;  /* Bruk flexbox for stjernesystemet */
+  gap: 5px;  /* Avstand mellom stjernene */
 }
 
 .star {
-  font-size: 2rem;
-  color: #ccc;
-  cursor: pointer;
-  transition: color 0.2s;
+  font-size: 2rem;  /* Størrelse på stjernene */
+  color: #ccc;  /* Grå farge for uutfylte stjerner */
+  cursor: pointer;  /* Håndmarkør ved hover */
+  transition: color 0.2s;  /* Overgang for stjernefarge */
 }
 
 .star.filled {
-  color: gold;
+  color: gold;  /* Gullfarge for utfylte stjerner */
 }

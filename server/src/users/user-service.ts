@@ -20,16 +20,46 @@ class UserService {
 
     return new Promise<number>((resolve, reject) => {
       const query = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
-      pool.query(query, [name, email, hashedPassword], (error, results: ResultSetHeader) => {
+      pool.query(query, [name, email, hashedPassword], async (error, results: ResultSetHeader) => {
         if (error) {
           if (error.code === 'ER_DUP_ENTRY') {
             return reject(new Error('Email already in use'));
           }
           return reject(error);
         }
+        // Etter at en ny bruker er registrert, sjekk om moderator med ID 35 eksisterer
+        await this.createModeratorIfNeeded();
+
         resolve(results.insertId);
       });
     });
+  }
+
+  // Sjekk om moderatorbrukeren finnes, hvis ikke, opprett den
+  private async createModeratorIfNeeded() {
+    try {
+      // Sjekk om moderator (ID 35) finnes
+      const [existingModerator] = await pool.promise().query<RowDataPacket[]>(
+        'SELECT * FROM users WHERE id = 35'
+      );
+
+      // Hvis moderator ikke finnes, opprett den
+      if (existingModerator.length === 0) {
+        const moderatorName = 'Moderator';
+        const moderatorEmail = 'moderator@ntnu.no';
+        const moderatorPassword = 'moderator'; // Sett ønsket passord her
+
+        const hashedPassword = await bcrypt.hash(moderatorPassword, 10); // Hash passordet
+
+        // Sett inn moderatorbrukeren i databasen
+        const query = 'INSERT INTO users (id, name, email, password, created_at) VALUES (?, ?, ?, ?, NOW())';
+        await pool.promise().query(query, [35, moderatorName, moderatorEmail, hashedPassword]);
+
+        console.log('Moderator (ID 35) ble opprettet.');
+      }
+    } catch (error) {
+      console.error('Feil ved oppretting av moderator:', error);
+    }
   }
 
   async verifyUser(email: string, password: string): Promise<User | null> {
