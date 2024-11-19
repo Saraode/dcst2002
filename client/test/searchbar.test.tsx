@@ -18,17 +18,18 @@ jest.mock('react-router-dom', () => ({
   })),
 }));
 
-describe('SearchBar Component', () => {
+describe('SearchBar-komponenten', () => {
   beforeEach(() => {
+    // Mocker standard API-respons
     mockedAxios.get.mockResolvedValue({
       data: [
-        { id: '1', name: 'Mathematics' },
-        { id: '2', name: 'Physics' },
+        { id: '1', name: 'Matematikk' },
+        { id: '2', name: 'Fysikk' },
       ],
     });
   });
 
-  test('renders input field correctly', () => {
+  test('viser søkefelt riktig', () => {
     render(
       <MemoryRouter>
         <SearchBar />
@@ -39,9 +40,7 @@ describe('SearchBar Component', () => {
     expect(inputElement).toBeInTheDocument();
   });
 
-  //
-
-  test('clears suggestions on clicking outside', async () => {
+  test('fjerner forslag når man klikker utenfor komponenten', async () => {
     render(
       <MemoryRouter>
         <SearchBar />

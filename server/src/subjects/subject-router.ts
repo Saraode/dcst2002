@@ -1,7 +1,7 @@
 import express from 'express';
 import subjectService from './subject-service';
 import { pool } from '../mysql-pool';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import type { RowDataPacket } from 'mysql2';
 
 const router = express.Router();
 
@@ -88,7 +88,7 @@ router.get('/subjects/:subjectId', async (req, res) => {
   }
 });
 
-// Sletter et fag
+
 // Sletter et fag (krever autorisering)
 router.delete('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params; // Subject ID to delete
@@ -112,7 +112,7 @@ router.put('/subjects/:subjectId', async (req, res) => {
   const { subjectId } = req.params;
   const { userId, levelId, description } = req.body;
 
-  // Validerer inngangsdata
+  
   if (!userId || !levelId) {
     return res.status(400).json({ error: 'User ID and level ID are required' });
   }
@@ -125,12 +125,12 @@ router.put('/subjects/:subjectId', async (req, res) => {
     return res.status(400).json({ error: 'Level ID must be a number' });
   }
 
-  // Sjekker autorisering
+  
   if (Number(userId) !== 35) {
     return res.status(403).json({ error: 'Not authorized to edit this subject' });
   }
 
-  // Validerer oppdateringer
+  
   if (!description && !levelId) {
     return res.status(400).json({ error: 'No updates provided (description or levelId missing)' });
   }
@@ -157,7 +157,7 @@ router.put('/subjects/:subjectId', async (req, res) => {
 router.get('/search', async (req, res) => {
   const query = req.query.query as string;
 
-  // Validerer søkeparameter
+  
   if (!query || query.trim() === '') {
     return res.status(400).json({ error: 'Query parameter is required' });
   }

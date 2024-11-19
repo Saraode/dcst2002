@@ -10,5 +10,9 @@
     "paths": {
       "react-simplified": ["@types/react-simplified.d.ts"]
     }
-  }
+  },
+  "include": [
+    "src/**/*",          // Inkluder alle filer i src-mappen
+    "types/**/*"         // Inkluder alle deklarasjonsfiler i types-mappen, hvis du har lagt `react-modal.d.ts` der
+  ]
 }

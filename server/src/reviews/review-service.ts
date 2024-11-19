@@ -9,7 +9,7 @@ export type Review = {
   stars: number;
   submitterName: string;
   userId: number;
-  created_date?: string; // Valgfri, siden den kanskje ikke alltid brukes
+  created_date?: string;
 };
 
 class ReviewService {
@@ -142,5 +142,4 @@ class ReviewService {
   }
 }
 
-// Eksporterer tjenesten for gjenbruk
 export const reviewService = new ReviewService();
