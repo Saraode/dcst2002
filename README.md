@@ -5,7 +5,7 @@ Dette er en side for å legge inn emner + anmeldelser av emner på NTNU. Man vel
 - [Hovedfunksjon](#Hovedfunksjon)
 - [Teknologier](#Teknologier)
     - [Bruk av KI-verktøy](#Bruk-av-KI-verktøy) 
-- [Database oppsett](#Database-oppsett)
+- [Databaseoppsett](#Databaseoppsett)
     - [SQL-setninger](#SQL-setninger)
     - [Tabeller uten avhengigheter](#Tabeller-uten-avhengigheter)
     - [Moderator](#Moderator)
@@ -14,8 +14,8 @@ Dette er en side for å legge inn emner + anmeldelser av emner på NTNU. Man vel
     - [Tabeller som refererer til Subjects](#Tabeller-som-refererer-til-Subjects)
     - [Tabeller som refererer til flere tidligere nivåer](#Tabeller-som-refererer-til-flere-tidligere-nivåer)
 - [Installasjon](#Installasjon)
-- [Server tester](#Server-tester)
-- [Klient tester](#Klient-tester)
+- [Server-tester](#Server-tester)
+- [Klient-tester](#Klient-tester)
 - [Versjonering](#Versjonering)
 - [Bidrag](#Bidrag)
 - [Kilder og lisens](#Kilder-og-lisens)
@@ -41,7 +41,7 @@ I utviklingen av dette prosjektet har disse KI-verktøyene blir benyttet:
 - OpenAI ChatGPT 4o
 - Github Copilot
   
-## Database oppsett
+## Databaseoppsett
 
 Du må logge deg inn på databasen vår (mysqladmin.it.ntnu.no). Du finner innlogging på config.ts i /server (Vanligvis ville denne vært i .gitignore, men siden dette er et prosjekt vi skal levere, gjør vi det slik. Vi legger ikke ut påloggingsinformasjon offentlig). 
 Husk at du må være på på NTNU-nett, eller VPN hvis du befinner deg et annet sted enn på campus. 
@@ -266,7 +266,7 @@ Følg disse stegene for å komme i gang:
 
 6. Applikasjonen skal nå kjøre på `http://localhost:3000`.
 
-## Server Tester
+## Server-tester
 
 Kjør testene på serveren:
 
@@ -275,9 +275,9 @@ cd server
 npm test
 ```
 
-### Informasjon om Server Tester
+### Informasjon om Server-tester
 
-## Klient Tester
+## Klient-tester
 
 Kjør testene på klienten
 
@@ -287,7 +287,7 @@ npm test
 ```
 
 ### Informasjon om Klient Tester
-Vi har tester på klient siden for å sørge for at applikasjonen vil fungere som forventet når det kommer til brukeropplevelse og kommunikasjon med API.
+Vi har tester på klientsiden for å sørge for at applikasjonen vil fungere som forventet når det kommer til brukeropplevelse og kommunikasjon med API.
 Utviklingen av testene er basert på leksjonen som omhandler klient tester, men fått hjelp med rettting av ChatGPT og Github Copilot.
 
 Link til leksjon: https://eidheim.folk.ntnu.no/full_stack/client-tests/chapter.html
