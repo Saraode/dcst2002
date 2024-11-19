@@ -1,6 +1,27 @@
 # NTNU Emnevurderinger (DCST2002 Webutviklingsprosjekt h24)
 Dette er en side for å legge inn emner og anmeldelser av emner på NTNU. Man velger hvilket campus og fagområde man vil legge inn emner under, og legger inn anmeldelse der.
 
+# Innhold
+- [Hovedfunksjon](#Hovedfunksjon)
+- [Teknologier](#Teknologier)
+    - [Bruk av KI-verktøy](#Bruk-av-KI-verktøy) 
+- [Databaseoppsett](#Databaseoppsett)
+    - [SQL-setninger](#SQL-setninger)
+    - [Tabeller uten avhengigheter](#Tabeller-uten-avhengigheter)
+    - [Moderator](#Moderator)
+    - [Tabeller som avhenger av nivå 1-tabeller](#Tabeller-som-avhenger-av-nivå-1-tabeller)
+    - [Tabeller som avhenger av nivå 2-tabeller](#Tabeller-som-avhenger-av-nivå-2-tabeller)
+    - [Tabeller som refererer til Subjects](#Tabeller-som-refererer-til-Subjects)
+    - [Tabeller som refererer til flere tidligere nivåer](#Tabeller-som-refererer-til-flere-tidligere-nivåer)
+- [Installasjon](#Installasjon)
+- [Server-tester](#Server-tester)
+- [Klient-tester](#Klient-tester)
+- [Versjonering](#Versjonering)
+- [Bidrag](#Bidrag)
+- [Kilder og lisens](#Kilder-og-lisens)
+
+
+
 ## Hovedfunksjoner 
 - Ved å opprette en bruker får man muligheten til å legge til fag, samt opprette, redigere og slette egne anmeldelser. Uten en bruker kan man ikke opprette egne anmeldelser, men man kan fortsatt lese anmeldelser fra andre. 
 - Plattformen har en moderatorbruker som har rettigheter til alt. Denne brukeren kan slette og redigere emner. Moderator kan også slette anmeldelser. 
@@ -14,17 +35,22 @@ Dette er en side for å legge inn emner og anmeldelser av emner på NTNU. Man ve
 - Databaser, SQL
 - Frontend, Client
 - Backend, Server
+
+### Bruk av KI-verktøy
+I utviklingen av dette prosjektet har disse KI-verktøyene blir benyttet:
+- OpenAI ChatGPT 4o
+- Github Copilot
   
-## Database oppsett
+## Databaseoppsett
 
 Du må logge deg inn på databasen vår (mysqladmin.it.ntnu.no). Du finner innlogging på config.ts i /server (Vanligvis ville denne vært i .gitignore, men siden dette er et prosjekt vi skal levere, gjør vi det slik. Vi legger ikke ut påloggingsinformasjon offentlig). 
 Husk at du må være på på NTNU-nett, eller VPN hvis du befinner deg et annet sted enn på campus. 
 
-## SQL - Setninger
+### SQL - Setninger
 Hvis du vil lage dine egne databaser, må du bruke SQL-setningene under. Da er det noen ting som er viktige å tenke på:
 - Legg de inn i rekkefølgen de står i.
 
-## Tabeller uten avhengigheter
+### Tabeller uten avhengigheter
 Disse tabellene må opprettes først, fordi andre tabeller refererer til dem via fremmednøkler:
 
 ```sql
@@ -64,7 +90,7 @@ CREATE TABLE users (
 );
 ```
 
-## Tabeller som avhenger av nivå 1-tabeller
+### Tabeller som avhenger av nivå 1-tabeller
 Tabeller som refererer til Campuses, Levels, eller users via fremmednøkler:
 
 ```sql
@@ -85,7 +111,7 @@ INSERT INTO Fields (id, name, campusId) VALUES
 (10, 'Statsvitenskap', 5);
 ```
 
-## Tabeller som avhenger av nivå 2-tabeller
+### Tabeller som avhenger av nivå 2-tabeller
 Tabeller som refererer til Fields og/eller Levels:
 
 ```sql
@@ -104,7 +130,7 @@ CREATE TABLE Subjects (
 );
 ```
 
-## Tabeller som refererer til Subjects
+### Tabeller som refererer til Subjects
 Disse tabellene avhenger av Subjects og må opprettes etter at Subjects er definert:
 
 ```sql
@@ -149,7 +175,7 @@ CREATE TABLE subject_versions (
 );
 ```
 
-## Tabeller som refererer til flere tidligere nivåer
+### Tabeller som refererer til flere tidligere nivåer
 Tabeller som avhenger både av Subjects, Fields, eller andre:
 
 ```sql
@@ -214,6 +240,7 @@ Følg disse stegene for å komme i gang:
 
 6. Applikasjonen skal nå kjøre på `http://localhost:3000`.
 
+
 ## Moderator
 Det er implementert moderatorfunksjonalitet hvor én bestemt bruker har autoritasjon til å slette og redigere alle fag og anmeldelser. Dette er gjort i koden ved at man har tilgang til disse funksjonene, dersom man er logget inn på bruker med bruker ID 35. Denne brukeren ligger klart i vår eksisterende database med følgende logg-inn informasjon:
 
@@ -232,6 +259,7 @@ Kjør testene på serveren:
 cd server
 npm test
 ```
+
 
 ## Informasjon om server-tester
 
@@ -253,7 +281,26 @@ cd client
 npm test
 ```
 
+
 ## Informasjon om klient-tester
+
+Vi har tester på klientsiden for å sørge for at applikasjonen vil fungere som forventet når det kommer til brukeropplevelse og kommunikasjon med API.
+Utviklingen av testene er basert på leksjonen som omhandler klient tester, men fått hjelp med rettting av ChatGPT og Github Copilot.
+
+Link til leksjon: https://eidheim.folk.ntnu.no/full_stack/client-tests/chapter.html
+
+Filene som er testet:
+- endringslogg.tsx
+- review-service.tsx
+- searchbar.tsx
+- starrating.tsx
+- subjectsByField.tsx
+- widgets.tsx
+
+## Versjonering
+
+På grunn av mangel på eksempler og forklaringer på implementering som kunne tilpasses vårt prosjekt ble Chat GPT brukt for å lage en generell regel på hvordan det skal se ut. Deretter ble det utviklet selv basert på dette, med retting ved help av KI-verktøy.
+
 
 ## Bidrag
 Dette prosjektet er utviklet av:
