@@ -1,5 +1,3 @@
-// client/StarRating.tsx
-
 import React from 'react';
 
 // Definerer typen for props som StarRating-komponenten tar

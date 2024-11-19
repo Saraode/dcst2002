@@ -96,7 +96,6 @@ versionRouter.post('/fields/:fieldId/version', async (req, res) => {
 });
 
 // Oppretter en ny versjon for et emne med bruker-ID
-// Oppretter en ny versjon for et emne med bruker-ID
 versionRouter.post('/subjects/:subjectId/version', async (req, res) => {
   const { subjectId } = req.params;
   const { userId, actionType, description } = req.body;
@@ -127,10 +126,6 @@ versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
   const { subjectId } = req.params;
   const { reviews, userId, actionType } = req.body;
 
-  if (!userId || !actionType) {
-    return res.status(400).json({ error: 'Missing required fields: userId or actionType' });
-  }
-
   try {
     const [result] = await pool
       .promise()
@@ -149,30 +144,14 @@ versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
 // Oppretter en ny versjon for et felt med bruker-ID
 versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   const { subjectId } = req.params;
-
-  if (!subjectId || subjectId.trim() === '') {
-    // Check for empty subjectId
-    console.error('Emne-ID mangler i forespørselen');
-    return res.status(400).json({ error: 'Emne-ID er påkrevd' });
-  }
-
   try {
-    const [result] = await pool
-      .promise()
-      .query<ResultSetHeader>('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [
-        subjectId,
-      ]);
-
-    if (result.affectedRows === 0) {
-      console.warn(`Emne ikke funnet for ID: ${subjectId}`);
-      return res.status(404).json({ error: 'Emne ikke funnet' });
-    }
-
-    console.log(`Øker antall visninger for emne-ID: ${subjectId}`);
-    return res.status(200).json({ message: 'Antall visninger økt' });
+    await pool.query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
+    res.status(200).send({ message: 'View count incremented successfully' });
   } catch (error) {
+
     console.error('Feil ved økning av visninger:', error);
     return res.status(500).json({ error: 'Kunne ikke øke antall visninger' });
+
   }
 });
 

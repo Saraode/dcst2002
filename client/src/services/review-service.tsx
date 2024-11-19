@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Subject, Review, Campus } from '../types/ServiceTypes';
+import { Subject, Campus } from '../types/ServiceTypes';
 
 // Setter baseURL for axios, slik at alle API-anrop går til denne basen
 axios.defaults.baseURL = 'http://localhost:3000/api';

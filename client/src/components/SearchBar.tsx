@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLocation, useHistory } from 'react-router-dom';
+
 import { SearchResult } from '../types/ServiceTypes'
+
 
 const SearchBar: React.FC = () => {
   // State for søkespørsmål (query) og forslag (suggestions)
@@ -90,10 +92,6 @@ const SearchBar: React.FC = () => {
               </li>
             ))}
 
-          {/* Kommentert ut: Liste for når ingen forslag finnes */}
-          {/* {suggestions.length === 0 && query.trim().length > 0 && (
-            <li className="no-results-suggestion">Ingen emner funnet</li>
-          )} */}
         </ul>
       )}
     </div>

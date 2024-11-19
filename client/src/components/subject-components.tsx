@@ -1,13 +1,15 @@
 // Importerer nødvendige komponenter og tjenester
 import * as React from 'react';
-import { Component } from 'react-simplified';  // Bruker react-simplified for enklere komponenthåndtering
-import { Alert, Card, Row, Column, Form, Button } from './widgets';  // Importerer UI-komponenter
-import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom'; // Importerer router-relaterte funksjoner
-import reviewService from '../services/review-service';  // Importerer reviewService for å hente og sende anmeldelser
-import { Subject, Review, Campus, CampusListState } from '../types/ServiceTypes';  // Importerer typer for emner, vurderinger osv.
-import { createHashHistory } from 'history'; // Bruker hashHistory for navigering
-import axios from 'axios'; // Bruker axios for API-anrop
-import ChangeHistory from './endringslogg'; // Importerer komponent for endringslogg
+
+import { Component } from 'react-simplified';
+import { Alert, Card, Row, Column, Form, Button } from './widgets';
+import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
+import reviewService from '../services/review-service';
+import { Subject, CampusListState } from '../types/ServiceTypes';
+import { createHashHistory } from 'history';
+import axios from 'axios';
+import ChangeHistory from './endringslogg';
+
 
 // Setter opp historikk med hash
 const history = createHashHistory();

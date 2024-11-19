@@ -1,5 +1,3 @@
-// client/components/FieldDropdown.tsx
-
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { Field } from '../types/ServiceTypes'; // Importer typen for "Field" som vi bruker i komponenten

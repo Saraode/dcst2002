@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { SubjectNewWithRouter } from './subject-components'; // Importerer komponenten for å legge til nytt emne
-import { Subject, Level } from '../types/ServiceTypes'; // Importerer typer for emner og nivåer
+import { Subject, Level } from '../types/ServiceTypes';
 
 
 // Funksjon for å validere input (kun tillate bokstaver, tall og mellomrom)

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
-import { ChangeHistoryEntry } from '../types/ServiceTypes'
+import { ChangeHistoryEntry } from '../types/ServiceTypes';
 
 // Set app element for Modal (krav for tilgjengelighet)
 Modal.setAppElement('#root');
-
+// for å lage modal har jeg brukt denne linken:
+// https://stackademic.com/blog/how-to-implement-a-reusable-modal-component-in-react-and-typescript som insirasjon
 const ChangeHistory: React.FC = () => {
   // State for å lagre endringshistorikk
   const [history, setHistory] = useState<ChangeHistoryEntry[]>([]);
@@ -21,11 +22,13 @@ const ChangeHistory: React.FC = () => {
       try {
         // Hent data fra API-et
         const response = await axios.get('/api/history');
+
         console.log('API response:', response.data); // Logg API-responsen
         setHistory(Array.isArray(response.data) ? response.data : []); // Sørg for at responsen er et array
       } catch (error) {
         console.error('Error fetching change history:', error);
         setHistory([]); // Hvis det er feil, fallback til en tom array
+
       } finally {
         setIsLoading(false); // Sett loading til false når forespørselen er fullført
       }
