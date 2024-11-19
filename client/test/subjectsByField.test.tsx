@@ -1,7 +1,7 @@
 import React from 'react';
 import { shallow, mount } from 'enzyme';
 import { MemoryRouter } from 'react-router-dom';
-import SubjectsByField from '../src/SubjectsByField';
+import SubjectsByField from '../src/components/SubjectsByField';
 
 global.fetch = jest.fn() as jest.Mock;
 

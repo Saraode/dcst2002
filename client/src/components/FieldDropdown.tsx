@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { Field } from '../types/ServiceTypes'
-
+import { Field } from '../types/ServiceTypes';
 
 const FieldDropdown: React.FC = () => {
   const [fields, setFields] = useState<Field[]>([]);
@@ -13,12 +12,14 @@ const FieldDropdown: React.FC = () => {
 
   useEffect(() => {
     const fetchFields = async () => {
-      try {
-        const response = await fetch(`/api/campus/${encodeURIComponent(campus)}/fields`);
-        const data = await response.json();
-        setFields(data);
-      } catch (error) {
-        console.error('Failed to fetch fields:', error);
+      if (campus) {
+        try {
+          const response = await fetch(`/api/campus/${encodeURIComponent(campus)}/fields`);
+          const data = await response.json();
+          setFields(data);
+        } catch (error) {
+          console.error('Failed to fetch fields:', error);
+        }
       }
     };
 
