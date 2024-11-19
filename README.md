@@ -263,6 +263,13 @@ npm test
 ## Informasjon om Klient Tester
 
 ## Bidrag
+Dette prosjektet er utviklet av:
+- Hilde Olsen
+- Thea Hilmo Jensen
+- Mathilde Lindkvist
+- Sara Ødeby
+
+Vi er 4 studenter som går 2. klasse Digital Infrastruktur og Cybersikkerhet ved NTNU Trondheim
 
 ## Kilder og Lisens
 - https://github.com/eman289/smart-login-system
