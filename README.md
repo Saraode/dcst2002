@@ -1,6 +1,27 @@
 # NTNU Emnevurderinger (DCST2002 Webutviklingsprosjekt h24)
 Dette er en side for å legge inn emner + anmeldelser av emner på NTNU. Man velger hvilket campus og fagområde man vil legge inn emner under, og legger inn anmeldelse der.
 
+# Innhold
+- [Hovedfunksjon](#Hovedfunksjon)
+- [Teknologier](#Teknologier)
+    - [Bruk av KI-verktøy](#Bruk-av-KI-verktøy) 
+- [Database oppsett](#Database-oppsett)
+    - [SQL-setninger](#SQL-setninger)
+    - [Tabeller uten avhengigheter](#Tabeller-uten-avhengigheter)
+    - [Moderator](#Moderator)
+    - [Tabeller som avhenger av nivå 1-tabeller](#Tabeller-som-avhenger-av-nivå-1-tabeller)
+    - [Tabeller som avhenger av nivå 2-tabeller](#Tabeller-som-avhenger-av-nivå-2-tabeller)
+    - [Tabeller som refererer til Subjects](#Tabeller-som-refererer-til-Subjects)
+    - [Tabeller som refererer til flere tidligere nivåer](#Tabeller-som-refererer-til-flere-tidligere-nivåer)
+- [Installasjon](#Installasjon)
+- [Server tester](#Server-tester)
+- [Klient tester](#Klient-tester)
+- [Versjonering](#Versjonering)
+- [Bidrag](#Bidrag)
+- [Kilder og lisens](#Kilder-og-lisens)
+
+
+
 ## Hovedfunksjoner 
 - Ved å opprette en bruker får man muligheten til å legge til fag, samt opprette, redigere og slette egne anmeldelser. Uten en bruker kan man ikke opprette egne anmeldelser, men man kan fortsatt lese anmeldelser fra andre. 
 - Plattformen har en moderatorbruker som har rettigheter til alt. Denne brukeren kan slette og redigere emner. Moderator kan også slette anmeldelser. 
@@ -25,12 +46,12 @@ I utviklingen av dette prosjektet har disse KI-verktøyene blir benyttet:
 Du må logge deg inn på databasen vår (mysqladmin.it.ntnu.no). Du finner innlogging på config.ts i /server (Vanligvis ville denne vært i .gitignore, men siden dette er et prosjekt vi skal levere, gjør vi det slik. Vi legger ikke ut påloggingsinformasjon offentlig). 
 Husk at du må være på på NTNU-nett, eller VPN hvis du befinner deg et annet sted enn på campus. 
 
-## SQL - Setninger
+### SQL - Setninger
 Hvis du vil lage dine egne databaser, må du bruke SQL-setningene under. Da er det noen ting som er viktige å tenke på:
 - User_id på moderator-brukeren må være 35. Så det er viktig at du legger inn moderator som user_id 35.
 - Legg de inn i rekkefølgen de står i.
 
-## Tabeller uten avhengigheter
+### Tabeller uten avhengigheter
 Disse tabellene må opprettes først, fordi andre tabeller refererer til dem via fremmednøkler:
 
 ```sql
@@ -69,7 +90,7 @@ CREATE TABLE users (
     PRIMARY KEY (id)
 );
 ```
-## Moderator
+### Moderator
 Denne insert-setningen bør kjøres med en gang etter at user-tabellen er opprettet, da user id bruker AUTO_INCREMENT, og id 35 må holdes av for moderator.
 ```sql
 
@@ -80,7 +101,7 @@ VALUES (35, 'Moderator', 'moderator@ntnu.no',
 
 ```
 
-## Tabeller som avhenger av nivå 1-tabeller
+### Tabeller som avhenger av nivå 1-tabeller
 Tabeller som refererer til Campuses, Levels, eller users via fremmednøkler:
 
 ```sql
@@ -101,7 +122,7 @@ INSERT INTO Fields (id, name, campusId) VALUES
 (10, 'Statsvitenskap', 5);
 ```
 
-## Tabeller som avhenger av nivå 2-tabeller
+### Tabeller som avhenger av nivå 2-tabeller
 Tabeller som refererer til Fields og/eller Levels:
 
 ```sql
@@ -120,7 +141,7 @@ CREATE TABLE Subjects (
 );
 ```
 
-## Tabeller som refererer til Subjects
+### Tabeller som refererer til Subjects
 Disse tabellene avhenger av Subjects og må opprettes etter at Subjects er definert:
 
 ```sql
@@ -165,7 +186,7 @@ CREATE TABLE subject_versions (
 );
 ```
 
-## Tabeller som refererer til flere tidligere nivåer
+### Tabeller som refererer til flere tidligere nivåer
 Tabeller som avhenger både av Subjects, Fields, eller andre:
 
 ```sql
@@ -254,7 +275,7 @@ cd server
 npm test
 ```
 
-## Informasjon om Server Tester
+### Informasjon om Server Tester
 
 ## Klient Tester
 
@@ -265,9 +286,11 @@ cd client
 npm test
 ```
 
-## Informasjon om Klient Tester
+### Informasjon om Klient Tester
 Vi har tester på klient siden for å sørge for at applikasjonen vil fungere som forventet når det kommer til brukeropplevelse og kommunikasjon med API.
 Utviklingen av testene er basert på leksjonen som omhandler klient tester, men fått hjelp med rettting av ChatGPT og Github Copilot.
+
+Link til leksjon: https://eidheim.folk.ntnu.no/full_stack/client-tests/chapter.html
 
 Filene som er testet:
 - endringslogg.tsx
@@ -277,7 +300,7 @@ Filene som er testet:
 - subjectsByField.tsx
 - widgets.tsx
 
-  ## Versjonering
+## Versjonering
 
 På grunn av mangel på eksempler og forklaringer på implementering som kunne tilpasses vårt prosjekt ble Chat GPT brukt for å lage en generell regel på hvordan det skal se ut. Deretter ble det utviklet selv basert på dette, med retting ved help av KI-verktøy.
 
