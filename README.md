@@ -275,3 +275,4 @@ Vi er 4 studenter som går 2. klasse Digital Infrastruktur og Cybersikkerhet ved
 - https://github.com/eman289/smart-login-system
 - https://www.w3schools.com/howto/howto_css_searchbar.asp
 - https://stackademic.com/blog/how-to-implement-a-reusable-modal-component-in-react-and-typescript
+- https://www.browserstack.com/guide/react-testing-tutorial
