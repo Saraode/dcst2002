@@ -1,4 +1,5 @@
-import reviewService, { Subject, Campus } from '../src/services/review-service';
+import { Subject, Campus } from 'src/types/ServiceTypes';
+import reviewService from '../src/services/review-service';
 import axios from 'axios';
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -26,8 +27,24 @@ describe('ReviewService Tests', () => {
   // Test for getSubjectsByCampus
   test('getSubjectsByCampus should fetch subjects correctly for given campus', async () => {
     const mockSubjects: Subject[] = [
-      { id: 1, name: 'Subject 1', fieldId: 1, reviews: [] },
-      { id: 2, name: 'Subject 2', fieldId: 1, reviews: [] },
+      {
+        id: '1',
+        name: 'Subject 1',
+        fieldid: 1,
+        review: [],
+        levelId: 0,
+        description: '',
+        view_count: 0,
+      },
+      {
+        id: '2',
+        name: 'Subject 2',
+        fieldid: 1,
+        review: [],
+        levelId: 0,
+        description: '',
+        view_count: 0,
+      },
     ];
 
     mockedAxios.get.mockResolvedValueOnce({ data: mockSubjects });
