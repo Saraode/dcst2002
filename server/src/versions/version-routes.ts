@@ -123,6 +123,7 @@ versionRouter.post('/subjects/:subjectId/version', async (req, res) => {
 });
 
 // Oppretter en ny versjon for anmeldelser knyttet til et emne
+
 versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
   const { subjectId } = req.params;
   const { reviews, userId, actionType } = req.body;
@@ -147,18 +148,19 @@ versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   const { subjectId } = req.params;
 
   if (!subjectId) {
-    console.error('Emne-ID mangler i forespørselen');
     return res.status(400).json({ error: 'Emne-ID er påkrevd' });
   }
 
   try {
-    // Execute the query and typecast the result
+    // Utfør spørringen og typecast resultatet
+
     const [result] = await pool
       .promise()
-      .query<ResultSetHeader>('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [
-        subjectId,
-      ]);
+      .query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
 
+    return res.status(200).send({ message: 'Antall visninger økt' });
+  } catch (error) {
+    return res.status(500).send({ error: 'Kunne ikke øke antall visninger' });
     // Check if any rows were affected
     if (result.affectedRows === 0) {
       console.warn(`Emne ikke funnet for ID: ${subjectId}`);

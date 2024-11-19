@@ -3,13 +3,12 @@ import { Component } from 'react-simplified';
 import { Alert, Card, Row, Column, Form, Button } from './widgets';
 import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
 import reviewService from '../services/review-service';
-import { Subject, Review, Campus, CampusListState  } from '../types/ServiceTypes';
+import { Subject, Review, Campus, CampusListState } from '../types/ServiceTypes';
 import { createHashHistory } from 'history';
 import axios from 'axios';
 import ChangeHistory from './endringslogg';
 
 const history = createHashHistory();
-
 
 export class CampusList extends Component<{}, CampusListState> {
   state = {
@@ -87,7 +86,7 @@ class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id:
     fieldid: 0,
     levelId: 0,
     description: '',
-    view_count: 0
+    view_count: 0,
   };
 
   render() {

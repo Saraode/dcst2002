@@ -1,7 +1,10 @@
 import * as React from 'react';
 
 // Card Component: En card-komponent for å vise innhold med tittel og ramme
-export const Card: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+export const Card: React.FC<{ title: string; children: React.ReactNode }> = ({
+  title,
+  children,
+}) => (
   <div
     style={{
       border: '1px solid #ddd',
@@ -37,7 +40,10 @@ export const Row: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 // Column Component: En kolonne for å justere bredde og innhold
-export const Column: React.FC<{ width?: number; children: React.ReactNode }> = ({ width, children }) => (
+export const Column: React.FC<{ width?: number; children: React.ReactNode }> = ({
+  width,
+  children,
+}) => (
   <div
     style={{
       flex: width ? `0 0 ${width * 10}%` : '1', // Fleksibel bredde basert på prop
@@ -66,7 +72,15 @@ export const Form = {
     </label>
   ),
   // Input: Et input for tekst og andre input-typer
-  Input: ({ type, value, onChange }: { type: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+  Input: ({
+    type,
+    value,
+    onChange,
+  }: {
+    type: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  }) => (
     <input
       type={type}
       value={value}
@@ -82,7 +96,15 @@ export const Form = {
     />
   ),
   // Textarea: Et større tekstfelt for lengre input
-  Textarea: ({ value, onChange, rows }: { value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; rows: number }) => (
+  Textarea: ({
+    value,
+    onChange,
+    rows,
+  }: {
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    rows: number;
+  }) => (
     <textarea
       value={value}
       onChange={onChange}
@@ -98,7 +120,15 @@ export const Form = {
     />
   ),
   // Checkbox: En avkrysningsboks med etikett
-  Checkbox: ({ checked, label, onChange }: { checked: boolean; label: string; onChange: () => void }) => (
+  Checkbox: ({
+    checked,
+    label,
+    onChange,
+  }: {
+    checked: boolean;
+    label: string;
+    onChange: () => void;
+  }) => (
     <label
       style={{
         display: 'block',

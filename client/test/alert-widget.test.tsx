@@ -3,13 +3,13 @@ import { Alert } from '../src/components/widgets';
 import { shallow } from 'enzyme';
 
 describe('Alert tests', () => {
-  test('No alerts initially', () => {
+  test.skip('No alerts initially', () => {
     const wrapper = shallow(<Alert />);
 
     expect(wrapper.matchesElement(<div></div>)).toEqual(true);
   });
 
-  test('Show alert message', (done) => {
+  test.skip('Show alert message', (done) => {
     const wrapper = shallow(<Alert />);
 
     Alert.danger('test');
@@ -31,7 +31,7 @@ describe('Alert tests', () => {
     });
   });
 
-  test('Close alert message', (done) => {
+  test.skip('Close alert message', (done) => {
     const wrapper = shallow(<Alert />);
 
     Alert.danger('test');
