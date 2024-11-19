@@ -13,6 +13,7 @@ describe('ReviewService', () => {
   });
 
   describe('getReviewsBySubjectId', () => {
+    // Tester å hente anmeldelser for et emne
     it('should fetch reviews for a subject', async () => {
       const mockReviews = [
         { id: 1, text: 'Great!', stars: 5, submitterName: 'John', userId: 1 },
@@ -24,7 +25,7 @@ describe('ReviewService', () => {
       });
 
       const reviews = await reviewService.getReviewsBySubjectId('123');
-      expect(reviews).toEqual(mockReviews); // Verifiser at anmeldelser returneres riktig
+      expect(reviews).toEqual(mockReviews);
       expect(pool.query).toHaveBeenCalledWith(
         expect.stringContaining('SELECT id, text, stars, submitterName'),
         ['123'],
@@ -32,16 +33,18 @@ describe('ReviewService', () => {
       );
     });
 
+    // Tester at databasefeil håndteres riktig
     it('should handle database errors', async () => {
       (pool.query as jest.Mock).mockImplementation((query, values, callback) => {
         callback(new Error('Database error'), null);
       });
 
-      await expect(reviewService.getReviewsBySubjectId('123')).rejects.toThrow('Database error'); // Verifiser at databasefeil håndteres riktig
+      await expect(reviewService.getReviewsBySubjectId('123')).rejects.toThrow('Database error');
     });
   });
 
   describe('createReview', () => {
+    // Tester å opprette en anmeldelse
     it('should create a review successfully', async () => {
       const mockInsertId = 1;
 
@@ -50,7 +53,7 @@ describe('ReviewService', () => {
       });
 
       const reviewId = await reviewService.createReview('123', 'Great!', 5, 1, 'John');
-      expect(reviewId).toBe(mockInsertId); // Verifiser at riktig review ID returneres
+      expect(reviewId).toBe(mockInsertId);
       expect(pool.query).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO Reviews'),
         ['123', 'Great!', 5, 1, 'John'],
@@ -58,18 +61,20 @@ describe('ReviewService', () => {
       );
     });
 
+    // Tester at databasefeil håndteres riktig ved opprettelse
     it('should handle database errors during review creation', async () => {
       (pool.query as jest.Mock).mockImplementation((query, values, callback) => {
         callback(new Error('Database error'), null);
       });
 
       await expect(reviewService.createReview('123', 'Great!', 5, 1, 'John')).rejects.toThrow(
-        'Database error', // Verifiser at databasefeil håndteres riktig
+        'Database error',
       );
     });
   });
 
   describe('getReviewById', () => {
+    // Tester å hente en anmeldelse basert på ID
     it('should fetch a review by ID', async () => {
       const mockReview = {
         id: 1,
@@ -84,7 +89,7 @@ describe('ReviewService', () => {
       });
 
       const review = await reviewService.getReviewById(1);
-      expect(review).toEqual(mockReview); // Verifiser at anmeldelsen returneres riktig
+      expect(review).toEqual(mockReview);
       expect(pool.query).toHaveBeenCalledWith(
         expect.stringContaining('SELECT id, text, stars, user_id'),
         [1],
@@ -92,17 +97,19 @@ describe('ReviewService', () => {
       );
     });
 
+    // Tester at null returneres hvis anmeldelsen ikke finnes
     it('should return null if the review is not found', async () => {
       (pool.query as jest.Mock).mockImplementation((query, values, callback) => {
         callback(null, []);
       });
 
       const review = await reviewService.getReviewById(999);
-      expect(review).toBeNull(); // Verifiser at null returneres hvis anmeldelsen ikke finnes
+      expect(review).toBeNull();
     });
   });
 
   describe('updateReview', () => {
+    // Tester å oppdatere en anmeldelse
     it('should update a review successfully', async () => {
       (pool.query as jest.Mock).mockImplementation((query, values, callback) => {
         callback(null);
@@ -116,18 +123,20 @@ describe('ReviewService', () => {
       );
     });
 
+    // Tester at databasefeil håndteres riktig ved oppdatering
     it('should handle database errors during review update', async () => {
       (pool.query as jest.Mock).mockImplementation((query, values, callback) => {
         callback(new Error('Database error'), null);
       });
 
       await expect(reviewService.updateReview(1, 'Updated text', 4)).rejects.toThrow(
-        'Database error', // Verifiser at databasefeil håndteres riktig
+        'Database error',
       );
     });
   });
 
   describe('deleteReview', () => {
+    // Tester å slette en anmeldelse
     it('should delete a review successfully', async () => {
       (pool.query as jest.Mock).mockImplementation((query, values, callback) => {
         callback(null);
@@ -141,16 +150,18 @@ describe('ReviewService', () => {
       );
     });
 
+    // Tester at databasefeil håndteres riktig ved sletting
     it('should handle database errors during review deletion', async () => {
       (pool.query as jest.Mock).mockImplementation((query, values, callback) => {
         callback(new Error('Database error'), null);
       });
 
-      await expect(reviewService.deleteReview(1)).rejects.toThrow('Database error'); // Verifiser at feil håndteres ved sletting
+      await expect(reviewService.deleteReview(1)).rejects.toThrow('Database error');
     });
   });
 
   describe('getAverageStarsForSubject', () => {
+    // Tester å beregne gjennomsnittlig stjerner for et emne
     it('should calculate the average stars for a subject', async () => {
       const mockAverage = [{ averageStars: 4.5 }];
 
@@ -159,7 +170,7 @@ describe('ReviewService', () => {
       });
 
       const average = await reviewService.getAverageStarsForSubject('123');
-      expect(average).toBe(4.5); // Verifiser at gjennomsnittsstjerner beregnes riktig
+      expect(average).toBe(4.5);
       expect(pool.query).toHaveBeenCalledWith(
         expect.stringContaining('SELECT AVG(stars) as averageStars'),
         ['123'],
@@ -167,6 +178,7 @@ describe('ReviewService', () => {
       );
     });
 
+    // Tester at 0 returneres hvis ingen anmeldelser finnes
     it('should return 0 if no reviews are found', async () => {
       const mockAverage = [{ averageStars: null }];
 
@@ -175,16 +187,17 @@ describe('ReviewService', () => {
       });
 
       const average = await reviewService.getAverageStarsForSubject('123');
-      expect(average).toBe(0); // Verifiser at 0 returneres når ingen anmeldelser finnes
+      expect(average).toBe(0);
     });
 
+    // Tester at databasefeil håndteres riktig ved beregning av gjennomsnitt
     it('should handle database errors during average stars calculation', async () => {
       (pool.query as jest.Mock).mockImplementation((query, values, callback) => {
         callback(new Error('Database error'), null);
       });
 
       await expect(reviewService.getAverageStarsForSubject('123')).rejects.toThrow(
-        'Database error', // Verifiser at databasefeil håndteres riktig
+        'Database error',
       );
     });
   });

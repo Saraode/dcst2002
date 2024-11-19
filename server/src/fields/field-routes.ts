@@ -74,17 +74,15 @@ router.get('/fields/:fieldId/total-subjects-count', async (req, res) => {
   const { fieldId } = req.params;
 
   try {
-    console.log(`[DEBUG] Received fieldId: ${fieldId}`);
     const totalSubjectsCount = await fieldService.getTotalSubjectsCount(Number(fieldId));
-    console.log(`[DEBUG] Total subjects count for fieldId ${fieldId}: ${totalSubjectsCount}`);
+    if (!totalSubjectsCount) {
+      return res.status(404).json({ error: 'No subjects found for this fieldId' });
+    }
+
     res.status(200).json({ total: totalSubjectsCount });
   } catch (error) {
-    if (error instanceof Error && error.message === 'No subjects found') {
-      res.status(404).json({ error: 'No subjects found for this fieldId' });
-    } else {
-      console.error(`[ERROR] Failed to fetch total subjects count for fieldId ${fieldId}:`, error);
-      res.status(500).json({ error: 'Failed to fetch total subjects count' });
-    }
+    console.error(`[ERROR] Failed to fetch total subjects count for fieldId ${fieldId}:`, error);
+    res.status(500).json({ error: 'Failed to fetch total subjects count' });
   }
 });
 
@@ -105,14 +103,17 @@ router.get('/fields/:fieldId/name', async (req, res) => {
 
 // Henter fields basert på campus ID
 router.get('/fields/:campusId', async (req, res) => {
-  const { campusId } = req.params;
-
   try {
+    const { campusId } = req.params;
+    console.log(`[DEBUG] campusId: ${campusId}`);
+
     const [fields] = await pool
       .promise()
       .query<
         RowDataPacket[]
       >('SELECT id, name, campus_id AS campusId FROM Fields WHERE campus_id = ?', [campusId]);
+
+    console.log(`[DEBUG] Fields fetched: ${JSON.stringify(fields)}`);
 
     if (!fields.length) {
       return res.status(200).json([]);
@@ -120,7 +121,7 @@ router.get('/fields/:campusId', async (req, res) => {
 
     res.status(200).json(fields);
   } catch (error) {
-    console.error('Error fetching fields:', error);
+    console.error(`[ERROR] Failed to fetch fields:`, error);
     res.status(500).json({ error: 'Failed to fetch fields' });
   }
 });

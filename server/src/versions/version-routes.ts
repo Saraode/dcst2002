@@ -127,6 +127,10 @@ versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
   const { subjectId } = req.params;
   const { reviews, userId, actionType } = req.body;
 
+  if (!userId || !actionType) {
+    return res.status(400).json({ error: 'Missing required fields: userId or actionType' });
+  }
+
   try {
     const [result] = await pool
       .promise()
@@ -146,31 +150,29 @@ versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
 versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   const { subjectId } = req.params;
 
-  if (!subjectId) {
+  if (!subjectId || subjectId.trim() === '') {
+    // Check for empty subjectId
     console.error('Emne-ID mangler i forespørselen');
     return res.status(400).json({ error: 'Emne-ID er påkrevd' });
   }
 
   try {
-    // Execute the query and typecast the result
     const [result] = await pool
       .promise()
       .query<ResultSetHeader>('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [
         subjectId,
       ]);
 
-    // Check if any rows were affected
     if (result.affectedRows === 0) {
       console.warn(`Emne ikke funnet for ID: ${subjectId}`);
-      return res.status(404).json({ error: 'Emne ikke funnet' }); // Response sent here
+      return res.status(404).json({ error: 'Emne ikke funnet' });
     }
 
-    // If rows were updated, send success response
     console.log(`Øker antall visninger for emne-ID: ${subjectId}`);
-    return res.status(200).json({ message: 'Antall visninger økt' }); // Response sent here
+    return res.status(200).json({ message: 'Antall visninger økt' });
   } catch (error) {
     console.error('Feil ved økning av visninger:', error);
-    return res.status(500).json({ error: 'Kunne ikke øke antall visninger' }); // Response sent here
+    return res.status(500).json({ error: 'Kunne ikke øke antall visninger' });
   }
 });
 

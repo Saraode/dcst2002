@@ -28,5 +28,6 @@ console.log('Feltruter registrert på /api/v2/fields');
 // Legger til generelle API-ruter
 app.use('/api', subjectRouter);
 app.use('/api', versionRouter);
+app.use('/fields', fieldRouter);
 
 export default app;

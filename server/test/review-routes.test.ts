@@ -17,6 +17,7 @@ describe('Review Router', () => {
   });
 
   describe('POST /subjects/:id/reviews', () => {
+    // Tester opprettelse av en ny anmeldelse
     it('should create a new review', async () => {
       (userService.findUserById as jest.Mock).mockResolvedValue({ id: 1, name: 'John' });
       (reviewService.createReview as jest.Mock).mockResolvedValue(123);
@@ -34,7 +35,7 @@ describe('Review Router', () => {
         userId: 1,
       });
 
-      expect(response.status).toBe(201); // Verifiser at anmeldelsen er opprettet
+      expect(response.status).toBe(201);
       expect(response.body).toEqual({
         id: 123,
         text: 'Great subject!',
@@ -51,16 +52,18 @@ describe('Review Router', () => {
       );
     });
 
+    // Tester at feil returneres hvis obligatoriske felt mangler
     it('should return 400 for missing fields', async () => {
       const response = await request(app).post('/api/v2/reviews/subjects/123/reviews').send({
         text: 'Great subject!',
       });
 
-      expect(response.status).toBe(400); // Verifiser at feil håndteres når felt mangler
-      expect(response.body).toEqual({ error: 'Review text, stars, or userId missing' });
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ error: 'Mangler tekst, stjerner, eller bruker-ID' });
       expect(reviewService.createReview).not.toHaveBeenCalled();
     });
 
+    // Tester at feil returneres for ugyldig bruker-ID
     it('should return 404 for invalid userId', async () => {
       (userService.findUserById as jest.Mock).mockResolvedValue(null);
 
@@ -70,11 +73,12 @@ describe('Review Router', () => {
         userId: 99,
       });
 
-      expect(response.status).toBe(404); // Verifiser at 404 returneres for ugyldig bruker-ID
-      expect(response.body).toEqual({ error: 'User not found' });
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: 'Bruker ikke funnet' });
       expect(reviewService.createReview).not.toHaveBeenCalled();
     });
 
+    // Tester at en feil returneres hvis tjenesten kaster en feil
     it('should return 500 for service errors', async () => {
       (userService.findUserById as jest.Mock).mockResolvedValue({ id: 1, name: 'John' });
       (reviewService.createReview as jest.Mock).mockRejectedValue(new Error('Database error'));
@@ -85,51 +89,55 @@ describe('Review Router', () => {
         userId: 1,
       });
 
-      expect(response.status).toBe(500); // Verifiser at feil håndteres for tjenesteproblemer
-      expect(response.body).toEqual({ error: 'Could not add review' });
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: 'Kunne ikke legge til anmeldelse' });
     });
   });
 
   describe('DELETE /:reviewId', () => {
+    // Tester sletting av en anmeldelse hvis brukeren er autorisert
     it('should delete a review if authorized', async () => {
       (reviewService.getReviewById as jest.Mock).mockResolvedValue({
         id: 123,
         userId: 1,
       });
-      (reviewService.deleteReview as jest.Mock).mockResolvedValue(undefined); // Simulerer vellykket sletting
+      (reviewService.deleteReview as jest.Mock).mockResolvedValue(undefined);
 
       const response = await request(app).delete('/api/v2/reviews/123').send({ userId: 1 });
 
-      expect(response.status).toBe(200); // Verifiserer vellykket sletting
-      expect(response.body).toEqual({ message: 'Review deleted successfully' });
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ message: 'Anmeldelse slettet' });
       expect(reviewService.deleteReview).toHaveBeenCalledWith(123);
     });
 
+    // Tester at sletting feiler hvis brukeren ikke er autorisert
     it('should return 403 if the user is not authorized to delete', async () => {
       (reviewService.getReviewById as jest.Mock).mockResolvedValue({
         id: 123,
-        userId: 2, // Simulerer at anmeldelsen tilhører en annen bruker
+        userId: 2,
       });
 
       const response = await request(app).delete('/api/v2/reviews/123').send({ userId: 1 });
 
-      expect(response.status).toBe(403); // Verifiserer at 403 returneres for uautorisert tilgang
-      expect(response.body).toEqual({ error: 'Not authorized to delete this review' });
-      expect(reviewService.deleteReview).not.toHaveBeenCalled(); // Verifiserer at slettemetoden ikke ble kalt
+      expect(response.status).toBe(403);
+      expect(response.body).toEqual({ error: 'Ikke autorisert til å slette denne anmeldelsen' });
+      expect(reviewService.deleteReview).not.toHaveBeenCalled();
     });
 
+    // Tester at en feil returneres hvis anmeldelsen ikke finnes
     it('should return 404 if the review does not exist', async () => {
-      (reviewService.getReviewById as jest.Mock).mockResolvedValue(null); // Simulerer at anmeldelsen ikke finnes
+      (reviewService.getReviewById as jest.Mock).mockResolvedValue(null);
 
       const response = await request(app).delete('/api/v2/reviews/123').send({ userId: 1 });
 
-      expect(response.status).toBe(404); // Verifiserer at 404 returneres når anmeldelsen ikke finnes
-      expect(response.body).toEqual({ error: 'Review not found' });
-      expect(reviewService.deleteReview).not.toHaveBeenCalled(); // Verifiserer at slettemetoden ikke ble kalt
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: 'Anmeldelse ikke funnet' });
+      expect(reviewService.deleteReview).not.toHaveBeenCalled();
     });
   });
 
   describe('GET /subjects/:id/reviews', () => {
+    // Tester henting av anmeldelser for et emne
     it('should fetch reviews for a subject', async () => {
       const mockReviews = [
         { id: 1, text: 'Great!', stars: 5, submitterName: 'John', userId: 1 },
@@ -140,11 +148,12 @@ describe('Review Router', () => {
 
       const response = await request(app).get('/api/v2/reviews/subjects/123/reviews');
 
-      expect(response.status).toBe(200); // Verifiserer at anmeldelser hentes riktig
+      expect(response.status).toBe(200);
       expect(response.body).toEqual(mockReviews);
       expect(reviewService.getReviewsBySubjectId).toHaveBeenCalledWith('123');
     });
 
+    // Tester at en feil returneres hvis tjenesten kaster en feil
     it('should return 500 for service errors', async () => {
       (reviewService.getReviewsBySubjectId as jest.Mock).mockRejectedValue(
         new Error('Database error'),
@@ -152,18 +161,19 @@ describe('Review Router', () => {
 
       const response = await request(app).get('/api/v2/reviews/subjects/123/reviews');
 
-      expect(response.status).toBe(500); // Verifiserer at feil håndteres for tjenesteproblemer
-      expect(response.body).toEqual({ error: 'Failed to fetch reviews' });
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: 'Kunne ikke hente anmeldelser' });
     });
   });
 
   describe('PUT /:reviewId', () => {
+    // Tester oppdatering av en anmeldelse hvis brukeren er autorisert
     it('should update a review if authorized', async () => {
       (reviewService.getReviewById as jest.Mock).mockResolvedValue({
         id: 123,
         userId: 1,
       });
-      (reviewService.updateReview as jest.Mock).mockResolvedValue(undefined); // Simulerer vellykket oppdatering
+      (reviewService.updateReview as jest.Mock).mockResolvedValue(undefined);
 
       const response = await request(app).put('/api/v2/reviews/123').send({
         text: 'Updated text',
@@ -171,15 +181,16 @@ describe('Review Router', () => {
         userId: 1,
       });
 
-      expect(response.status).toBe(200); // Verifiserer vellykket oppdatering
-      expect(response.body).toEqual({ message: 'Review updated successfully' });
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ message: 'Anmeldelse oppdatert' });
       expect(reviewService.updateReview).toHaveBeenCalledWith(123, 'Updated text', 4);
     });
 
+    // Tester at oppdatering feiler hvis brukeren ikke er autorisert
     it('should return 403 if the user is not authorized', async () => {
       (reviewService.getReviewById as jest.Mock).mockResolvedValue({
         id: 123,
-        userId: 2, // Simulerer at anmeldelsen tilhører en annen bruker
+        userId: 2,
       });
 
       const response = await request(app).put('/api/v2/reviews/123').send({
@@ -188,13 +199,14 @@ describe('Review Router', () => {
         userId: 1,
       });
 
-      expect(response.status).toBe(403); // Verifiserer at 403 returneres for uautorisert tilgang
-      expect(response.body).toEqual({ error: 'Not authorized to edit this review' });
-      expect(reviewService.updateReview).not.toHaveBeenCalled(); // Verifiserer at oppdateringsmetoden ikke ble kalt
+      expect(response.status).toBe(403);
+      expect(response.body).toEqual({ error: 'Ikke autorisert til å redigere denne anmeldelsen' });
+      expect(reviewService.updateReview).not.toHaveBeenCalled();
     });
 
+    // Tester at en feil returneres hvis anmeldelsen ikke finnes
     it('should return 404 if the review does not exist', async () => {
-      (reviewService.getReviewById as jest.Mock).mockResolvedValue(null); // Simulerer at anmeldelsen ikke finnes
+      (reviewService.getReviewById as jest.Mock).mockResolvedValue(null);
 
       const response = await request(app).put('/api/v2/reviews/123').send({
         text: 'Updated text',
@@ -202,9 +214,9 @@ describe('Review Router', () => {
         userId: 1,
       });
 
-      expect(response.status).toBe(404); // Verifiserer at 404 returneres når anmeldelsen ikke finnes
-      expect(response.body).toEqual({ error: 'Review not found' });
-      expect(reviewService.updateReview).not.toHaveBeenCalled(); // Verifiserer at oppdateringsmetoden ikke ble kalt
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: 'Anmeldelse ikke funnet' });
+      expect(reviewService.updateReview).not.toHaveBeenCalled();
     });
   });
 });
