@@ -219,13 +219,11 @@ Følg disse stegene for å komme i gang:
     process.env.MYSQL_DATABASE = 'username_todo_dev';
     ```
 
-3. Naviger til prosjektmappen:
+3. Installer nødvendige avhengigheter:
     ```bash
-    cd 'dcst2002'
-    ```
-
-4. Installer nødvendige avhengigheter:
-    ```bash
+    cd dcst2002
+    npm install
+    
     cd client
     npm install
     
@@ -234,7 +232,7 @@ Følg disse stegene for å komme i gang:
     ```
 
 
-5. Start applikasjonen:
+4. Start applikasjonen:
     ```bash
     cd client
     npm start
@@ -243,7 +241,7 @@ Følg disse stegene for å komme i gang:
     npm start
     ```
 
-6. Applikasjonen skal nå kjøre på `http://localhost:3000`.
+5. Applikasjonen skal nå kjøre på `http://localhost:3000`.
 
 
 ## Moderator
