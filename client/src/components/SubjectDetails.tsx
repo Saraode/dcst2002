@@ -1,32 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
-import StarRating from './StarRating';
-import reviewService from '../services/review-service';
-import { Review, Subject, Level } from '../types/ServiceTypes'
+import StarRating from './StarRating';  // Importerer komponenten for stjernesystemet
+import reviewService from '../services/review-service';  // Importerer reviewService for å håndtere anmeldelser
+import { Review, Subject, Level } from '../types/ServiceTypes';  // Importerer relevante typer for anmeldelse, emne og nivå
 
-
+// SubjectDetails-komponenten som viser detaljer om et emne
 const SubjectDetails: React.FC = () => {
-  const { subjectId, fieldId } = useParams<{ subjectId: string; fieldId: string }>();
-  const history = useHistory();
-  const [subject, setSubject] = useState<Subject | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [newReviewText, setNewReviewText] = useState('');
-  const [newRating, setNewRating] = useState(0);
-  const [averageStars, setAverageStars] = useState(0);
-  const [isAuthorizedToEditSubject, setIsAuthorizedToEditSubject] = useState(false);
-  const [levels, setLevels] = useState<Level[]>([]);
-  const [isEditingLevel, setIsEditingLevel] = useState(false);
-  const [updatedLevelId, setUpdatedLevelId] = useState<number | null>(null);
-  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [updatedDescription, setUpdatedDescription] = useState<string>('');
+  const { subjectId, fieldId } = useParams<{ subjectId: string; fieldId: string }>();  // Henter subjectId og fieldId fra URL
+  const history = useHistory();  // Brukes for navigering til andre sider
+  const [subject, setSubject] = useState<Subject | null>(null);  // State for emneinformasjon
+  const [reviews, setReviews] = useState<Review[]>([]);  // State for å lagre anmeldelser
+  const [newReviewText, setNewReviewText] = useState('');  // State for tekstfeltet for ny anmeldelse
+  const [newRating, setNewRating] = useState(0);  // State for å lagre stjernesystemet for ny anmeldelse
+  const [averageStars, setAverageStars] = useState(0);  // State for gjennomsnittlige stjerner
+  const [isAuthorizedToEditSubject, setIsAuthorizedToEditSubject] = useState(false);  // State for å kontrollere om bruker kan redigere emnet
+  const [levels, setLevels] = useState<Level[]>([]);  // State for nivåer
+  const [isEditingLevel, setIsEditingLevel] = useState(false);  // State for å kontrollere om nivå redigeres
+  const [updatedLevelId, setUpdatedLevelId] = useState<number | null>(null);  // State for oppdatert nivå
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);  // State for hvilken anmeldelse som redigeres
+  const [isEditingDescription, setIsEditingDescription] = useState(false);  // State for å kontrollere om beskrivelsen redigeres
+  const [updatedDescription, setUpdatedDescription] = useState<string>('');  // State for oppdatert beskrivelse
 
+  // Brukes til å sjekke om den påloggede brukeren er moderator (ID 35)
   useEffect(() => {
     const currentUserId = Number(localStorage.getItem('userId'));
     if (currentUserId === 35) {
-      setIsAuthorizedToEditSubject(true);
+      setIsAuthorizedToEditSubject(true);  // Sett autorisasjon for moderator
     }
   }, []);
+
+  // Øker visningsantallet for emnet
   useEffect(() => {
     const incrementViewCount = async () => {
       try {
@@ -42,6 +45,7 @@ const SubjectDetails: React.FC = () => {
     incrementViewCount();
   }, [subjectId]);
 
+  // Henter informasjon om emnet, nivåer og anmeldelser
   useEffect(() => {
     const fetchSubject = async () => {
       try {
@@ -50,27 +54,26 @@ const SubjectDetails: React.FC = () => {
           const subjectData = await response.json();
           console.log('Fetched subject data:', subjectData);
 
-          // Formater `id` til store bokstaver og `name` med stor forbokstav
+          // Formaterer `id` til store bokstaver og `name` med stor forbokstav
           const formattedSubjectData = {
             ...subjectData,
             id: String(subjectData.id).toUpperCase(),
-
             name:
               subjectData.name.charAt(0).toUpperCase() + subjectData.name.slice(1).toLowerCase(),
-            description: subjectData.description || 'Ingen beskrivelse tilgjengelig', // Default value for description
+            description: subjectData.description || 'Ingen beskrivelse tilgjengelig',  // Default value for description
           };
 
-          // Normaliser anmeldelser (reviews) hvis de finnes
+          // Normaliserer anmeldelser (reviews) hvis de finnes
           const transformedReviews = (formattedSubjectData.reviews || []).map((review: any) => ({
             ...review,
-            userId: review.userId || review.user_id, // Ensure `userId` is consistent
+            userId: review.userId || review.user_id,  // Ensurerer at userId er konsekvent
           }));
 
-          // Oppdater lokal state
-          setSubject(formattedSubjectData); // Oppdater `subject`-objektet
-          setUpdatedLevelId(formattedSubjectData.levelId); // Oppdater nivå hvis relevant
-          setUpdatedDescription(formattedSubjectData.description); // Sett beskrivelsen i tekstfeltet
-          setReviews(transformedReviews); // Oppdater anmeldelser
+          // Oppdaterer lokal state
+          setSubject(formattedSubjectData);  // Setter emnet i state
+          setUpdatedLevelId(formattedSubjectData.levelId);  // Setter oppdatert nivå
+          setUpdatedDescription(formattedSubjectData.description);  // Setter beskrivelsen i tekstfeltet
+          setReviews(transformedReviews);  // Setter anmeldelser i state
         } else {
           console.error('Failed to fetch subject');
         }
@@ -84,7 +87,7 @@ const SubjectDetails: React.FC = () => {
         const response = await fetch('/api/levels');
         if (response.ok) {
           const levelsData = await response.json();
-          setLevels(levelsData);
+          setLevels(levelsData);  // Setter nivåer i state
         } else {
           console.error('Failed to fetch levels');
         }
@@ -98,18 +101,20 @@ const SubjectDetails: React.FC = () => {
     fetchAverageStars();
   }, [subjectId]);
 
+  // Henter gjennomsnittlig vurdering for emnet
   const fetchAverageStars = async () => {
     try {
       const response = await fetch(`/api/subjects/${subjectId}/average-stars`);
       if (response.ok) {
         const data = await response.json();
-        setAverageStars(data.averageStars);
+        setAverageStars(data.averageStars);  // Setter gjennomsnittsstjernescore
       }
     } catch (error) {
       console.error('Failed to fetch average stars:', error);
     }
   };
 
+  // Håndterer tilføying av ny anmeldelse
   const handleAddReview = async () => {
     if (!newReviewText || newRating === 0) {
       alert('Vennligst fyll inn anmeldelsen og gi en vurdering');
@@ -135,11 +140,11 @@ const SubjectDetails: React.FC = () => {
         const newReview = await response.json();
         console.log('New review:', newReview);
 
-        // Add the new review to the state, ensuring userId is preserved
+        // Legger til den nye anmeldelsen i state
         setReviews([
           {
             ...newReview,
-            userId: currentUserId, // Ensure the userId is included
+            userId: currentUserId,
           },
           ...reviews,
         ]);
@@ -147,7 +152,7 @@ const SubjectDetails: React.FC = () => {
 
         setNewReviewText('');
         setNewRating(0);
-        fetchAverageStars(); // Recalculate average stars
+        fetchAverageStars();  // Recalculation of average stars
         await fetch(`/api/subjects/${subjectId}/reviews/version`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -165,6 +170,7 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  // Håndterer sletting av anmeldelse
   const handleDeleteReview = async (reviewId: number) => {
     const currentUserId = localStorage.getItem('userId');
     if (!currentUserId) return;
@@ -183,7 +189,7 @@ const SubjectDetails: React.FC = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            reviews: reviews.filter((review) => review.id !== reviewId), // Include all remaining reviews
+            reviews: reviews.filter((review) => review.id !== reviewId),
             userId: currentUserId,
             actionType: 'deleted a comment on',
           }),
@@ -197,12 +203,14 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  // Håndterer redigering av anmeldelse
   const handleEditReview = (review: Review) => {
     setEditingReviewId(review.id);
     setNewReviewText(review.text);
     setNewRating(review.stars);
   };
 
+  // Håndterer lagring av redigert anmeldelse
   const handleSaveEdit = async () => {
     if (editingReviewId === null) return;
 
@@ -250,10 +258,12 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  // Håndterer redigering av emne
   const handleEditSubject = () => {
     setIsEditingLevel(true);
   };
 
+  // Håndterer lagring av redigert nivå
   const handleSaveLevelEdit = async () => {
     if (!updatedLevelId || !subject) return;
 
@@ -279,6 +289,7 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  // Håndterer avbrytelse av nivåredigering
   const handleCancelLevelEdit = () => {
     setIsEditingLevel(false);
     if (subject) {
@@ -286,6 +297,7 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  // Håndterer sletting av emne
   const handleDeleteSubject = async () => {
     const currentUserId = Number(localStorage.getItem('userId'));
     if (!currentUserId) {
@@ -321,10 +333,12 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  // Håndterer redigering av beskrivelse
   const handleEditDescription = () => {
     setIsEditingDescription(true);
   };
 
+  // Håndterer lagring av redigert beskrivelse
   const handleSaveDescriptionEdit = async () => {
     if (!subject) {
       console.error('Subject is missing. Cannot update description.');
@@ -366,6 +380,7 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
+  // Håndterer avbrytelse av beskrivelsesredigering
   const handleCancelDescriptionEdit = () => {
     setIsEditingDescription(false);
     if (subject) {
@@ -373,10 +388,11 @@ const SubjectDetails: React.FC = () => {
     }
   };
 
-  if (!subject) return <p>Loading...</p>;
+  if (!subject) return <p>Loading...</p>;  // Vist hvis emnet ikke er lastet ennå
 
   return (
     <div style={{ display: 'flex', gap: '20px' }}>
+      {/* Første kolonne for emnet og anmeldelser */}
       <div
         style={{
           flex: '1',
@@ -388,22 +404,21 @@ const SubjectDetails: React.FC = () => {
       >
         <h2>Gjennomsnittlig vurdering</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <StarRating rating={averageStars} onRatingChange={() => {}} readOnly />
-
+          <StarRating rating={averageStars} onRatingChange={() => {}} readOnly /> {/* Vist gjennomsnittlig vurdering */}
           <span>({reviews.length})</span>
         </div>
 
         <h2>Legg til anmeldelse</h2>
         <textarea
           value={newReviewText}
-          onChange={(e) => setNewReviewText(e.target.value)}
+          onChange={(e) => setNewReviewText(e.target.value)}  // Håndterer endring i anmeldelse
           placeholder="Skriv din anmeldelse her"
           style={{ marginBottom: '10px', width: '100%', height: '100px' }}
         />
-        <StarRating rating={newRating} onRatingChange={setNewRating} />
+        <StarRating rating={newRating} onRatingChange={setNewRating} /> {/* Stjernesystem for anmeldelse */}
         <button
           style={{ marginTop: '10px' }}
-          onClick={editingReviewId ? handleSaveEdit : handleAddReview}
+          onClick={editingReviewId ? handleSaveEdit : handleAddReview}  // Håndterer lagring eller opprettelse av anmeldelse
         >
           {editingReviewId ? 'Lagre endring' : 'Legg til anmeldelse'}
         </button>
@@ -436,11 +451,12 @@ const SubjectDetails: React.FC = () => {
                 <button onClick={handleCancelLevelEdit}>Avbryt</button>
               </>
             )}
-            <button onClick={handleDeleteSubject}>Slett fag</button>
+            <button onClick={handleDeleteSubject}>Slett fag</button> {/* Knapp for å slette emnet */}
           </div>
         )}
       </div>
 
+      {/* Andre kolonne for detaljer om anmeldelsene */}
       <div style={{ flex: '2', border: '1px solid #ccc', padding: '10px' }}>
         <h2>
           Anmeldelser for {subject?.id} {subject?.name}
@@ -453,7 +469,7 @@ const SubjectDetails: React.FC = () => {
           {isEditingDescription ? (
             <textarea
               value={updatedDescription}
-              onChange={(e) => setUpdatedDescription(e.target.value)}
+              onChange={(e) => setUpdatedDescription(e.target.value)}  // Håndterer endring i beskrivelse
               style={{ width: '100%', height: '100px', marginBottom: '10px' }}
             />
           ) : (
@@ -498,7 +514,7 @@ const SubjectDetails: React.FC = () => {
                   <span>{new Date(review.created_date).toLocaleDateString()}</span>
                 </p>
                 <p>{review.text}</p>
-                <StarRating rating={review.stars} onRatingChange={() => {}} readOnly />
+                <StarRating rating={review.stars} onRatingChange={() => {}} readOnly /> {/* Vist stjerner for anmeldelsen */}
 
                 {isReviewOwner && (
                   <div>
@@ -508,13 +524,13 @@ const SubjectDetails: React.FC = () => {
                     >
                       Rediger
                     </button>
-                    <button onClick={() => handleDeleteReview(review.id)}>Slett</button>
+                    <button onClick={() => handleDeleteReview(review.id)}>Slett</button> {/* Knapp for å redigere eller slette anmeldelse */}
                   </div>
                 )}
 
                 {isModerator && !isReviewOwner && (
                   <div>
-                    <button onClick={() => handleDeleteReview(review.id)}>Slett</button>
+                    <button onClick={() => handleDeleteReview(review.id)}>Slett</button> {/* Knapp for moderator for å slette andres anmeldelser */}
                   </div>
                 )}
               </li>
