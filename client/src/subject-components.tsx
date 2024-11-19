@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Component } from 'react-simplified';
-import { Alert, Card, Row, Column, Form, Button} from './Widgets';
+import { Alert, Card, Row, Column, Form, Button } from '../src/widgets';
 import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
 import reviewService, { Subject, Review } from './review-service';
 import { createHashHistory } from 'history';
@@ -132,19 +132,18 @@ class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id:
 
 export const SubjectDetailsWithRouter = withRouter(SubjectDetails);
 
-
 class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId: string }>> {
   name = '';
   level = '';
   studyLevels: string[] = [];
 
   state = {
-    studyLevels: [] as string[], 
+    studyLevels: [] as string[],
   };
 
   async componentDidMount() {
     try {
-      const response = await axios.get('/api/study-levels'); 
+      const response = await axios.get('/api/study-levels');
       this.setState({ studyLevels: response.data });
     } catch (error: any) {
       Alert.danger('Error fetching study levels: ' + error.message);

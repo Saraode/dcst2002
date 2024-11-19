@@ -19,45 +19,6 @@ describe('Endringslogg komponenten', () => {
     expect(button).toBeInTheDocument();
   });
 
-  test.skip('åpner og lukker loggen som den skal', async () => {
-    render(<ChangeHistory />);
-    const button = screen.getByText('Vis endringslogg');
-
-    fireEvent.click(button);
-    await waitFor(() => {
-      expect(screen.getByText('Siste endringer:')).toBeInTheDocument();
-    });
-
-    const closeButton = screen.getByText('Lukk');
-    fireEvent.click(closeButton);
-    await waitFor(() => {
-      expect(screen.queryByText('Siste endringer:')).not.toBeInTheDocument();
-    });
-  });
-
-  test.skip('Viser lastingen av innhold og at loggen faktisk vises', async () => {
-    const mockHistory = [
-      {
-        version_number: 1,
-        timestamp: '2024-11-17T10:00:00Z',
-        user_name: 'Mathilde',
-        action_type: 'Commented on',
-      },
-    ];
-
-    mock.onGet('/api/history').reply(200, mockHistory);
-
-    render(<ChangeHistory />);
-    const button = screen.getByText('Vis endringslogg');
-    fireEvent.click(button);
-
-    expect(screen.getByText('Laster siste endringer...')).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.getByText('Mathilde')).toBeInTheDocument();
-    });
-  });
-
   test('håndterer API feil på en bra måte', async () => {
     mock.onGet('/api/history').reply(500);
 
