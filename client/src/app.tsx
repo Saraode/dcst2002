@@ -8,10 +8,10 @@ import {
   CampusList,
   SubjectNewWithRouter as SubjectNew,
   ReviewNewWithRouter as ReviewNew,
-} from './Subject-Components';
+} from './components/subject-components';
 
 import axios from 'axios';
-import SearchBar from './SearchBar';
+import SearchBar from './components/SearchBar';
 
 type Campus = {
   campusId: number;

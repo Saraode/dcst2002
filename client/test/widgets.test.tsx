@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { shallow } from 'enzyme';
-import { Card, Row, Column, Form, Button, Alert } from '../src/widgets';
+import { Card, Row, Column, Form, Button, Alert } from '../src/components/widgets';
 
 describe('Widgets Component Tests', () => {
   // Card Component Tests
