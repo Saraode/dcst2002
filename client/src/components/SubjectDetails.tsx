@@ -1,29 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import StarRating from './StarRating';
-import reviewService from './review-service';
+import reviewService from '../services/review-service';
+import { Review, Subject, Level } from '../types/ServiceTypes'
 
-type Review = {
-  id: number;
-  text: string;
-  stars: number;
-  submitterName: string | null;
-  userId: number;
-  created_date: string;
-};
-
-type Subject = {
-  id: string;
-  name: string;
-  levelId: number;
-  description: string;
-  view_count: number;
-};
-
-type Level = {
-  id: number;
-  name: string;
-};
 
 const SubjectDetails: React.FC = () => {
   const { subjectId, fieldId } = useParams<{ subjectId: string; fieldId: string }>();
@@ -312,23 +292,23 @@ const SubjectDetails: React.FC = () => {
       console.error('User ID is missing. Cannot delete subject.');
       return;
     }
-  
+
     if (!subjectId) {
       console.error('Subject ID is missing. Cannot delete subject.');
       return;
     }
-  
+
     const isConfirmed = window.confirm('Er du sikker på at du vil slette dette faget?');
     if (!isConfirmed) return;
-  
+
     try {
       console.log('Deleting subject:', { subjectId, userId: currentUserId });
-  
+
       const response = await fetch(`/api/subjects/${subjectId}?userId=${currentUserId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
-  
+
       if (response.ok) {
         console.log('Subject deleted successfully');
         history.push(`/fields/${fieldId}`);
@@ -340,7 +320,6 @@ const SubjectDetails: React.FC = () => {
       console.error('Error deleting subject:', error);
     }
   };
-  
 
   const handleEditDescription = () => {
     setIsEditingDescription(true);
@@ -351,29 +330,29 @@ const SubjectDetails: React.FC = () => {
       console.error('Subject is missing. Cannot update description.');
       return;
     }
-  
+
     const currentUserId = localStorage.getItem('userId');
     if (!currentUserId) {
       console.error('User ID is missing. Cannot update description.');
       return;
     }
-  
+
     if (!subject.levelId) {
       console.error('Level ID is missing in subject.');
       return;
     }
-  
+
     try {
       const response = await fetch(`/api/subjects/${subjectId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: Number(currentUserId), // Bruk innlogget bruker-ID
-          levelId: subject.levelId,     // Sørg for at nivå-ID sendes
+          levelId: subject.levelId, // Sørg for at nivå-ID sendes
           description: updatedDescription, // Oppdatert beskrivelse
         }),
       });
-  
+
       if (response.ok) {
         setSubject({ ...subject, description: updatedDescription }); // Oppdater lokalt
         setIsEditingDescription(false);
@@ -386,7 +365,7 @@ const SubjectDetails: React.FC = () => {
       console.error('Error updating subject description:', error);
     }
   };
-  
+
   const handleCancelDescriptionEdit = () => {
     setIsEditingDescription(false);
     if (subject) {
