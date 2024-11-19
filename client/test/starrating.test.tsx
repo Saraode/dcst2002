@@ -2,45 +2,36 @@ import * as React from 'react';
 import { configure, mount } from 'enzyme';
 import Adapter from '@cfaester/enzyme-adapter-react-18';
 import StarRating from '../src/components/StarRating';
-//hei
-// Configure Enzyme to use the correct React adapter
+
 configure({ adapter: new Adapter() });
 
-describe('StarRating Component Tests', () => {
+describe('Tester for StarRating-komponenten', () => {
   afterEach(() => {
-    // Cleanup after each test
-    jest.clearAllMocks(); // Clears any mock functions
+    // Rydder opp mock-funksjoner etter hver test
+    jest.clearAllMocks();
   });
 
-  test('Changes rating on star click', () => {
-    // Mock the function that will handle rating changes
-    const onRatingChange = jest.fn();
+  test('Endrer rating når en stjerne klikkes', () => {
+    const onRatingChange = jest.fn(); // Mock-funksjon for å håndtere ratingendringer
     const initialRating = 3;
 
-    // Mount the StarRating component
     const wrapper = mount(<StarRating rating={initialRating} onRatingChange={onRatingChange} />);
 
-    // Simulate clicking the 4th star (index 3)
-    wrapper.find('span').at(3).simulate('click');
+    wrapper.find('span').at(3).simulate('click'); // Simulerer klikk på 4. stjerne
 
-    // Check that the rating function has been called with the correct value
-    expect(onRatingChange).toHaveBeenCalledWith(4);
+    expect(onRatingChange).toHaveBeenCalledWith(4); // Sjekker at riktig verdi sendes
   });
 
-  test('Does not change rating when in readOnly mode', () => {
-    // Mock the function that will handle rating changes
+  test('Endrer ikke rating i readOnly-modus', () => {
     const onRatingChange = jest.fn();
     const initialRating = 2;
 
-    // Mount the StarRating component in read-only mode
     const wrapper = mount(
       <StarRating rating={initialRating} onRatingChange={onRatingChange} readOnly={true} />,
     );
 
-    // Simulate clicking the 3rd star (index 2)
-    wrapper.find('span').at(2).simulate('click');
+    wrapper.find('span').at(2).simulate('click'); // Simulerer klikk på 3. stjerne
 
-    // Verify that the onRatingChange function was not called
-    expect(onRatingChange).not.toHaveBeenCalled();
+    expect(onRatingChange).not.toHaveBeenCalled(); // Sjekker at funksjonen ikke kalles
   });
 });
