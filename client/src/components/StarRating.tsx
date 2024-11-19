@@ -1,5 +1,3 @@
-// client/StarRating.tsx
-
 import React from 'react';
 
 interface StarRatingProps {

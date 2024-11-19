@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLocation, useHistory } from 'react-router-dom';
-import { SearchResult } from '../types/ServiceTypes'
-
+import { SearchResult } from '../types/ServiceTypes';
 
 const SearchBar: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -77,11 +76,6 @@ const SearchBar: React.FC = () => {
                 {result.id} {result.name}
               </li>
             ))}
-
-          {/* Kommentert ut delen for "Ingen emner funnet" */}
-          {/* {suggestions.length === 0 && query.trim().length > 0 && (
-            <li className="no-results-suggestion">Ingen emner funnet</li>
-          )} */}
         </ul>
       )}
     </div>

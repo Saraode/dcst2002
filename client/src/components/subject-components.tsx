@@ -3,7 +3,7 @@ import { Component } from 'react-simplified';
 import { Alert, Card, Row, Column, Form, Button } from './widgets';
 import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
 import reviewService from '../services/review-service';
-import { Subject, Review, Campus, CampusListState } from '../types/ServiceTypes';
+import { Subject, CampusListState } from '../types/ServiceTypes';
 import { createHashHistory } from 'history';
 import axios from 'axios';
 import ChangeHistory from './endringslogg';
