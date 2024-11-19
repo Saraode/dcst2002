@@ -1,17 +1,15 @@
 import * as React from 'react';
 import { Component } from 'react-simplified';
-import { Alert, Card, Row, Column, Form, Button} from './widgets';
+import { Alert, Card, Row, Column, Form, Button } from './widgets';
 import { NavLink, RouteComponentProps, withRouter } from 'react-router-dom';
-import reviewService, { Subject, Review } from './review-service';
+import reviewService from '../services/review-service';
+import { Subject, Review, Campus, CampusListState  } from '../types/ServiceTypes';
 import { createHashHistory } from 'history';
 import axios from 'axios';
 import ChangeHistory from './endringslogg';
 
 const history = createHashHistory();
 
-type CampusListState = {
-  showHistory: boolean;
-};
 
 export class CampusList extends Component<{}, CampusListState> {
   state = {
@@ -83,10 +81,13 @@ export const SubjectListWithRouter = withRouter(SubjectList);
 
 class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id: string }>> {
   subject: Subject = {
-    id: 0,
+    id: '',
     name: '',
-    reviews: [],
-    fieldId: 0,
+    review: [],
+    fieldid: 0,
+    levelId: 0,
+    description: '',
+    view_count: 0
   };
 
   render() {
@@ -100,7 +101,7 @@ class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id:
           <Row>
             <Column width={2}>Reviews:</Column>
           </Row>
-          {this.subject.reviews.map((review, index) => (
+          {this.subject.review.map((review, index) => (
             <Row key={index}>
               <Column>
                 <strong>{review.submitterName}</strong>: {review.text}
@@ -132,19 +133,18 @@ class SubjectDetails extends Component<RouteComponentProps<{ campus: string; id:
 
 export const SubjectDetailsWithRouter = withRouter(SubjectDetails);
 
-
 class SubjectNew extends Component<RouteComponentProps<{ campus: string; fieldId: string }>> {
   name = '';
   level = '';
   studyLevels: string[] = [];
 
   state = {
-    studyLevels: [] as string[], 
+    studyLevels: [] as string[],
   };
 
   async componentDidMount() {
     try {
-      const response = await axios.get('/api/study-levels'); 
+      const response = await axios.get('/api/study-levels');
       this.setState({ studyLevels: response.data });
     } catch (error: any) {
       Alert.danger('Error fetching study levels: ' + error.message);
