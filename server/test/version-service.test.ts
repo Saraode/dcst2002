@@ -25,9 +25,9 @@ describe('VersionService', () => {
       const mockPromiseQuery = pool.promise().query as jest.Mock;
 
       mockPromiseQuery
-        .mockResolvedValueOnce([[{ max_version: 1 }], []]) // Spørring for MAX(version_number)
-        .mockResolvedValueOnce([mockSubjects, []]) // Spørring for emne-IDer
-        .mockResolvedValueOnce([mockInsertResult, []]); // Spørring for INSERT
+        .mockResolvedValueOnce([[{ max_version: 1 }], []])
+        .mockResolvedValueOnce([mockSubjects, []])
+        .mockResolvedValueOnce([mockInsertResult, []]);
 
       const result = await versionService.createPageVersion(
         mockFieldId,
@@ -35,7 +35,7 @@ describe('VersionService', () => {
         mockDescription,
       );
 
-      expect(result).toBe(2); // Nytt versjonsnummer
+      expect(result).toBe(2);
       expect(mockPromiseQuery).toHaveBeenCalledTimes(3);
       expect(mockPromiseQuery).toHaveBeenCalledWith(
         'SELECT MAX(version_number) AS max_version FROM page_versions WHERE field_id = ?',
@@ -96,8 +96,8 @@ describe('VersionService', () => {
       const mockPromiseQuery = pool.promise().query as jest.Mock;
 
       mockPromiseQuery
-        .mockResolvedValueOnce([[{ max_version: 2 }], []]) // Spørring for MAX(version_number)
-        .mockResolvedValueOnce([mockInsertResult, []]); // Spørring for INSERT
+        .mockResolvedValueOnce([[{ max_version: 2 }], []])
+        .mockResolvedValueOnce([mockInsertResult, []]);
 
       const result = await versionService.createSubjectVersion(
         mockSubjectId,

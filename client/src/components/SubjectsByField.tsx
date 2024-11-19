@@ -2,38 +2,40 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Subject, Level } from '../types/ServiceTypes';
 
+
+// Funksjon for å validere input (kun tillate bokstaver, tall og mellomrom)
 const isValidInput = (input: string) => /^[a-zA-Z0-9æøåÆØÅ\s]*$/.test(input);
 
 const SubjectsByField: React.FC = () => {
-  const { fieldId } = useParams<{ fieldId: string }>();
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [fieldName, setFieldName] = useState<string>('');
-  const [newSubjectId, setNewSubjectId] = useState('');
-  const [newSubjectName, setNewSubjectName] = useState('');
-  const [newSubjectLevel, setNewSubjectLevel] = useState<number | null>(null);
-  const [levels, setLevels] = useState<Level[]>([]);
-  const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [subjectCounts, setSubjectCounts] = useState<{ levelId: number; count: number }[]>([]);
-  const [totalSubjectsCount, setTotalSubjectsCount] = useState<number>(0);
-  const [newSubjectDescription, setNewSubjectDescription] = useState('');
+  const { fieldId } = useParams<{ fieldId: string }>(); // Henter fieldId fra URL
+  const [subjects, setSubjects] = useState<Subject[]>([]); // Tilstand for emner
+  const [fieldName, setFieldName] = useState<string>(''); // Tilstand for å lagre navn på fagområde
+  const [newSubjectId, setNewSubjectId] = useState(''); // Tilstand for ny fagkode
+  const [newSubjectName, setNewSubjectName] = useState(''); // Tilstand for nytt emnenavn
+  const [newSubjectLevel, setNewSubjectLevel] = useState<number | null>(null); // Tilstand for valgt nivå
+  const [levels, setLevels] = useState<Level[]>([]); // Tilstand for nivåer
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(null); // Tilstand for valgt nivå
+  const [errorMessage, setErrorMessage] = useState(''); // Tilstand for feilmeldinger
+  const [subjectCounts, setSubjectCounts] = useState<{ levelId: number; count: number }[]>([]); // Tilstand for emneteller
+  const [totalSubjectsCount, setTotalSubjectsCount] = useState<number>(0); // Tilstand for totalt antall emner
+  const [newSubjectDescription, setNewSubjectDescription] = useState(''); // Tilstand for emnebeskrivelse
 
-  // Fetch levels once on component load
+  // Henter nivåer én gang når komponenten lastes
   useEffect(() => {
     const fetchLevels = async () => {
       try {
-        const response = await fetch(`/api/levels`);
+        const response = await fetch(`/api/levels`); // Henter nivåer fra API
         if (!response.ok) throw new Error('Failed to fetch levels');
         const data = await response.json();
         setLevels(data);
       } catch (error) {
-        console.error('Failed to fetch levels:', error);
+        console.error('Failed to fetch levels:', error); // Håndterer feil ved henting
       }
     };
     fetchLevels();
   }, []);
 
-  // Fetch subject counts by level from the database
+  // Henter emneteller etter nivå fra API
   const fetchSubjectCounts = useCallback(async () => {
     try {
       const response = await fetch(`/api/fields/${fieldId}/subject-counts`);
@@ -41,11 +43,11 @@ const SubjectsByField: React.FC = () => {
       const data = await response.json();
       setSubjectCounts(data.filter((item: { levelId: number | null }) => item.levelId !== null));
     } catch (error) {
-      console.error('Error fetching subject counts:', error);
+      console.error('Error fetching subject counts:', error); // Håndterer feil ved henting av teller
     }
   }, [fieldId]);
 
-  // Fetch total subjects count directly from the database
+  // Henter totalt antall emner fra API
   const fetchTotalSubjectsCount = useCallback(async () => {
     try {
       const response = await fetch(`/api/fields/${fieldId}/total-subjects-count`);
@@ -53,52 +55,53 @@ const SubjectsByField: React.FC = () => {
       const data = await response.json();
       setTotalSubjectsCount(data.total);
     } catch (error) {
-      console.error('Error fetching total subjects count:', error);
+      console.error('Error fetching total subjects count:', error); // Håndterer feil ved henting av totalt antall
     }
   }, [fieldId]);
 
-  // Call `fetchSubjectCounts` and `fetchTotalSubjectsCount` only when `fieldId` changes
+  // Kall funksjonene for å hente emneteller og totalt antall når fieldId endres
   useEffect(() => {
     fetchSubjectCounts();
     fetchTotalSubjectsCount();
   }, [fetchSubjectCounts, fetchTotalSubjectsCount]);
 
-  // Fetch field name based on `fieldId`
+  // Henter navn på fagområde basert på fieldId
   useEffect(() => {
     const fetchFieldName = async () => {
       try {
         const response = await fetch(`/api/fields/${fieldId}/name`);
         if (!response.ok) throw new Error('Failed to fetch field name');
         const field = await response.json();
-        setFieldName(field.name);
+        setFieldName(field.name); // Setter fagområde-navn
       } catch (error) {
-        console.error('Failed to fetch field name:', error);
+        console.error('Failed to fetch field name:', error); // Håndterer feil ved henting av fagområde
       }
     };
     fetchFieldName();
   }, [fieldId]);
 
-  // Fetch subjects based on selected level or all subjects if no level is selected
+  // Henter emner basert på valgt nivå eller alle emner hvis ingen nivå er valgt
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
         const url = selectedLevel
-          ? `/api/fields/${fieldId}/subjects?levelId=${selectedLevel}`
-          : `/api/fields/${fieldId}/subjects`;
+          ? `/api/fields/${fieldId}/subjects?levelId=${selectedLevel}` // Hvis nivå er valgt, hent nivå-spesifikke emner
+          : `/api/fields/${fieldId}/subjects`; // Hvis ingen nivå er valgt, hent alle emner
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch subjects');
         const data = await response.json();
-        setSubjects(data);
+        setSubjects(data); // Setter emner i state
       } catch (error) {
-        console.error('Failed to fetch subjects:', error);
+        console.error('Failed to fetch subjects:', error); // Håndterer feil ved henting av emner
       }
     };
     fetchSubjects();
   }, [fieldId, selectedLevel]);
 
+  // Håndterer oppretting av nytt emne
   const handleAddSubject = async () => {
     if (!newSubjectId || !newSubjectName || !newSubjectLevel || !newSubjectDescription) {
-      setErrorMessage('ID, navn, nivå eller beskrivelse mangler');
+      setErrorMessage('ID, navn, nivå eller beskrivelse mangler'); // Sjekker at alle felt er utfylt
       return;
     }
 
@@ -106,11 +109,11 @@ const SubjectsByField: React.FC = () => {
     if (!userId) {
       console.error("User ID is missing from local storage. Can't create version.");
       setErrorMessage('User ID is missing. Please log in again.');
-      return;
+      return; // Sjekker om bruker er logget inn
     }
 
     try {
-      // Konverter `newSubjectId` til store bokstaver og `newSubjectName` til stor forbokstav
+      // Formaterer fagkode og emnenavn før innsending
       const formattedSubjectId = newSubjectId.toUpperCase();
       const formattedSubjectName =
         newSubjectName.charAt(0).toUpperCase() + newSubjectName.slice(1).toLowerCase();
@@ -124,7 +127,7 @@ const SubjectsByField: React.FC = () => {
           id: formattedSubjectId,
           name: formattedSubjectName,
           level: newSubjectLevel,
-          description: newSubjectDescription, // Send description to backend
+          description: newSubjectDescription, // Sender beskrivelse til backend
         }),
       });
 
@@ -135,7 +138,7 @@ const SubjectsByField: React.FC = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ userId, description: newSubjectDescription }), // Pass userId for versioning
+          body: JSON.stringify({ userId, description: newSubjectDescription }), // Oppretter versjon for emnet
         });
 
         if (!versionResponse.ok) {
@@ -146,16 +149,16 @@ const SubjectsByField: React.FC = () => {
 
         console.log('Version created successfully');
 
-        // Update the subject list if the new subject matches the selected level or if all levels are shown
+        // Oppdaterer emnelisten og teller etter emnet er lagt til
         if (newSubjectLevel === selectedLevel || selectedLevel === null) {
           setSubjects([{ ...newSubject, description: newSubjectDescription }, ...subjects]);
         }
 
-        // Update counts from the database
+        // Oppdaterer emneteller og totalt antall emner
         fetchSubjectCounts();
         fetchTotalSubjectsCount();
 
-        // Reset input fields after adding the subject
+        // Tilbakestiller inputfeltene etter emnet er lagt til
         setNewSubjectId('');
         setNewSubjectName('');
         setNewSubjectLevel(null);
@@ -174,6 +177,7 @@ const SubjectsByField: React.FC = () => {
     }
   };
 
+  // Henter antall emner for valgt nivå
   const getCountForLevel = (levelId: number) => {
     const countObj = subjectCounts.find((count) => count.levelId === levelId);
     return countObj ? countObj.count : 0;
@@ -181,10 +185,11 @@ const SubjectsByField: React.FC = () => {
 
   const selectedLevelName = selectedLevel
     ? levels.find((level) => level.id === selectedLevel)?.name
-    : 'Alle nivåer';
+    : 'Alle nivåer'; // Vist valgt nivå
 
   return (
     <div style={{ display: 'flex', gap: '20px' }}>
+      {/* Første kolonne for å legge til nytt emne */}
       <div
         style={{
           flex: '1',
@@ -255,6 +260,7 @@ const SubjectsByField: React.FC = () => {
         {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
       </div>
 
+      {/* Andre kolonne for å vise emner */}
       <div style={{ flex: '2', border: '1px solid #ccc', padding: '10px' }}>
         <h2>Emner i {fieldName}</h2>
         <div style={{ marginBottom: '15px', fontWeight: 'bold' }}>

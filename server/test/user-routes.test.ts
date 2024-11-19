@@ -11,7 +11,7 @@ jest.mock('../src/users/user-service', () => ({
 
 describe('User Routes (Mocked)', () => {
   afterEach(() => {
-    jest.clearAllMocks(); // Nullstiller mocks etter hver test
+    jest.clearAllMocks();
   });
 
   describe('POST /register', () => {

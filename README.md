@@ -1,12 +1,36 @@
-# NTNU Emnevurderinger (DCST2002 Webutviklingsprosjekt h24)
-Dette er en side for å legge inn emner + anmeldelser av emner på NTNU. Man velger hvilket campus og fagområde man vil legge inn emner under, og legger inn anmeldelse der.
+# NTNU EmneVurderinger (DCST2002 Webutviklingsprosjekt h24)
+
+EmneVurderinger er en webapplikasjon som lar brukere utforske og vurdere emner ved NTNU. Brukere kan søke etter emner, filtrere dem etter fagområde, og sortere emnene etter nivå. Applikasjonen lar brukere også legge til, redigere og slette egne anmeldelser av emner. I tillegg kan brukere se gjennomsnittlig vurdering for hvert emne. 
+Brukere kan navigere mellom forskjellige campus ved NTNU, velge fagområder og emner, og lese detaljer om hvert emne, inkludert beskrivelser og vurderinger. Administrasjon av emner og anmeldelser kan utføres av moderatorer som har spesifik tilgang til å opprette, redigere og slette emner og anmeldelser.
+Applikasjonen har funksjonalitet for både vanlige brukere og moderatorer, med mulighet for å vise endringslogg og versjonshåndtering for emner og anmeldelser, som gir innsikt i hvilke endringer som har blitt gjort over tid. 
+
+# Innhold
+- [Hovedfunksjon](#Hovedfunksjon)
+- [Teknologier](#Teknologier)
+    - [Bruk av KI-verktøy](#Bruk-av-KI-verktøy) 
+- [Databaseoppsett](#Databaseoppsett)
+    - [SQL-setninger](#SQL-setninger)
+    - [Tabeller uten avhengigheter](#Tabeller-uten-avhengigheter)
+    - [Moderator](#Moderator)
+    - [Tabeller som avhenger av nivå 1-tabeller](#Tabeller-som-avhenger-av-nivå-1-tabeller)
+    - [Tabeller som avhenger av nivå 2-tabeller](#Tabeller-som-avhenger-av-nivå-2-tabeller)
+    - [Tabeller som refererer til Subjects](#Tabeller-som-refererer-til-Subjects)
+    - [Tabeller som refererer til flere tidligere nivåer](#Tabeller-som-refererer-til-flere-tidligere-nivåer)
+- [Installasjon](#Installasjon)
+- [Server-tester](#Server-tester)
+- [Klient-tester](#Klient-tester)
+- [Versjonering](#Versjonering)
+- [Bidrag](#Bidrag)
+- [Kilder og lisens](#Kilder-og-lisens)
+
+
 
 ## Hovedfunksjoner 
 - Ved å opprette en bruker får man muligheten til å legge til fag, samt opprette, redigere og slette egne anmeldelser. Uten en bruker kan man ikke opprette egne anmeldelser, men man kan fortsatt lese anmeldelser fra andre. 
 - Plattformen har en moderatorbruker som har rettigheter til alt. Denne brukeren kan slette og redigere emner. Moderator kan også slette anmeldelser. 
 - Søkefunksjonalitet: Brukere kan søke etter emner, og ved å klikke på emnet blir de ført til siden med anmeldelser. 
 - Versjoneringskontroll: På forsiden har man tilgang på en logg som viser hva som har blitt gjort når og av hvem. 
-- Database: Plattformen bruker en database for å kunne lagre at av data, og deretter hente den ut.
+- Database: Plattformen bruker en database for å kunne lagre alt av data, og deretter hente den ut.
 
 ## Teknologier
 - Språk: TS, CSS, JS, HTML  
@@ -14,18 +38,22 @@ Dette er en side for å legge inn emner + anmeldelser av emner på NTNU. Man vel
 - Databaser, SQL
 - Frontend, Client
 - Backend, Server
+
+### Bruk av KI-verktøy
+I utviklingen av dette prosjektet har disse KI-verktøyene blir benyttet:
+- OpenAI ChatGPT 4o
+- Github Copilot
   
-## Database oppsett
+## Databaseoppsett
 
 Du må logge deg inn på databasen vår (mysqladmin.it.ntnu.no). Du finner innlogging på config.ts i /server (Vanligvis ville denne vært i .gitignore, men siden dette er et prosjekt vi skal levere, gjør vi det slik. Vi legger ikke ut påloggingsinformasjon offentlig). 
 Husk at du må være på på NTNU-nett, eller VPN hvis du befinner deg et annet sted enn på campus. 
 
-## SQL - Setninger
+### SQL - Setninger
 Hvis du vil lage dine egne databaser, må du bruke SQL-setningene under. Da er det noen ting som er viktige å tenke på:
-- User_id på moderator-brukeren må være 35. Så det er viktig at du legger inn moderator som user_id 35.
 - Legg de inn i rekkefølgen de står i.
 
-## Tabeller uten avhengigheter
+### Tabeller uten avhengigheter
 Disse tabellene må opprettes først, fordi andre tabeller refererer til dem via fremmednøkler:
 
 ```sql
@@ -64,18 +92,8 @@ CREATE TABLE users (
     PRIMARY KEY (id)
 );
 ```
-## Moderator
-Denne insert-setningen bør kjøres med en gang etter at user-tabellen er opprettet, da user id bruker AUTO_INCREMENT, og id 35 må holdes av for moderator.
-```sql
 
-INSERT INTO users (id, name, email, password, created_at)
-VALUES (35, 'Moderator', 'moderator@ntnu.no', 
-        SHA2('moderator', 256), NOW());
-
-
-```
-
-## Tabeller som avhenger av nivå 1-tabeller
+### Tabeller som avhenger av nivå 1-tabeller
 Tabeller som refererer til Campuses, Levels, eller users via fremmednøkler:
 
 ```sql
@@ -95,8 +113,10 @@ INSERT INTO Fields (id, name, campusId) VALUES
 (9, 'Cybersikkerhet', 4),
 (10, 'Statsvitenskap', 5);
 ```
+Vi har valgt og fokusere på campus Gløshaugen i denne applikasjonen, og derfor er dette et eksempel på insert-setninger for fagfelt på Gløshaugen. 
+Det vil være en lignende implementasjon for de andre campusene (viser det ved "statsvitenskap").
 
-## Tabeller som avhenger av nivå 2-tabeller
+### Tabeller som avhenger av nivå 2-tabeller
 Tabeller som refererer til Fields og/eller Levels:
 
 ```sql
@@ -115,7 +135,7 @@ CREATE TABLE Subjects (
 );
 ```
 
-## Tabeller som refererer til Subjects
+### Tabeller som refererer til Subjects
 Disse tabellene avhenger av Subjects og må opprettes etter at Subjects er definert:
 
 ```sql
@@ -160,25 +180,10 @@ CREATE TABLE subject_versions (
 );
 ```
 
-## Tabeller som refererer til flere tidligere nivåer
+### Tabeller som refererer til flere tidligere nivåer
 Tabeller som avhenger både av Subjects, Fields, eller andre:
 
 ```sql
-
-CREATE TABLE page (
-    id INT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL,
-    fieldId INT NOT NULL,
-    PRIMARY KEY (id),
-    FOREIGN KEY (fieldId) REFERENCES Fields(id)
-);
-
-INSERT INTO page (id, name, fieldId) VALUES
-(1, 'Matematikk', 6),
-(2, 'Programmering', 7),
-(3, 'Nettverk', 8),
-(4, 'Cybersikkerhet', 9),
-(5, 'Statsvitenskap', 10);
 
 CREATE TABLE page_versions (
     version_id INT NOT NULL AUTO_INCREMENT,
@@ -214,9 +219,9 @@ Følg disse stegene for å komme i gang:
     process.env.MYSQL_DATABASE = 'username_todo_dev';
     ```
 
-3. Naviger til prosjektmappen din:
+3. Naviger til prosjektmappen:
     ```bash
-    cd 'prosjektnavn'
+    cd 'dcst2002'
     ```
 
 4. Installer nødvendige avhengigheter:
@@ -240,7 +245,18 @@ Følg disse stegene for å komme i gang:
 
 6. Applikasjonen skal nå kjøre på `http://localhost:3000`.
 
-## Server Tester
+
+## Moderator
+Det er implementert moderatorfunksjonalitet hvor én bestemt bruker har autoritasjon til å slette og redigere alle fag og anmeldelser. Dette er gjort i koden ved at man har tilgang til disse funksjonene, dersom man er logget inn på bruker med bruker ID 35. Denne brukeren ligger klart i vår eksisterende database med følgende logg-inn informasjon:
+
+**Epost:** moderator@ntnu.no
+
+**Passord:** moderator
+
+Dersom man oppretter egne databaser, vil koden automatisk generere en bruker med lik logg-inn informasjon, og med bruker ID 35. Dette skjer etter at den første brukeren opprettes på siden. Passordet blir hashet med bcrypt. 
+
+
+## Server-tester
 
 Kjør testene på serveren:
 
@@ -249,9 +265,19 @@ cd server
 npm test
 ```
 
-## Informasjon om Server Tester
 
-## Klient Tester
+## Informasjon om server-tester
+
+Til testing av backend er det brukt Jest og mocking. Testingen er blitt gjort med utgangspunkt i denne leksjonen https://olso.folk.ntnu.no/wu/testing-rest/testing-rest.html. 
+
+Mocking er når vi erstatter ekte avhengigheter, som API-er eller databaser, med kontrollerbare, falske versjoner i testene våre. Dette gjør at vi kan isolere koden vi tester. Vi bruker mocking i vårt prosjekt for å sikre at testene våre er raske, stabile og ikke avhengige av eksterne systemer. Det gir oss også muligheten til å teste hvordan koden håndterer ulike scenarier, som feil eller timeout. Dette gjør det enklere å finne feil og forbedre kvaliteten på koden.
+
+Det er opprettet en testfil for hver router og service fil, for god oversikt når testene blir kjørt. 
+
+ChatGPT er brukt for feilsøking, samt ideer til flere tester, for å sikre god testdekning. 
+
+
+## Klient-tester
 
 Kjør testene på klienten
 
@@ -260,7 +286,26 @@ cd client
 npm test
 ```
 
-## Informasjon om Klient Tester
+
+## Informasjon om klient-tester
+
+Vi har tester på klientsiden for å sørge for at applikasjonen vil fungere som forventet når det kommer til brukeropplevelse og kommunikasjon med API.
+Utviklingen av testene er basert på leksjonen som omhandler klient tester, men fått hjelp med rettting av ChatGPT og Github Copilot.
+
+Link til leksjon: https://eidheim.folk.ntnu.no/full_stack/client-tests/chapter.html
+
+Filene som er testet:
+- endringslogg.tsx
+- review-service.tsx
+- searchbar.tsx
+- starrating.tsx
+- subjectsByField.tsx
+- widgets.tsx
+
+## Versjonering
+
+På grunn av mangel på eksempler og forklaringer på implementering som kunne tilpasses vårt prosjekt ble Chat GPT brukt for å lage en generell regel på hvordan det skal se ut. Deretter ble det utviklet selv basert på dette, med retting ved help av KI-verktøy.
+
 
 ## Bidrag
 Dette prosjektet er utviklet av:
@@ -272,7 +317,7 @@ Dette prosjektet er utviklet av:
 Vi er 4 studenter som går 2. klasse Digital Infrastruktur og Cybersikkerhet ved NTNU Trondheim
 
 ## Kilder og Lisens
-- https://github.com/eman289/smart-login-system
-- https://www.w3schools.com/howto/howto_css_searchbar.asp
-- https://stackademic.com/blog/how-to-implement-a-reusable-modal-component-in-react-and-typescript
-- https://www.browserstack.com/guide/react-testing-tutorial
+- https://github.com/eman289/smart-login-system -Logg inn systemet
+- https://www.w3schools.com/howto/howto_css_searchbar.asp -Søkefeltet
+- https://stackademic.com/blog/how-to-implement-a-reusable-modal-component-in-react-and-typescript -Versjonering frontend
+- https://www.browserstack.com/guide/react-testing-tutorial -Frontend testing
