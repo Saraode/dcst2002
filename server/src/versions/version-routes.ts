@@ -1,8 +1,7 @@
 import { pool } from '../mysql-pool';
 import { versionService } from './version-service';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2';
-import express, { Request, Response } from 'express';
-import axios from 'axios';
+import type { ResultSetHeader } from 'mysql2';
+import express from 'express';
 
 const versionRouter = express.Router();
 
@@ -174,7 +173,6 @@ versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   } catch (error) {
     console.error('Feil ved økning av visninger:', error);
     return res.status(500).json({ error: 'Kunne ikke øke antall visninger' });
-
   }
 });
 

@@ -1,6 +1,7 @@
-import { pool } from '../mysql-pool'; // Importer databaseforbindelse
-import { RowDataPacket, ResultSetHeader } from 'mysql2'; // Typer for SQL-resultater
-import bcrypt from 'bcrypt'; // For hasjing av passord
+import { pool } from '../mysql-pool';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import bcrypt from 'bcrypt';
+
 
 // Definerer brukertypen
 export type User = {

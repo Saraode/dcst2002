@@ -29,6 +29,7 @@ describe('SubjectService', () => {
 
   describe('deleteSubject', () => {
     it('should throw an error if deleting reviews fails', async () => {
+      // Tester at en feil kastes hvis sletting av anmeldelser feiler
       const mockConnection = await pool.promise().getConnection();
 
       (mockConnection.query as jest.Mock).mockImplementationOnce(() => {
@@ -41,6 +42,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if deleting the subject fails', async () => {
+      // Tester at en feil kastes hvis sletting av emnet feiler
       const mockConnection = await pool.promise().getConnection();
 
       (mockConnection.query as jest.Mock).mockResolvedValueOnce(null);
@@ -57,6 +59,7 @@ describe('SubjectService', () => {
 
   describe('getSubjectsByField', () => {
     it('should return a list of subjects by field ID', async () => {
+      // Tester at en liste over emner hentes korrekt basert på felt-ID
       const mockSubjects = [
         { id: '1', name: 'Math', fieldId: 101, levelId: 1 },
         { id: '2', name: 'Science', fieldId: 101, levelId: 2 },
@@ -76,6 +79,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if the query fails', async () => {
+      // Tester at en feil kastes hvis forespørselen feiler
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) =>
         callback(new Error('Database error')),
@@ -87,6 +91,7 @@ describe('SubjectService', () => {
 
   describe('getSubjectsByFieldAndLevel', () => {
     it('should return subjects for a given field and level', async () => {
+      // Tester at en liste over emner for et spesifikt felt og nivå hentes korrekt
       const mockSubjects = [
         { id: '1', name: 'Math', fieldId: 101, levelId: 1 },
         { id: '2', name: 'Science', fieldId: 101, levelId: 1 },
@@ -106,6 +111,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if the query fails', async () => {
+      // Tester at en feil kastes hvis forespørselen feiler
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) =>
         callback(new Error('Database error')),
@@ -119,6 +125,7 @@ describe('SubjectService', () => {
 
   describe('getSubject', () => {
     it('should return a subject with reviews if it exists', async () => {
+      // Tester at et emne med tilhørende anmeldelser hentes korrekt
       const mockSubject = {
         id: '1',
         name: 'Math',
@@ -150,6 +157,7 @@ describe('SubjectService', () => {
     });
 
     it('should return undefined if the subject does not exist', async () => {
+      // Tester at undefined returneres hvis emnet ikke eksisterer
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) => callback(null, []));
 
@@ -166,6 +174,7 @@ describe('SubjectService', () => {
 
   describe('updateSubjectDescription', () => {
     it('should update the subject description successfully', async () => {
+      // Tester at beskrivelsen av et emne oppdateres korrekt
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) => callback(null));
 
@@ -181,6 +190,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if the query fails', async () => {
+      // Tester at en feil kastes hvis forespørselen feiler
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) =>
         callback(new Error('Database error')),
@@ -200,6 +210,7 @@ describe('SubjectService', () => {
 
   describe('searchSubjects', () => {
     it('should return a list of subjects matching the search term', async () => {
+      // Tester at en liste over emner som matcher søketermer hentes korrekt
       const mockSubjects = [
         { id: '1', name: 'Math' },
         { id: '2', name: 'Mathematics' },
@@ -219,6 +230,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if the query fails', async () => {
+      // Tester at en feil kastes hvis forespørselen feiler
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) =>
         callback(new Error('Database error')),
@@ -236,6 +248,7 @@ describe('SubjectService', () => {
 
   describe('updateSubjectLevel', () => {
     it('should update the subject level successfully', async () => {
+      // Tester at nivået for et emne oppdateres korrekt
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) => callback(null));
 
@@ -249,6 +262,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if the query fails', async () => {
+      // Tester at en feil kastes hvis forespørselen feiler
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) =>
         callback(new Error('Database error')),
@@ -266,6 +280,7 @@ describe('SubjectService', () => {
 
   describe('getAllLevels', () => {
     it('should return all levels in the system', async () => {
+      // Tester at alle nivåer i systemet hentes korrekt
       const mockLevels = [
         { id: 1, name: 'Beginner' },
         { id: 2, name: 'Intermediate' },
@@ -282,6 +297,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if the query fails', async () => {
+      // Tester at en feil kastes hvis forespørselen feiler
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, callback) => callback(new Error('Database error')));
 
@@ -293,6 +309,7 @@ describe('SubjectService', () => {
 
   describe('getTotalSubjectsCount', () => {
     it('should return the total number of subjects for a field', async () => {
+      // Tester at totalt antall emner for et felt hentes korrekt
       const mockCount = [{ total: 42 }];
 
       const mockQuery = pool.query as jest.Mock;
@@ -309,6 +326,7 @@ describe('SubjectService', () => {
     });
 
     it('should return 0 if no subjects are found', async () => {
+      // Tester at 0 returneres hvis ingen emner finnes for et felt
       const mockCount = [{ total: 0 }];
 
       const mockQuery = pool.query as jest.Mock;
@@ -325,6 +343,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if the query fails', async () => {
+      // Tester at en feil kastes hvis forespørselen feiler
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) =>
         callback(new Error('Database error')),
@@ -342,6 +361,7 @@ describe('SubjectService', () => {
 
   describe('getSubjectByIdCaseInsensitive', () => {
     it('should return a subject if it exists (case-insensitive)', async () => {
+      // Tester at et emne hentes korrekt uten hensyn til store/små bokstaver
       const mockSubject = { id: '1', name: 'Math', fieldId: 101, levelId: 1 };
 
       const mockQuery = pool.query as jest.Mock;
@@ -358,6 +378,7 @@ describe('SubjectService', () => {
     });
 
     it('should return null if no subject matches the ID', async () => {
+      // Tester at null returneres hvis ingen emner matcher ID-en
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) => callback(null, []));
 
@@ -372,6 +393,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if the query fails', async () => {
+      // Tester at en feil kastes hvis forespørselen feiler
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) =>
         callback(new Error('Database error')),
@@ -385,6 +407,7 @@ describe('SubjectService', () => {
 
   describe('updateSubject', () => {
     it('should update a subject successfully', async () => {
+      // Tester at et emne oppdateres korrekt
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) => callback(null));
 
@@ -400,6 +423,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if the query fails', async () => {
+      // Tester at en feil kastes hvis forespørselen feiler
       const mockQuery = pool.query as jest.Mock;
       mockQuery.mockImplementation((_query, _params, callback) =>
         callback(new Error('Database error')),
@@ -413,6 +437,7 @@ describe('SubjectService', () => {
 
   describe('getSubjectCountByLevel', () => {
     it('should return subject counts grouped by level for a given fieldId', async () => {
+      // Tester at emnetall gruppert etter nivå hentes korrekt for et felt
       const mockFieldId = 101;
       const mockCounts = [
         { levelId: 1, count: 5 },
@@ -438,6 +463,7 @@ describe('SubjectService', () => {
     });
 
     it('should throw an error if the query fails', async () => {
+      // Tester at en feil kastes hvis forespørselen feiler
       const mockFieldId = 101;
 
       const mockQuery = pool.query as jest.Mock;
