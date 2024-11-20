@@ -144,14 +144,25 @@ versionRouter.post('/subjects/:subjectId/reviews/version', async (req, res) => {
 // Oppretter en ny versjon for et felt med bruker-ID
 versionRouter.post('/subjects/:subjectId/increment-view', async (req, res) => {
   const { subjectId } = req.params;
+
   try {
-    await pool.query('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [subjectId]);
-    res.status(200).send({ message: 'View count incremented successfully' });
+    // Execute the query
+    const result = await pool
+      .promise()
+      .query<ResultSetHeader>('UPDATE Subjects SET view_count = view_count + 1 WHERE id = ?', [
+        subjectId,
+      ]);
+
+    // Check if any rows were affected
+    if (result[0].affectedRows === 0) {
+      return res.status(404).json({ error: 'Subject not found' });
+    }
+
+    // Send success response
+    res.status(200).json({ message: 'View count incremented successfully' });
   } catch (error) {
-
     console.error('Feil ved økning av visninger:', error);
-    return res.status(500).json({ error: 'Kunne ikke øke antall visninger' });
-
+    res.status(500).json({ error: 'Kunne ikke øke antall visninger' });
   }
 });
 
