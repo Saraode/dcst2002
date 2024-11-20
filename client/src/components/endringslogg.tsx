@@ -18,7 +18,7 @@ const ChangeHistory: React.FC = () => {
   // useEffect-hook for å hente endringshistorikk fra API ved komponentens første rendering
   useEffect(() => {
     const fetchChangeHistory = async () => {
-      setIsLoading(true);  // Sett loading-tilstand til true
+      setIsLoading(true); // Sett loading-tilstand til true
       try {
         // Hent data fra API-et
         const response = await axios.get('/api/history');
@@ -28,7 +28,6 @@ const ChangeHistory: React.FC = () => {
       } catch (error) {
         console.error('Error fetching change history:', error);
         setHistory([]); // Hvis det er feil, fallback til en tom array
-
       } finally {
         setIsLoading(false); // Sett loading til false når forespørselen er fullført
       }
@@ -108,7 +107,7 @@ const ChangeHistory: React.FC = () => {
               history.map((entry, index) => (
                 <li key={index} style={{ marginBottom: '10px' }}>
                   <span>
-                    <strong>{entry.user_name}</strong> har {entry.action_type} et fag på{' '}
+                    <strong>{entry.user_name}</strong> has {entry.action_type} a subject at{' '}
                     {new Date(entry.timestamp).toLocaleString()}
                   </span>
                 </li>
