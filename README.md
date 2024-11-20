@@ -20,8 +20,9 @@ Applikasjonen har funksjonalitet for både vanlige brukere og moderatorer, med m
 - [Server-tester](#Server-tester)
 - [Klient-tester](#Klient-tester)
 - [Versjonering](#Versjonering)
+- [Kilder](#Kilder)
 - [Bidrag](#Bidrag)
-- [Kilder og lisens](#Kilder-og-lisens)
+
 
 
 
@@ -34,7 +35,7 @@ Applikasjonen har funksjonalitet for både vanlige brukere og moderatorer, med m
 
 ## Teknologier
 - Språk: TS, CSS, JS, HTML  
-- Bibliotek: React 
+- Bibliotek: React, Jest, React Testing Library 
 - Databaser, SQL
 - Frontend, Client
 - Backend, Server
@@ -50,8 +51,7 @@ Du må logge deg inn på databasen vår (mysqladmin.it.ntnu.no). Du finner innlo
 Husk at du må være på på NTNU-nett, eller VPN hvis du befinner deg et annet sted enn på campus. 
 
 ### SQL - Setninger
-Hvis du vil lage dine egne databaser, må du bruke SQL-setningene under. Da er det noen ting som er viktige å tenke på:
-- Legg de inn i rekkefølgen de står i.
+Hvis du vil lage dine egne tabeller, er det viktige at de legges inn i den rekkefølgen de står i her. 
 
 ### Tabeller uten avhengigheter
 Disse tabellene må opprettes først, fordi andre tabeller refererer til dem via fremmednøkler:
@@ -243,6 +243,8 @@ Følg disse stegene for å komme i gang:
 
 5. Applikasjonen skal nå kjøre på `http://localhost:3000`.
 
+Node må være lastet inn for at dette prosjektet skal kjøre. Det kan lastes ned her: https://nodejs.org/en 
+
 
 ## Moderator
 Det er implementert moderatorfunksjonalitet hvor én bestemt bruker har autoritasjon til å slette og redigere alle fag og anmeldelser. Dette er gjort i koden ved at man har tilgang til disse funksjonene, dersom man er logget inn på bruker med bruker ID 35. Denne brukeren ligger klart i vår eksisterende database med følgende logg-inn informasjon:
@@ -304,6 +306,11 @@ Filene som er testet:
 
 På grunn av mangel på eksempler og forklaringer på implementering som kunne tilpasses vårt prosjekt ble Chat GPT brukt for å lage en generell regel på hvordan det skal se ut. Deretter ble det utviklet selv basert på dette, med retting ved help av KI-verktøy.
 
+## Kilder
+- https://github.com/eman289/smart-login-system -Logg inn systemet
+- https://www.w3schools.com/howto/howto_css_searchbar.asp -Søkefeltet
+- https://stackademic.com/blog/how-to-implement-a-reusable-modal-component-in-react-and-typescript -Versjonering frontend
+- https://www.browserstack.com/guide/react-testing-tutorial -Frontend testing
 
 ## Bidrag
 Dette prosjektet er utviklet av:
@@ -314,8 +321,4 @@ Dette prosjektet er utviklet av:
 
 Vi er 4 studenter som går 2. klasse Digital Infrastruktur og Cybersikkerhet ved NTNU Trondheim
 
-## Kilder og Lisens
-- https://github.com/eman289/smart-login-system -Logg inn systemet
-- https://www.w3schools.com/howto/howto_css_searchbar.asp -Søkefeltet
-- https://stackademic.com/blog/how-to-implement-a-reusable-modal-component-in-react-and-typescript -Versjonering frontend
-- https://www.browserstack.com/guide/react-testing-tutorial -Frontend testing
+
