@@ -15,6 +15,7 @@ const SubjectDetails: React.FC = () => {
   const [averageStars, setAverageStars] = useState(0);  // State for gjennomsnittlige stjerner
   const [isAuthorizedToEditSubject, setIsAuthorizedToEditSubject] = useState(false);  // State for å kontrollere om bruker kan redigere emnet
   const [levels, setLevels] = useState<Level[]>([]);  // State for nivåer
+  const [errorMessage, setErrorMessage] = useState('');  // Feilmelding state
   const [isEditingLevel, setIsEditingLevel] = useState(false);  // State for å kontrollere om nivå redigeres
   const [updatedLevelId, setUpdatedLevelId] = useState<number | null>(null);  // State for oppdatert nivå
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null);  // State for hvilken anmeldelse som redigeres
@@ -117,14 +118,21 @@ const SubjectDetails: React.FC = () => {
   // Håndterer tilføying av ny anmeldelse
   const handleAddReview = async () => {
     if (!newReviewText || newRating === 0) {
-      alert('Vennligst fyll inn anmeldelsen og gi en vurdering');
+      setErrorMessage('Vennligst fyll inn anmeldelsen og gi en vurdering'); // Feilmelding for tomme felt
       return;
     }
 
-    try {
-      const currentUserId = Number(localStorage.getItem('userId'));
-      const submitterName = localStorage.getItem('userName') || 'Anonym';
+    const currentUserId = Number(localStorage.getItem('userId'));
 
+    // Sjekk om brukeren er logget inn
+    if (!currentUserId) {
+      setErrorMessage('Du må være logget inn for å legge til en anmeldelse'); // Feilmelding for ikke-pålogget bruker
+      return;
+    }
+
+    const submitterName = localStorage.getItem('userName') || 'Anonym';
+
+    try {
       const response = await fetch(`/api/subjects/${subjectId}/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,7 +160,8 @@ const SubjectDetails: React.FC = () => {
 
         setNewReviewText('');
         setNewRating(0);
-        fetchAverageStars();  // Recalculation of average stars
+        setErrorMessage('');
+        fetchAverageStars(); 
         await fetch(`/api/subjects/${subjectId}/reviews/version`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -416,6 +425,9 @@ const SubjectDetails: React.FC = () => {
           style={{ marginBottom: '10px', width: '100%', height: '100px' }}
         />
         <StarRating rating={newRating} onRatingChange={setNewRating} /> {/* Stjernesystem for anmeldelse */}
+        
+        {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+
         <button
           style={{ marginTop: '10px' }}
           onClick={editingReviewId ? handleSaveEdit : handleAddReview}  // Håndterer lagring eller opprettelse av anmeldelse
