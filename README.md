@@ -1,7 +1,7 @@
 # NTNU EmneVurderinger (DCST2002 Webutviklingsprosjekt h24)
 
 EmneVurderinger er en webapplikasjon som lar brukere utforske og vurdere emner ved NTNU. Brukere kan søke etter emner, filtrere dem etter fagområde, og sortere emnene etter nivå. Applikasjonen lar brukere også legge til, redigere og slette egne anmeldelser av emner. I tillegg kan brukere se gjennomsnittlig vurdering for hvert emne. 
-Brukere kan navigere mellom forskjellige campus ved NTNU, velge fagområder og emner, og lese detaljer om hvert emne, inkludert beskrivelser og vurderinger. Administrasjon av emner og anmeldelser kan utføres av moderatorer som har spesifik tilgang til å opprette, redigere og slette emner og anmeldelser.
+Brukere kan navigere mellom forskjellige campus ved NTNU, velge fagområder og emner, og lese detaljer om hvert emne, inkludert beskrivelser og vurderinger. På hvert fag vises antall sidevisninger. Administrasjon av emner og anmeldelser kan utføres av moderatorer som har spesifik tilgang til å opprette, redigere og slette emner og anmeldelser.
 Applikasjonen har funksjonalitet for både vanlige brukere og moderatorer, med mulighet for å vise endringslogg og versjonshåndtering for emner og anmeldelser, som gir innsikt i hvilke endringer som har blitt gjort over tid. 
 
 # Innhold
