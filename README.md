@@ -35,7 +35,7 @@ Applikasjonen har funksjonalitet for både vanlige brukere og moderatorer, med m
 
 ## Teknologier
 - Språk: TS, CSS, JS, HTML  
-- Bibliotek: React, Jest, React Testing Library 
+- Bibliotek: React, Jest, React Testing Library, bcrypt 
 - Databaser, SQL
 - Frontend, Client
 - Backend, Server
@@ -48,7 +48,7 @@ I utviklingen av dette prosjektet har disse KI-verktøyene blir benyttet:
 ## Databaseoppsett
 
 Du må logge deg inn på databasen vår (mysqladmin.it.ntnu.no). Du finner innlogging på /server/config.ts. 
-Husk at du må være på på NTNU-nett, eller VPN hvis du befinner deg et annet sted enn på campus. 
+Husk at du må være på på NTNU-nett, eller benytte VPN hvis du befinner deg et annet sted enn på campus. 
 
 ### SQL - Setninger
 Hvis du vil lage dine egne tabeller, er det viktige at de legges inn i den rekkefølgen de står i her. 
@@ -64,12 +64,13 @@ CREATE TABLE Campuses (
     PRIMARY KEY (campusId)
 );
 
-INSERT INTO Campuses (campusId, name) VALUES
-(4, 'Gløshaugen'),
-(5, 'Dragvoll'),
-(6, 'Øya'),
-(7, 'Kalvskinnet'),
-(8, 'Helgasetr');
+INSERT INTO Campuses (name) VALUES
+('Gløshaugen'),
+('Dragvoll'),
+('Øya'),
+('Kalvskinnet'),
+('Helgasetr'),
+('Handleshøyskolen');
 
 CREATE TABLE Levels (
     id INT NOT NULL AUTO_INCREMENT,
@@ -77,11 +78,11 @@ CREATE TABLE Levels (
     PRIMARY KEY (id)
 );
 
-INSERT INTO Levels (id, name) VALUES
-(1, 'Grunnleggende emner, nivå I'),
-(2, 'Videregående emner, nivå II'),
-(3, 'Høyere grads nivå'),
-(5, 'Annet');
+INSERT INTO Levels (name) VALUES
+('Grunnleggende emner, nivå I'),
+('Videregående emner, nivå II'),
+('Høyere grads nivå'),
+('Annet');
 
 CREATE TABLE users (
     id INT NOT NULL AUTO_INCREMENT,
@@ -106,14 +107,14 @@ CREATE TABLE Fields (
     FOREIGN KEY (campusId) REFERENCES Campuses(campusId)
 );
 
-INSERT INTO Fields (id, name, campusId) VALUES
-(6, 'Matematikk', 4),
-(7, 'Programmering', 4),
-(8, 'Nettverk', 4),
-(9, 'Cybersikkerhet', 4),
-(10, 'Statsvitenskap', 5);
+INSERT INTO Fields (name, campusId) VALUES
+('Matematikk', 4),
+('Programmering', 4),
+('Nettverk', 4),
+('Cybersikkerhet', 4),
+('Statsvitenskap', 5);
 ```
-Vi har valgt og fokusere på campus Gløshaugen i denne applikasjonen, og derfor er dette et eksempel på insert-setninger for fagfelt på Gløshaugen. 
+Vi har valgt å fokusere på campus Gløshaugen i denne applikasjonen, og derfor er dette et eksempel på insert-setninger for fagfelt på Gløshaugen. 
 Det vil være en lignende implementasjon for de andre campusene (viser det ved "statsvitenskap").
 
 ### Tabeller som avhenger av nivå 2-tabeller
@@ -253,7 +254,7 @@ Det er implementert moderatorfunksjonalitet hvor én bestemt bruker har autorita
 
 **Passord:** moderator
 
-Dersom man oppretter egne databaser, vil koden automatisk generere en bruker med lik logg-inn informasjon, og med bruker ID 35. Dette skjer etter at den første brukeren opprettes på siden. Passordet blir hashet med bcrypt. 
+Dersom man oppretter egen database, vil koden automatisk generere en bruker med lik logg-inn informasjon, og med bruker ID 35. Dette skjer etter at den første brukeren opprettes på siden. Passordet blir hashet med bcrypt. 
 
 
 ## Server-tester
