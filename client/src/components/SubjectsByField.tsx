@@ -108,7 +108,7 @@ const SubjectsByField: React.FC = () => {
     const userId = localStorage.getItem('userId');
     if (!userId) {
       console.error("User ID is missing from local storage. Can't create version.");
-      setErrorMessage('User ID is missing. Please log in again.');
+      setErrorMessage('Du må være logget inn for å legge til et emne.');
       return; // Sjekker om bruker er logget inn
     }
 
