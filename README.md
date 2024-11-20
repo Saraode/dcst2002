@@ -108,12 +108,14 @@ CREATE TABLE Fields (
 );
 
 INSERT INTO Fields (name, campusId) VALUES
-('Matematikk', 4),
-('Programmering', 4),
-('Nettverk', 4),
-('Cybersikkerhet', 4),
-('Statsvitenskap', 5);
+('Matematikk', 1),
+('Programmering', 1),
+('Nettverk', 1),
+('Cybersikkerhet', 1),
+('Statsvitenskap', 2);
 ```
+Her er det viktig å undersøke at campusId samsvarer med campusId i Campus-tabellen. 
+
 Vi har valgt å fokusere på campus Gløshaugen i denne applikasjonen, og derfor er dette et eksempel på insert-setninger for fagfelt på Gløshaugen. 
 Det vil være en lignende implementasjon for de andre campusene (viser det ved "statsvitenskap").
 
